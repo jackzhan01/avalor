@@ -129,9 +129,20 @@ export type EventDraft =
   | Omit<MissionEvent, keyof BaseGameEvent>
   | Omit<TextEvent, keyof BaseGameEvent>;
 
+/**
+ * Omit that distributes over a union.
+ *
+ * Plain `Omit<GameEvent, ...>` collapses the union to only the keys every
+ * member shares, which would silently make every type-specific field
+ * un-patchable.
+ */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
 /** An edit may change payload fields, never identity or ordering. */
 export type EventPatch = Partial<
-  Omit<GameEvent, "id" | "gameId" | "sequence" | "type">
+  DistributiveOmit<GameEvent, "id" | "gameId" | "sequence" | "type">
 >;
 
 /** Ascending by sequence. The store keeps `events` in this order as an invariant. */

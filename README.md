@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Avalor · 阿瓦隆记录本
 
-## Getting Started
+线下《阿瓦隆》对局的实时信息记录本。
 
-First, run the development server:
+一局 9–10 人的阿瓦隆要打 45–90 分钟，人脑很难同时记住谁保过谁、谁踩过谁、态度什么时候变的、每辆车谁点的、谁上了什么票、哪些任务崩了。这个 App 就干一件事：**让你在不打断游戏节奏的前提下，把这些信息结构化地记下来。**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+它**不是** AI、不是身份推理器、不是胜率预测——V1 只做记录。
+
+## 现在能做什么
+
+- 5–10 人局，座位号固定
+- **保踩**：A 对 B 的 1–5 态度，两次点击记完，不需要按保存
+- **点车**：队长 + 上车名单，队长按座位自动顺推且随时可改
+- **投票**：完整的座位级票型（上票 / 下票 / 不清楚 / 没记，四种状态互相区分）
+- **任务**：成功失败 + 坏票数（可不填）
+- **备注**：保踩表达不了的都能写
+- **时间线**：按轮次分组，投票嵌在对应的车里，任务嵌在通过的车里
+- **玩家页**：每个人的表态、改口链、点过的车、投票史、上过的车、备注
+- **保踩总表**：N×N 矩阵
+- 任意记录可改可删，最近一步可撤销
+- 刷新 / 关浏览器都不丢，可导出 JSON
+
+## 几条不肯妥协的数据语义
+
+这几条是整个数据模型的地基，也是测试覆盖的重点：
+
+1. **空白 ≠ 中立。** 没表过态和明确说「看不清」（3）是两回事，绝不会把空白自动填成 3。
+2. **改口不覆盖历史。** 3号对6号从 4 改到 5 再改到 2，三条都在，时间线里看得到完整变化。
+3. **票型不能只存票数。** 6-4 通过，不同的 6 个人含义完全不同，所以存座位级完整票型。
+4. **残缺数据永远合法。** 只记住一半的票、没数清的坏票，照记不误。
+5. **排序只认 `sequence`，不认时间戳。** 设备时钟会跳，按时间戳排会悄悄搞乱一整局。
+
+## 架构
+
+事件溯源：一局游戏 = 一串不可变的事件，界面上每个状态都由纯函数从事件日志推导出来。
+
+```
+src/lib/
+  types/       事件与派生类型
+  rules/       官方人数表、第 4 轮双坏票规则
+  selectors/   全部推导逻辑（纯函数，可单测）
+    derive-timeline.ts   ← 核心 fold：阶段、当前车、轮次编号、队长
+  events/      事件的增删改与级联规则
+  store/       Zustand（乐观更新）+ Dexie 写入队列
+  db/          IndexedDB（唯一允许 import dexie 的地方）
+  fixtures/    测试夹具构造器
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 开发
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+npm test        # 117 项 selector 单元测试
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+部署见 [DEPLOY.md](./DEPLOY.md)。
 
-## Learn More
+## 数据隐私
 
-To learn more about Next.js, take a look at the following resources:
+记录全部存在浏览器本地（IndexedDB），不会离开设备，没有账号也没有后端。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+代价是浏览器可能清理长期未访问站点的数据——所以建议把页面**添加到主屏幕**，并在打完一局后导出 JSON 备份。

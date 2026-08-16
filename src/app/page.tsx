@@ -1,103 +1,130 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import * as repo from "@/lib/db/repository";
+import type { GameSummary } from "@/lib/db/repository";
+import { useHydrated } from "@/lib/store/hooks";
+import { Button } from "@/components/ui/button";
+import { Card, EmptyState, SectionTitle, Skeleton } from "@/components/ui/feedback";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { formatGameDate } from "@/lib/format/labels";
+
+export default function HomePage() {
+  const hydrated = useHydrated();
+  const [games, setGames] = useState<GameSummary[] | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<GameSummary | null>(null);
+  const [standalone, setStandalone] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setGames(await repo.listRecentGames());
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void refresh();
+    // An installed PWA is exempt from Safari's 7-day storage cleanup, so the
+    // hint below is only worth showing to people browsing in a tab.
+    setStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+        // iOS Safari predates the display-mode media query for this.
+        (navigator as { standalone?: boolean }).standalone === true,
+    );
+  }, [hydrated, refresh]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="mx-auto min-h-dvh max-w-md px-4 pb-10 pt-8">
+      <header className="mb-7">
+        <h1 className="text-[2.6rem] font-semibold leading-none tracking-tight">
+          Avalor
+        </h1>
+        <p className="mt-2 text-sm text-fg-muted">阿瓦隆记录本</p>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      <Link href="/new" className="block">
+        <Button size="lg" fullWidth>
+          开一局新的
+        </Button>
+      </Link>
+
+      <section className="mt-8">
+        <SectionTitle>最近的对局</SectionTitle>
+
+        {!hydrated || games === null ? (
+          <div className="space-y-2">
+            <Skeleton className="h-[68px] w-full" />
+            <Skeleton className="h-[68px] w-full" />
+          </div>
+        ) : games.length === 0 ? (
+          <EmptyState
+            title="还没有记录过对局"
+            hint="开一局，边打边记。"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        ) : (
+          <ul className="space-y-2">
+            {games.map((game) => (
+              <li key={game.id}>
+                <Card className="flex items-center gap-3 p-0">
+                  <Link
+                    href={`/game/${game.id}`}
+                    className="min-w-0 flex-1 px-3 py-3"
+                  >
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[15px] font-medium">
+                        {game.playerCount} 人局
+                      </span>
+                      <span
+                        className={
+                          game.status === "completed"
+                            ? "text-[12px] text-fg-subtle"
+                            : "text-[12px] font-medium text-accent"
+                        }
+                      >
+                        {game.status === "completed" ? "已结束" : "进行中"}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[12px] text-fg-subtle">
+                      {formatGameDate(game.createdAt)} · {game.eventCount} 条记录
+                    </p>
+                  </Link>
+                  <button
+                    onClick={() => setPendingDelete(game)}
+                    aria-label="删除这局记录"
+                    className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-fg-subtle active:bg-surface-2"
+                  >
+                    <span aria-hidden>🗑</span>
+                  </button>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {hydrated && !standalone && (
+        <p className="mt-8 rounded-xl bg-surface-2 px-3 py-2.5 text-[12px] leading-relaxed text-fg-muted">
+          记录只存在这台设备上。建议把本页
+          <strong className="font-medium text-fg">「添加到主屏幕」</strong>
+          —— 浏览器会清理长期没打开的网站数据，装成 App 后就不会被清掉。
+        </p>
+      )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="删除这局记录？"
+        message={
+          pendingDelete
+            ? `${pendingDelete.playerCount} 人局，共 ${pendingDelete.eventCount} 条记录。删掉之后没法恢复。`
+            : ""
+        }
+        confirmLabel="删除"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (pendingDelete) await repo.deleteGame(pendingDelete.id);
+          setPendingDelete(null);
+          await refresh();
+        }}
+      />
+    </main>
   );
 }
