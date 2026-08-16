@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Avalor 的封面、命名由来与视觉规范。">
+<meta name="theme-color" content="#0C1420">
+<link rel="icon" href="/icon-192.png">
+</head>
+<body>
+<title>Avalor 封面</title>
+
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     Palette
+
+     Page neutrals carry a slight blue bias toward the accent, so
+     they read as chosen rather than inherited grey.
+
+     The cover card itself is INVARIANT — a printed cover has its
+     own colours regardless of the light in the room. Only the
+     reading matter around it follows the viewer's theme.
+     ───────────────────────────────────────────────────────────── */
+
+  :root {
+    --bg: #F1F4F8;
+    --surface: #FFFFFF;
+    --surface-2: #E8EDF3;
+    --border: #D5DDE7;
+    --border-strong: #B7C3D1;
+    --fg: #0F1721;
+    --fg-muted: #55626F;
+    --fg-subtle: #7E8B99;
+    --accent: #2E5FD0;
+    --accent-soft: #DCE6FB;
+
+    /* Fixed cover object — never themed. */
+    --cover-ground: #0C1420;
+    --cover-ground-2: #121D2C;
+    --cover-stone: #E9E4D9;
+    --cover-stone-dim: #8E9AA8;
+    --cover-gold: #C9A227;
+
+    /* The product's own rating scale: 强踩 → 强保.
+       This is the app's real chromatic identity, so the brand
+       borrows from function rather than inventing a second palette. */
+    --rate-1: #D92D20;
+    --rate-2: #E07A1A;
+    --rate-3: #6B7684;
+    --rate-4: #0F9488;
+    --rate-5: #15A34A;
+
+    --display: "Trajan Pro", "Optima", "Palatino Linotype", "Book Antiqua",
+      Palatino, "Times New Roman", serif;
+    --body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #090E15;
+      --surface: #111A24;
+      --surface-2: #17222F;
+      --border: #24313F;
+      --border-strong: #3A4A5C;
+      --fg: #E6EDF4;
+      --fg-muted: #98A5B3;
+      --fg-subtle: #6C7A89;
+      --accent: #6D9BF5;
+      --accent-soft: #182B47;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #090E15;
+    --surface: #111A24;
+    --surface-2: #17222F;
+    --border: #24313F;
+    --border-strong: #3A4A5C;
+    --fg: #E6EDF4;
+    --fg-muted: #98A5B3;
+    --fg-subtle: #6C7A89;
+    --accent: #6D9BF5;
+    --accent-soft: #182B47;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1.25rem, 4vw, 2rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 7vw, 5rem);
+  }
+
+  /* ── The cover object ─────────────────────────────────────── */
+
+  .cover-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .cover {
+    position: relative;
+    width: min(100%, 30rem);
+    aspect-ratio: 3 / 4;
+    background:
+      radial-gradient(120% 85% at 50% 8%, var(--cover-ground-2) 0%, var(--cover-ground) 62%);
+    border: 1px solid #1E2C3E;
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8% 7%;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.05) inset,
+      0 24px 60px -24px rgba(6, 12, 20, 0.65);
+  }
+
+  /* A hairline frame, the way an inscription sits inside a cut border. */
+  .cover::after {
+    content: "";
+    position: absolute;
+    inset: 4.5%;
+    border: 1px solid rgba(233, 228, 217, 0.14);
+    pointer-events: none;
+  }
+
+  .ring {
+    width: 34%;
+    max-width: 8rem;
+    margin-bottom: 9%;
+    display: block;
+    overflow: visible;
+  }
+
+  .ring .table-edge {
+    fill: none;
+    stroke: rgba(233, 228, 217, 0.22);
+    stroke-width: 2;
+  }
+
+  .ring .seat {
+    fill: var(--cover-stone);
+  }
+
+  .ring .seat-leader {
+    fill: var(--cover-gold);
+  }
+
+  .wordmark {
+    font-family: var(--display);
+    font-weight: 400;
+    /* Inscriptional letterspacing: Roman capitals were cut wide. */
+    letter-spacing: 0.26em;
+    /* The tracking adds space after the final letter; pull it back so the
+       word stays optically centred inside the frame. */
+    text-indent: 0.26em;
+    font-size: clamp(2.1rem, 9.5vw, 3.4rem);
+    line-height: 1;
+    color: var(--cover-stone);
+    margin: 0;
+    text-align: center;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  /* The quiet reveal: a gold hairline under V-A-L-O-R.
+     You are meant to notice the wordmark first and this second. */
+  .valor-rule {
+    display: block;
+    height: 1px;
+    background: var(--cover-gold);
+    opacity: 0.85;
+    margin: 0.85rem auto 0;
+    /* Five of six letters, minus the trailing tracking space. */
+    width: 68%;
+    margin-right: auto;
+    margin-left: auto;
+    transform: translateX(8%);
+  }
+
+  .cover-sub {
+    font-family: var(--body);
+    font-size: clamp(0.8rem, 2.6vw, 0.95rem);
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    color: var(--cover-stone-dim);
+    margin: 1.4rem 0 0;
+    text-align: center;
+  }
+
+  .cover-foot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8.5%;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    color: rgba(142, 154, 168, 0.75);
+  }
+
+  .cover-caption {
+    font-size: 0.8rem;
+    color: var(--fg-subtle);
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Page sections ────────────────────────────────────────── */
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 3.6vw, 1.85rem);
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    margin: 0.15rem 0 0;
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--fg-muted);
+  }
+
+  p strong { color: var(--fg); font-weight: 600; }
+
+  .lede { color: var(--fg); font-size: 1.05rem; }
+
+  /* ── The name breakdown ───────────────────────────────────── */
+
+  .split {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.1em;
+    font-family: var(--display);
+    font-size: clamp(2.4rem, 10vw, 4rem);
+    letter-spacing: 0.12em;
+    line-height: 1;
+    padding: clamp(1.75rem, 5vw, 2.75rem) 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+
+  .split .a { color: var(--fg-subtle); }
+
+  .split .valor {
+    color: var(--fg);
+    border-bottom: 2px solid var(--cover-gold);
+    padding-bottom: 0.12em;
+  }
+
+  .gloss {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .gloss > div {
+    background: var(--surface);
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .gloss dt {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+    margin: 0;
+  }
+
+  .gloss dd {
+    margin: 0;
+    font-size: 0.94rem;
+    color: var(--fg-muted);
+  }
+
+  .gloss dd b { color: var(--fg); font-weight: 600; }
+
+  /* ── Notes / caveats ──────────────────────────────────────── */
+
+  .note {
+    display: flex;
+    gap: 0.9rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--cover-gold);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .note-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cover-gold);
+    white-space: nowrap;
+    padding-top: 0.28rem;
+  }
+
+  .note p { font-size: 0.94rem; }
+
+  /* ── Type comparison ──────────────────────────────────────── */
+
+  .type-compare {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem;
+  }
+
+  .type-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1.5rem 1.25rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .type-card.rejected { opacity: 0.62; }
+
+  .type-specimen {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
+    text-align: center;
+    color: var(--fg);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .type-specimen.roman { font-family: var(--display); }
+  /* Papyrus, shown only to make the comparison honest. */
+  .type-specimen.papyrus { font-family: Papyrus, "Papyrus", fantasy; }
+
+  .type-verdict {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .type-card.chosen .type-verdict { color: var(--rate-5); }
+  .type-card.rejected .type-verdict { color: var(--rate-1); }
+
+  .type-card p { font-size: 0.88rem; }
+
+  /* ── Icon specimens ───────────────────────────────────────── */
+
+  .icons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: clamp(1.25rem, 4vw, 2.5rem);
+    padding: 1.75rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+
+  .icon-spec {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .icon-tile {
+    background: #1D4ED8;
+    display: block;
+    border-radius: 22%;
+  }
+
+  .icon-tile .seat { fill: #FFFFFF; }
+  .icon-tile .seat-leader { fill: #FBBF24; }
+  .icon-tile .table-edge {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.28);
+    stroke-width: 10;
+  }
+
+  .icon-size {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Rating scale ─────────────────────────────────────────── */
+
+  .scale {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+  }
+
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 1.15rem 0.35rem 0.9rem;
+    border-radius: 3px;
+    color: #FFFFFF;
+  }
+
+  .swatch b {
+    font-size: 1.35rem;
+    line-height: 1;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .swatch span {
+    font-size: 0.78rem;
+    opacity: 0.9;
+  }
+
+  .swatch code {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+    opacity: 0.72;
+    margin-top: 0.25rem;
+  }
+
+  /* ── Load sequence ────────────────────────────────────────── */
+
+  .cover .ring,
+  .cover .wordmark,
+  .cover .valor-rule,
+  .cover .cover-sub,
+  .cover .cover-foot {
+    animation: settle 0.9s cubic-bezier(0.16, 0.84, 0.34, 1) backwards;
+  }
+
+  .cover .ring { animation-delay: 0.05s; }
+  .cover .wordmark { animation-delay: 0.28s; }
+  .cover .valor-rule { animation-delay: 0.62s; animation-duration: 1.1s; }
+  .cover .cover-sub { animation-delay: 0.46s; }
+  .cover .cover-foot { animation-delay: 0.7s; }
+
+  @keyframes settle {
+    from { opacity: 0; transform: translateY(0.6rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .valor-rule { animation-name: settle-rule; }
+
+  @keyframes settle-rule {
+    from { opacity: 0; transform: translateX(8%) scaleX(0); }
+    to { opacity: 0.85; transform: translateX(8%) scaleX(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cover .ring,
+    .cover .wordmark,
+    .cover .valor-rule,
+    .cover .cover-sub,
+    .cover .cover-foot {
+      animation: none;
+    }
+  }
+
+  a { color: var(--accent); }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 30rem) {
+    .scale { grid-template-columns: repeat(5, 1fr); gap: 0.3rem; }
+    .swatch { padding: 0.85rem 0.15rem 0.7rem; }
+    .swatch span { font-size: 0.66rem; }
+    .swatch code { display: none; }
+  }
+</style>
+
+<div class="page">
+
+  <!-- ── COVER ─────────────────────────────────────────────── -->
+  <div class="cover-stage">
+    <div class="cover">
+      <svg class="ring" viewBox="0 0 200 200" role="img"
+           aria-label="十个座位围成的圆桌，顶端一个金色座位代表当前队长">
+        <circle class="table-edge" cx="100" cy="100" r="38" />
+        <circle class="seat-leader" cx="100" cy="32" r="10" />
+        <circle class="seat" cx="139.97" cy="44.99" r="7.5" />
+        <circle class="seat" cx="164.67" cy="78.99" r="7.5" />
+        <circle class="seat" cx="164.67" cy="121.01" r="7.5" />
+        <circle class="seat" cx="139.97" cy="155.01" r="7.5" />
+        <circle class="seat" cx="100" cy="168" r="7.5" />
+        <circle class="seat" cx="60.03" cy="155.01" r="7.5" />
+        <circle class="seat" cx="35.33" cy="121.01" r="7.5" />
+        <circle class="seat" cx="35.33" cy="78.99" r="7.5" />
+        <circle class="seat" cx="60.03" cy="44.99" r="7.5" />
+      </svg>
+
+      <h1 class="wordmark">AVALOR</h1>
+      <span class="valor-rule" aria-hidden="true"></span>
+      <p class="cover-sub">阿瓦隆记录本</p>
+
+      <p class="cover-foot">谁保过谁 · 谁踩过谁 · 谁改过口</p>
+    </div>
+    <p class="cover-caption">3 : 4 · 封面</p>
+  </div>
+
+  <!-- ── NAME ──────────────────────────────────────────────── -->
+  <section class="section">
+    <div>
+      <p class="eyebrow">名字</p>
+      <h2>Avalor 里面本来就藏着 valor</h2>
+    </div>
+
+    <p class="lede">
+      你把 Avalon 和 Avatar 揉在一起的时候，顺手撞出了一个比原意更好的东西：
+      <strong>AVAL-OR 的后五个字母是 valor —— 英勇、武德。</strong>
+      亚瑟王传说的核心词，长在了名字里面。这不是硬凑的解释，是这个名字真正立得住的地方。
+    </p>
+
+    <div class="split" aria-label="A + VALOR">
+      <span class="a">A</span><span class="valor">VALOR</span>
+    </div>
+
+    <dl class="gloss">
+      <div>
+        <dt>第一层</dt>
+        <dd><b>valor</b> — 英勇。圆桌骑士的美德，也是好人阵营在做的事。</dd>
+      </div>
+      <div>
+        <dt>第二层</dt>
+        <dd><b>-or</b> 施事者后缀，像 sailor、actor。<b>Avalor = 玩阿瓦隆的人。</b></dd>
+      </div>
+      <div>
+        <dt>第三层</dt>
+        <dd>和 <b>Avalon</b> 只差一个音节，念出来别人立刻知道是什么游戏。</dd>
+      </div>
+    </dl>
+
+    <div class="note">
+      <span class="note-label">需要知道</span>
+      <p>
+        Avalor 也是迪士尼动画《Elena of Avalor》里的王国名。自己用完全没问题，
+        但如果日后要上应用商店或商业化，建议先查一下商标。这不是拦路虎，是该提前知道的事。
+      </p>
+    </div>
+  </section>
+
+  <!-- ── TYPE ──────────────────────────────────────────────── -->
+  <section class="section">
+    <div>
+      <p class="eyebrow">字体</p>
+      <h2>没有用 Avatar 那套，用了更贴题的一套</h2>
+    </div>
+
+    <p>
+      《阿凡达》的标题字是 <strong>Papyrus 的改版</strong>——这在设计圈是个著名的槽点，
+      2017 年 SNL 专门拍过一个 Ryan Gosling 的短剧调侃它，地位大概和 Comic Sans 相当。
+      更要紧的是它其实不贴题：Papyrus 的气质是古埃及和波利尼西亚，跟中世纪的亚瑟王传说不是一路。
+    </p>
+
+    <div class="type-compare">
+      <div class="type-card chosen">
+        <p class="type-specimen roman">AVALOR</p>
+        <p class="type-verdict">采用 · 罗马碑刻体</p>
+        <p>
+          Palatino / Optima 一路的人文主义衬线体，源头是文艺复兴对罗马碑刻大写字母的复刻。
+          宽字距是碑刻的原生排法，不是装饰。
+        </p>
+      </div>
+      <div class="type-card rejected">
+        <p class="type-specimen papyrus">AVALOR</p>
+        <p class="type-verdict">弃用 · Papyrus</p>
+        <p>
+          如果你的系统装了 Papyrus，上面这行就是它本来的样子。
+          （没装的话会退回默认字体，那也说明了另一个问题：它并不可靠。）
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="note-label">为什么是它</span>
+      <p>
+        罗马大写字母本身<strong>就是一种记录技术</strong>——刻进石头，是为了让说过的话留存下来。
+        而这个 App 干的正好是同一件事：把牌桌上转瞬即逝的保、踩、改口刻下来，
+        让它在 60 分钟后还在。字体和产品说的是同一句话，这比"看起来神秘"值钱得多。
+      </p>
+    </div>
+
+    <p>
+      界面正文仍然是系统字体（苹方 / 微软雅黑）：中文字形覆盖完整、零加载成本、
+      在昏暗的桌游场景里可读性最好。<strong>花字只出现在封面和 logo 上，不进界面。</strong>
+    </p>
+  </section>
+
+  <!-- ── ICON ──────────────────────────────────────────────── -->
+  <section class="section">
+    <div>
+      <p class="eyebrow">图标</p>
+      <h2>一张圆桌，十个座位，一个队长</h2>
+    </div>
+
+    <p>
+      不画剑、不画盾、不画城堡——画这个 App 真正在记录的东西：
+      <strong>一圈固定的座位号，和当前那个队长。</strong>
+      金色的那个是队长，会跟着牌局往下顺。小尺寸下仍然认得出来，因为它是形状而不是细节。
+    </p>
+
+    <!-- Defined once, drawn three times: the geometry here is the same
+         formula that generated the PNGs in public/ — 10 seats on a 150px
+         radius, seat 1 at twelve o'clock. -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+      <symbol id="avalor-icon" viewBox="0 0 512 512">
+        <circle class="table-edge" cx="256" cy="256" r="96" />
+        <circle class="seat" cx="344.2" cy="134.7" r="26" />
+        <circle class="seat" cx="398.7" cy="209.6" r="26" />
+        <circle class="seat" cx="398.7" cy="302.4" r="26" />
+        <circle class="seat" cx="344.2" cy="377.4" r="26" />
+        <circle class="seat" cx="256" cy="406" r="26" />
+        <circle class="seat" cx="167.8" cy="377.4" r="26" />
+        <circle class="seat" cx="113.3" cy="302.4" r="26" />
+        <circle class="seat" cx="113.3" cy="209.6" r="26" />
+        <circle class="seat" cx="167.8" cy="134.7" r="26" />
+        <circle class="seat-leader" cx="256" cy="106" r="34" />
+      </symbol>
+    </svg>
+
+    <div class="icons">
+      <div class="icon-spec">
+        <svg class="icon-tile" width="88" height="88" viewBox="0 0 512 512" role="img" aria-label="Avalor 图标，大尺寸">
+          <use href="#avalor-icon" />
+        </svg>
+        <span class="icon-size">512 px</span>
+      </div>
+      <div class="icon-spec">
+        <svg class="icon-tile" width="52" height="52" viewBox="0 0 512 512" role="img" aria-label="Avalor 图标，中尺寸">
+          <use href="#avalor-icon" />
+        </svg>
+        <span class="icon-size">192 px</span>
+      </div>
+      <div class="icon-spec">
+        <svg class="icon-tile" width="30" height="30" viewBox="0 0 512 512" role="img" aria-label="Avalor 图标，主屏幕尺寸">
+          <use href="#avalor-icon" />
+        </svg>
+        <span class="icon-size">主屏幕</span>
+      </div>
+    </div>
+
+    <p>
+      这三个尺寸的 PNG 已经在仓库的 <code style="font-family:var(--mono);font-size:0.86em">public/</code> 里了，
+      manifest 也配好了——所以「添加到主屏幕」拿到的是这个图标，不是网页截图。
+    </p>
+  </section>
+
+  <!-- ── COLOR ─────────────────────────────────────────────── -->
+  <section class="section">
+    <div>
+      <p class="eyebrow">配色</p>
+      <h2>品牌色直接借用产品的保踩色阶</h2>
+    </div>
+
+    <p>
+      不另外发明一套品牌色。App 里 1–5 的保踩色阶本来就是这个产品最有辨识度的颜色系统，
+      封面和图标都从它里面取色。<strong>颜色永远和数字一起出现</strong>——
+      桌游场景光线暗，也有人分不清红绿，所以颜色只能是第二通道，不能是唯一通道。
+    </p>
+
+    <div class="scale">
+      <div class="swatch" style="background: var(--rate-1)">
+        <b>1</b><span>强踩</span><code>D92D20</code>
+      </div>
+      <div class="swatch" style="background: var(--rate-2)">
+        <b>2</b><span>踩</span><code>E07A1A</code>
+      </div>
+      <div class="swatch" style="background: var(--rate-3)">
+        <b>3</b><span>中立</span><code>6B7684</code>
+      </div>
+      <div class="swatch" style="background: var(--rate-4)">
+        <b>4</b><span>保</span><code>0F9488</code>
+      </div>
+      <div class="swatch" style="background: var(--rate-5)">
+        <b>5</b><span>强保</span><code>15A34A</code>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="note-label">留白也是数据</span>
+      <p>
+        这五个颜色之外还有第六种状态：<strong>什么都没有。</strong>
+        「没表过态」和明确说「看不清」（3）是两回事，界面上前者是空白，后者是灰色的 3。
+        这条区分是整个数据模型的地基，也是配色必须留出空位的原因。
+      </p>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
