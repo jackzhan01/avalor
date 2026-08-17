@@ -3,12 +3,15 @@ import {
   TEAM_SIZES,
   EVIL_COUNTS,
   PLAYER_COUNTS,
+  DEFAULT_ROLE_SET,
   teamSize,
   requiredFails,
   evilCount,
   goodCount,
   getTeamSizeWarning,
   isPlayerCount,
+  defaultRoleSet,
+  describeComposition,
 } from "./avalon";
 import type { PlayerCount } from "@/lib/types/game";
 
@@ -109,6 +112,86 @@ describe("getTeamSizeWarning", () => {
         }
       }
     }
+  });
+});
+
+describe("DEFAULT_ROLE_SET", () => {
+  // Composition is bounded by the table: the named villains only fit once
+  // there are evil seats to spend on them.
+  it("fits inside each table's good and evil counts", () => {
+    for (const count of PLAYER_COUNTS) {
+      const composition = describeComposition(count, defaultRoleSet(count));
+      expect(composition.problems).toEqual([]);
+
+      const good = composition.good.reduce((n, line) => n + line.count, 0);
+      const evil = composition.evil.reduce((n, line) => n + line.count, 0);
+      expect(good).toBe(goodCount(count));
+      expect(evil).toBe(evilCount(count));
+      expect(good + evil).toBe(count);
+    }
+  });
+
+  it("always includes Merlin and the Assassin", () => {
+    for (const count of PLAYER_COUNTS) {
+      expect(DEFAULT_ROLE_SET[count]).toContain("merlin");
+      expect(DEFAULT_ROLE_SET[count]).toContain("assassin");
+    }
+  });
+
+  it("pairs Percival with Morgana at every size", () => {
+    for (const count of PLAYER_COUNTS) {
+      const roles = DEFAULT_ROLE_SET[count];
+      expect(roles.includes("percival")).toBe(roles.includes("morgana"));
+    }
+  });
+
+  it("keeps Mordred and Oberon out of the two-evil tables", () => {
+    for (const count of [5, 6] as PlayerCount[]) {
+      expect(DEFAULT_ROLE_SET[count]).not.toContain("mordred");
+      expect(DEFAULT_ROLE_SET[count]).not.toContain("oberon");
+    }
+  });
+
+  it("only reaches Oberon once there are four evil seats", () => {
+    for (const count of PLAYER_COUNTS) {
+      if (DEFAULT_ROLE_SET[count].includes("oberon")) {
+        expect(evilCount(count)).toBeGreaterThanOrEqual(4);
+      }
+    }
+  });
+});
+
+describe("describeComposition", () => {
+  it("fills the leftover seats with 忠臣 and 爪牙", () => {
+    const composition = describeComposition(10, defaultRoleSet(10));
+    expect(composition.good).toEqual([
+      { role: "merlin", count: 1 },
+      { role: "percival", count: 1 },
+      { role: "loyal", count: 4 },
+    ]);
+    // 10 players: 4 evil, all four named, so no 爪牙 left over.
+    expect(composition.evil.find((l) => l.role === "minion")).toBeUndefined();
+  });
+
+  it("reports a set that cannot fit in the evil seats", () => {
+    const composition = describeComposition(6, {
+      rolesIncluded: ["merlin", "morgana", "assassin", "mordred", "oberon"],
+    });
+    expect(composition.problems.some((p) => p.includes("装不下"))).toBe(true);
+  });
+
+  it("flags Percival without Morgana", () => {
+    const composition = describeComposition(9, {
+      rolesIncluded: ["merlin", "percival", "assassin"],
+    });
+    expect(composition.problems.some((p) => p.includes("莫甘娜"))).toBe(true);
+  });
+
+  it("flags a missing Merlin", () => {
+    const composition = describeComposition(9, {
+      rolesIncluded: ["assassin", "morgana"],
+    });
+    expect(composition.problems.some((p) => p.includes("梅林"))).toBe(true);
   });
 });
 

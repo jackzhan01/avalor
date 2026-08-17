@@ -3,12 +3,23 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as repo from "@/lib/db/repository";
-import { PLAYER_COUNTS, evilCount, goodCount, teamSize } from "@/lib/rules/avalon";
-import type { Player, PlayerCount } from "@/lib/types/game";
+import {
+  PLAYER_COUNTS,
+  defaultRoleSet,
+  evilCount,
+  goodCount,
+  teamSize,
+} from "@/lib/rules/avalon";
+import type { Player, PlayerCount, RoleSetConfig } from "@/lib/types/game";
 import { RoundTable } from "@/components/table/round-table";
+import { Button } from "@/components/ui/button";
+import {
+  CompositionEditor,
+  CompositionView,
+} from "@/components/game/composition";
 import { cn } from "@/lib/utils/cn";
 
-type Step = "count" | "me" | "leader";
+type Step = "count" | "roles" | "me" | "leader";
 
 /**
  * Setup, one question per screen.
@@ -23,6 +34,8 @@ export default function NewGamePage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("count");
   const [playerCount, setPlayerCount] = useState<PlayerCount>(10);
+  const [roleSet, setRoleSet] = useState<RoleSetConfig>(() => defaultRoleSet(10));
+  const [editingRoles, setEditingRoles] = useState(false);
   const [viewerSeat, setViewerSeat] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -37,6 +50,7 @@ export default function NewGamePage() {
     try {
       const created = await repo.createGame({
         playerCount,
+        roleSet,
         viewerSeat: viewerSeat ?? 1,
         firstLeaderSeat,
       });
@@ -54,7 +68,8 @@ export default function NewGamePage() {
         <button
           onClick={() => {
             if (step === "count") router.push("/menu");
-            else if (step === "me") setStep("count");
+            else if (step === "roles") setStep("count");
+            else if (step === "me") setStep("roles");
             else setStep("me");
           }}
           aria-label="返回"
@@ -78,8 +93,12 @@ export default function NewGamePage() {
                 key={count}
                 onClick={() => {
                   setPlayerCount(count);
+                  // Composition is bounded by the table, so the set is rebuilt
+                  // from the new size rather than carried over.
+                  setRoleSet(defaultRoleSet(count));
+                  setEditingRoles(false);
                   setViewerSeat(null);
-                  setStep("me");
+                  setStep("roles");
                 }}
                 // Hovering previews the split below, so the number you are
                 // about to press is never a blind choice.
@@ -96,6 +115,43 @@ export default function NewGamePage() {
                 {count}
               </button>
             ))}
+          </div>
+        </section>
+      )}
+
+      {step === "roles" && (
+        <section className="a-push flex flex-1 flex-col">
+          <h1 className="t-large-title">这局有谁</h1>
+          <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
+            {playerCount} 人局的常规配置。对就直接确认。
+          </p>
+
+          <div className="mt-6 flex flex-col gap-4">
+            <CompositionView playerCount={playerCount} roleSet={roleSet} />
+
+            {editingRoles ? (
+              <CompositionEditor
+                playerCount={playerCount}
+                roleSet={roleSet}
+                onChange={setRoleSet}
+              />
+            ) : (
+              <button
+                onClick={() => setEditingRoles(true)}
+                className="t-subhead min-h-[44px] rounded-[12px] bg-[color:var(--fill)] font-medium text-[color:var(--label)] active:opacity-70"
+              >
+                你们这局不一样？改一下
+              </button>
+            )}
+
+            <Button size="lg" fullWidth onClick={() => setStep("me")}>
+              就是这些人
+            </Button>
+
+            <p className="t-footnote px-1 leading-relaxed text-[color:var(--label-tertiary)]">
+              这决定了你的身份能看到几个人 —— 比如有莫德雷德的话，梅林就少看到一个。
+              之后在对局设置里还能改。
+            </p>
           </div>
         </section>
       )}

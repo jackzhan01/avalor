@@ -11,19 +11,13 @@ import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import { downloadExport } from "@/lib/db/transfer";
 import * as repo from "@/lib/db/repository";
-import { getIntegrityWarnings, validateRoleSet } from "@/lib/selectors";
-import type { RoleType, WinningSide } from "@/lib/types/game";
-
-const ROLES: { value: RoleType; label: string; side: "good" | "evil" }[] = [
-  { value: "merlin", label: "梅林", side: "good" },
-  { value: "percival", label: "派西维尔", side: "good" },
-  { value: "loyal", label: "忠臣", side: "good" },
-  { value: "morgana", label: "莫甘娜", side: "evil" },
-  { value: "mordred", label: "莫德雷德", side: "evil" },
-  { value: "assassin", label: "刺客", side: "evil" },
-  { value: "oberon", label: "奥伯伦", side: "evil" },
-  { value: "minion", label: "爪牙", side: "evil" },
-];
+import { getIntegrityWarnings } from "@/lib/selectors";
+import { defaultRoleSet } from "@/lib/rules/avalon";
+import {
+  CompositionEditor,
+  CompositionView,
+} from "@/components/game/composition";
+import type { WinningSide } from "@/lib/types/game";
 
 export default function GameSettingsPage() {
   const router = useRouter();
@@ -44,7 +38,8 @@ export default function GameSettingsPage() {
 
   if (!game || !timeline) return null;
   const warnings = getIntegrityWarnings(events, game);
-  const roleWarning = validateRoleSet(game.roleSet, game.playerCount);
+  // Older games predate the setup step, so fall back to the standard line-up.
+  const roleSet = game.roleSet ?? defaultRoleSet(game.playerCount);
 
   return (
     <main className="mx-auto max-w-md px-4 pb-10">
@@ -137,45 +132,23 @@ export default function GameSettingsPage() {
           ))}
         </ListGroup>
 
-        <ListGroup
-          header="本局有哪些角色"
-          footer="只记这局有哪些角色，不需要知道谁是谁。它只用来算你的视野该看到几个人，不参与任何推理。"
-        >
-          <div className="list-row flex flex-wrap gap-1.5 p-3">
-            {ROLES.map((role) => {
-              const on = game.roleSet?.rolesIncluded.includes(role.value) ?? false;
-              return (
-                <button
-                  key={role.value}
-                  onClick={() => {
-                    const current = game.roleSet?.rolesIncluded ?? [];
-                    const next = on
-                      ? current.filter((r) => r !== role.value)
-                      : [...current, role.value];
-                    void updateRoleSet(
-                      next.length > 0 ? { rolesIncluded: next } : undefined,
-                    );
-                  }}
-                  aria-pressed={on}
-                  className={`t-subhead min-h-[40px] rounded-[10px] px-3 font-medium active:opacity-70 ${
-                    on
-                      ? role.side === "evil"
-                        ? "bg-[color:var(--red)] text-white"
-                        : "bg-[color:var(--green)] text-white"
-                      : "bg-[color:var(--fill)] text-[color:var(--label)]"
-                  }`}
-                >
-                  {role.label}
-                </button>
-              );
-            })}
-          </div>
-          {roleWarning.severity === "warn" && (
-            <div className="list-row p-3">
-              <InlineWarning>{roleWarning.message}</InlineWarning>
-            </div>
-          )}
-        </ListGroup>
+        {/* The escape hatch for a table running something unusual. Changing it
+            changes what each role can see, so it lives next to the line-up
+            rather than buried in a list of toggles. */}
+        <section className="flex flex-col gap-3">
+          <h2 className="t-footnote px-4 uppercase tracking-[0.06em] text-[color:var(--label-secondary)]">
+            局内人员构成
+          </h2>
+          <CompositionView playerCount={game.playerCount} roleSet={roleSet} />
+          <CompositionEditor
+            playerCount={game.playerCount}
+            roleSet={roleSet}
+            onChange={(next) => void updateRoleSet(next)}
+          />
+          <p className="t-footnote px-4 text-[color:var(--label-tertiary)]">
+            改这个只影响你的视野该点几个人，不参与任何推理。
+          </p>
+        </section>
 
         <ListGroup
           header="导出"

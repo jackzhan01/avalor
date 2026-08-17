@@ -124,6 +124,113 @@ const EVIL_ROLE_SET: readonly RoleType[] = [
 ];
 
 /**
+ * The usual line-up at each table size.
+ *
+ * Composition is not free-floating — it is bounded by the table. Six players
+ * means two evil seats, so Mordred and Oberon simply do not fit alongside
+ * Morgana and the Assassin; they only start appearing once there are three or
+ * four evil seats to spend. Offering the same role menu at every size invited
+ * a configuration that cannot exist.
+ *
+ * Merlin and the Assassin are in every game. Percival and Morgana come as a
+ * pair. Everything after that is spending the remaining evil seats.
+ */
+export const DEFAULT_ROLE_SET: Record<PlayerCount, RoleType[]> = {
+  // 3 good / 2 evil
+  5: ["merlin", "percival", "loyal", "morgana", "assassin"],
+  // 4 good / 2 evil — still no room for a third named villain
+  6: ["merlin", "percival", "loyal", "morgana", "assassin"],
+  // 4 good / 3 evil — the third evil seat is where Mordred arrives
+  7: ["merlin", "percival", "loyal", "morgana", "assassin", "mordred"],
+  8: ["merlin", "percival", "loyal", "morgana", "assassin", "mordred"],
+  9: ["merlin", "percival", "loyal", "morgana", "assassin", "mordred"],
+  // 6 good / 4 evil — the fourth seat is where Oberon fits
+  10: [
+    "merlin",
+    "percival",
+    "loyal",
+    "morgana",
+    "assassin",
+    "mordred",
+    "oberon",
+  ],
+};
+
+export function defaultRoleSet(playerCount: PlayerCount): RoleSetConfig {
+  return { rolesIncluded: [...DEFAULT_ROLE_SET[playerCount]] };
+}
+
+/** Named roles, i.e. the ones that exist at most once. */
+const UNIQUE_GOOD: readonly RoleType[] = ["merlin", "percival"];
+const UNIQUE_EVIL: readonly RoleType[] = [
+  "morgana",
+  "mordred",
+  "assassin",
+  "oberon",
+];
+
+export interface CompositionLine {
+  role: RoleType;
+  count: number;
+}
+
+export interface Composition {
+  good: CompositionLine[];
+  evil: CompositionLine[];
+  goodTotal: number;
+  evilTotal: number;
+  /** Warnings only — a table may be running something unusual on purpose. */
+  problems: string[];
+}
+
+/**
+ * Turn "which roles are in play" into "how many of each", filling the leftover
+ * seats with 忠臣 and 爪牙. Those two are the only roles that appear more than
+ * once, so their counts are always whatever is left over.
+ */
+export function describeComposition(
+  playerCount: PlayerCount,
+  roleSet: RoleSetConfig,
+): Composition {
+  const has = (r: RoleType) => roleSet.rolesIncluded.includes(r);
+  const goodTotal = goodCount(playerCount);
+  const evilTotal = evilCount(playerCount);
+
+  const namedGood = UNIQUE_GOOD.filter(has);
+  const namedEvil = UNIQUE_EVIL.filter(has);
+  const loyal = goodTotal - namedGood.length;
+  const minion = evilTotal - namedEvil.length;
+
+  const problems: string[] = [];
+  if (loyal < 0) {
+    problems.push(`好人只有 ${goodTotal} 个位置，装不下这些好人角色。`);
+  }
+  if (minion < 0) {
+    problems.push(
+      `${playerCount} 人局只有 ${evilTotal} 个坏人，装不下 ${namedEvil.length} 个坏人角色。`,
+    );
+  }
+  if (!has("merlin")) problems.push("没有梅林，刺杀环节就没有意义了。");
+  if (has("percival") && !has("morgana")) {
+    problems.push("有派西维尔却没有莫甘娜，他会直接看到梅林。");
+  }
+
+  return {
+    good: [
+      ...namedGood.map((role) => ({ role, count: 1 })),
+      ...(loyal > 0 ? [{ role: "loyal" as RoleType, count: loyal }] : []),
+    ],
+    evil: [
+      ...namedEvil.map((role) => ({ role, count: 1 })),
+      ...(minion > 0 ? [{ role: "minion" as RoleType, count: minion }] : []),
+    ],
+    goodTotal,
+    evilTotal,
+    problems,
+  };
+}
+
+/**
  * What to assume about an optional role when the game's role set was never
  * configured — which is the common case, since configuring it is optional.
  *
