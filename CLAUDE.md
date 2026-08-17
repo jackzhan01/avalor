@@ -81,6 +81,23 @@ npm run dev -- -H 0.0.0.0
 
 只有 npm（无 pnpm/yarn），Node 20.9，Next 锁 15.x。
 
+## 分支：`main` 是生产环境
+
+**`main` 已经上线，推上去 1–2 分钟后用户就用上了。所以不要直接推 `main`。**
+
+在 `dev` 上开发：
+
+```bash
+git checkout dev
+git pull origin dev     # 别人可能刚推过
+# ... 改代码 ...
+git push origin dev
+```
+
+合进 `main` 由**仓库主人决定**，agent 不要自己合。要发布时告诉他，或者他自己开 PR。
+
+判断标准很简单：**这次改动，你敢让正在牌桌上记录的人立刻用上吗？** 敢就可以提合并，不敢就先留在 `dev`。
+
 ## 多 agent 协作
 
 这个仓库同时有多个 agent 在工作。
