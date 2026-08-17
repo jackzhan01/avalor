@@ -22,6 +22,10 @@ export class AvalonDB extends Dexie {
   meta!: Table<MetaRecord, string>;
 
   constructor() {
+    // NEVER rename this. It is the IndexedDB database name, not a label: a new
+    // name is a new, empty database, and every game anyone has recorded would
+    // vanish on their next visit with nothing to point at as the cause. The
+    // product's display name has already changed once and this did not.
     super("avalon-live-notebook");
     this.version(1).stores({
       games: "id, updatedAt, createdAt, status",

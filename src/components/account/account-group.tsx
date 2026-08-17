@@ -120,12 +120,18 @@ export function AccountGroup() {
   return (
     <>
       <ListGroup
+        /*
+         * States where the records live, in whichever of the three situations
+         * the reader is actually in. It used to promise nothing ever left the
+         * device, which stopped being true the moment backup shipped — and a
+         * privacy line that has quietly gone stale is worse than none.
+         */
         footer={
           !backend
             ? "这个版本没有账号功能，所有记录都存在本机。"
             : email
-              ? "已登录。牌局记录依然只存在这台设备上，登录不会上传任何一局。"
-              : "登录是可选的 —— 不登录，记录功能一样完整可用。"
+              ? "记录默认只在这台设备上。点「云端备份」才会上传，不会自动进行。"
+              : "记录只存在这台设备上。登录是可选的 —— 可以备份到云端，也能用 AI 内测功能。"
         }
       >
         <ListRow

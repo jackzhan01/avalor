@@ -41,7 +41,7 @@ export default function MenuPage() {
           Avalor
         </h1>
         <p className="t-subhead mt-2 text-[color:var(--label-secondary)]">
-          阿瓦隆记录本
+          阿瓦隆 AI 助手
         </p>
       </div>
 
@@ -73,11 +73,10 @@ export default function MenuPage() {
           />
         </ListGroup>
 
+        {/* The where-your-data-lives line lives on this group's footer now:
+            two of them stacked said the same thing twice, and one of them
+            was out of date the moment backup shipped. */}
         <AccountGroup />
-
-        <p className="t-footnote px-1 text-[color:var(--label-tertiary)]">
-          所有记录都存在这台设备上，不会上传。
-        </p>
       </div>
     </main>
   );

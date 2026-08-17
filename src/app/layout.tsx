@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Avalor · 阿瓦隆记录本",
-  description: "线下阿瓦隆对局的实时信息记录本：保踩、点车、票型、任务结果。",
+  title: "Avalor · 阿瓦隆 AI 助手",
+  description:
+    "线下阿瓦隆对局的实时记录与复盘：保踩、点车、票型、任务结果，打完还能让 AI 帮你理一遍。",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

@@ -2,7 +2,7 @@
   <img src="figure/hero.webp" alt="Avalor" width="100%">
 </p>
 
-<h1 align="center">Avalor · 阿瓦隆记录本 + AI 参谋</h1>
+<h1 align="center">Avalor · 阿瓦隆 AI 助手</h1>
 
 <p align="center">
   牌桌怎么坐，屏幕就怎么画 —— 然后让一个真读得懂这局的 AI，替你把牌理一遍。
