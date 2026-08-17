@@ -21,6 +21,7 @@ import {
   type AnalysisResult,
   type SpeechResult,
 } from "@/lib/ai/types";
+import { boardSignature, readCachedRun, writeCachedRun } from "@/lib/ai/cache";
 import { NEEDS_LOGIN } from "@/lib/auth/messages";
 import { ROLE_LABELS, seatOf } from "@/lib/format/labels";
 import { cn } from "@/lib/utils/cn";
@@ -54,6 +55,16 @@ function rememberConsent(): void {
 }
 
 type Phase = "consent" | "loading" | "done" | "error";
+
+/** Coarse on purpose: within a game, "刚刚" and "12 分钟前" is all that matters. */
+function timeAgo(iso: string): string {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes} 分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  return `${Math.floor(hours / 24)} 天前`;
+}
 
 const TONE_COLOR: Record<ReturnType<typeof readTone>, string> = {
   evil: "var(--red)",
@@ -95,6 +106,15 @@ export function AiSheet({
   const [route, setRoute] = useState<AiRoute>("our-key");
   /** Guards against a second request while one is in flight. */
   const running = useRef(false);
+  /**
+   * The log this result describes. When it still matches the log on screen,
+   * nothing has happened since and a re-run would buy the same paragraphs.
+   */
+  const [shownFor, setShownFor] = useState<string | null>(null);
+  const [shownAt, setShownAt] = useState<string | null>(null);
+
+  const signature = boardSignature(events);
+  const stale = shownFor !== null && shownFor !== signature;
 
   /*
    * Held in a ref rather than a useCallback on purpose. The request closes over
@@ -120,6 +140,16 @@ export function AiSheet({
         if (task === "analysis") setAnalysis(result as AnalysisResult);
         else setSpeech(result as SpeechResult);
         setPhase("done");
+
+        const at = new Date().toISOString();
+        setShownFor(signatureRef.current);
+        setShownAt(at);
+        void writeCachedRun(game.id, task, {
+          signature: signatureRef.current,
+          createdAt: at,
+          ...(steerText?.trim() ? { steer: steerText.trim() } : {}),
+          result,
+        });
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "分析失败了。");
@@ -130,13 +160,44 @@ export function AiSheet({
       });
   };
 
-  // Runs once per open: the page keys this component on the task, so switching
-  // between the two features remounts it rather than reusing stale results.
+  /*
+   * Read inside the request, which is why it is a ref: the request must record
+   * the log it actually ran against, and `signature` from the render that
+   * started it would be stale by the time the model answers.
+   */
+  const signatureRef = useRef(signature);
+  signatureRef.current = signature;
+
+  const gameId = game?.id;
+
+  /*
+   * Opening shows the last result rather than buying a new one. Only a game
+   * that has never been analysed calls the model on open — which is the whole
+   * point: reopening to re-read something used to be billed as a fresh
+   * analysis.
+   */
   useEffect(() => {
-    if (!task) return;
+    if (!task || !gameId) return;
     setRoute(currentRoute());
-    if (hasConsent()) run.current();
-  }, [task]);
+
+    let cancelled = false;
+    void readCachedRun(gameId, task).then((cached) => {
+      if (cancelled) return;
+      if (cached) {
+        if (task === "analysis") setAnalysis(cached.result as AnalysisResult);
+        else setSpeech(cached.result as SpeechResult);
+        if (cached.steer) setSteer(cached.steer);
+        setShownFor(cached.signature);
+        setShownAt(cached.createdAt);
+        setPhase("done");
+        return;
+      }
+      if (hasConsent()) run.current();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [task, gameId]);
 
   if (!game || !task) return null;
 
@@ -171,6 +232,9 @@ export function AiSheet({
   } else if (phase === "done" && !isAnalysis && speech) {
     footer = (
       <div className="flex gap-2">
+        {/* Always available, unlike 重新分析: a different angle on the same
+            board is exactly what this button is for, so an unchanged log is
+            not a reason to withhold it. */}
         <Button
           size="lg"
           variant="gray"
@@ -202,9 +266,21 @@ export function AiSheet({
       </div>
     );
   } else if (phase === "done" && isAnalysis) {
+    /*
+     * Disabled while the log is unchanged, rather than hidden or left live.
+     * Live, it would charge for a re-read of the same board; hidden, the user
+     * would wonder where re-analysis went. Disabled with the reason on the
+     * button answers the question before it is asked.
+     */
     footer = (
-      <Button size="lg" variant="gray" fullWidth onClick={() => run.current()}>
-        重新分析
+      <Button
+        size="lg"
+        variant={stale ? "filled" : "gray"}
+        fullWidth
+        disabled={!stale}
+        onClick={() => run.current()}
+      >
+        {stale ? "基于新进展重新分析" : "局势没变化，不用重算"}
       </Button>
     );
   }
@@ -259,6 +335,23 @@ export function AiSheet({
             </Button>
           )}
         </div>
+      )}
+
+      {/* Says which board this describes. Without it a cached result reads as
+          if it were just computed, and a stale one would be trusted. */}
+      {phase === "done" && shownAt && (
+        <p
+          className={cn(
+            "t-caption mb-3 px-1",
+            stale
+              ? "text-[color:var(--orange)]"
+              : "text-[color:var(--label-tertiary)]",
+          )}
+        >
+          {stale
+            ? "这是之前的结果 —— 之后又记了新东西，可以重新分析。"
+            : `这是当前局势的结果 · ${timeAgo(shownAt)}`}
+        </p>
       )}
 
       {phase === "done" && isAnalysis && analysis && (

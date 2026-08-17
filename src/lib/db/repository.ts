@@ -219,9 +219,12 @@ export async function restoreGame(
 
 export async function deleteGame(gameId: string): Promise<void> {
   const db = getDb();
-  await db.transaction("rw", db.events, db.games, async () => {
+  await db.transaction("rw", db.events, db.games, db.meta, async () => {
     await db.events.where("gameId").equals(gameId).delete();
     await db.games.delete(gameId);
+    // Anything keyed `game:<id>:` belongs to this game and goes with it —
+    // the convention that keeps per-game settings from outliving the game.
+    await db.meta.where("key").startsWith(`game:${gameId}:`).delete();
   });
 }
 
