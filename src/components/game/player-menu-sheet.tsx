@@ -5,6 +5,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RoleChooser } from "./role-chooser";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame } from "@/lib/store/hooks";
 import {
@@ -18,7 +19,6 @@ import { visionFor } from "@/lib/rules/avalon";
 import { ROLE_LABELS, markLabel, playerLabel, seatList } from "@/lib/format/labels";
 import type { RoleMark } from "@/lib/types/events";
 import type { RoleType } from "@/lib/types/game";
-import { EVIL_ROLES, GOOD_ROLES } from "@/lib/types/game";
 
 type Layer = "root" | "mark" | "myRole" | "rename";
 
@@ -199,28 +199,12 @@ export function PlayerMenuSheet({
           subtitle="选完会带你点出你看到的人"
           layerKey="myRole"
         >
-          <ListGroup header="好人">
-            {GOOD_ROLES.map((role) => (
-              <ListRow
-                key={role}
-                label={ROLE_LABELS[role]}
-                accessory={game.viewerRole === role ? "check" : "none"}
-                onClick={() => requestRole(role)}
-              />
-            ))}
-          </ListGroup>
-          <div className="mt-6">
-            <ListGroup header="坏人">
-              {EVIL_ROLES.map((role) => (
-                <ListRow
-                  key={role}
-                  label={ROLE_LABELS[role]}
-                  accessory={game.viewerRole === role ? "check" : "none"}
-                  onClick={() => requestRole(role)}
-                />
-              ))}
-            </ListGroup>
-          </div>
+          <RoleChooser
+            current={game.viewerRole}
+            playerCount={game.playerCount}
+            roleSet={game.roleSet}
+            onPick={requestRole}
+          />
         </Sheet>
 
         <ConfirmDialog

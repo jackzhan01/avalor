@@ -15,6 +15,7 @@ import { PlayerMenuSheet } from "@/components/game/player-menu-sheet";
 import { MissionRecorder } from "@/components/game/mission-recorder";
 import { TextNoteComposer } from "@/components/game/text-note-composer";
 import { LeaderPickerSheet } from "@/components/game/leader-picker-sheet";
+import { RoleSetupSheet } from "@/components/game/role-setup-sheet";
 import { Scratchpad } from "@/components/game/scratchpad";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
@@ -63,8 +64,23 @@ export default function GamePage() {
    */
   const [visionVisible, setVisionVisible] = useState(false);
   const [guessVisible, setGuessVisible] = useState(false);
+  /** Set only when the user actively defers the role prompt. */
+  const [roleDeferred, setRoleDeferred] = useState(false);
 
   if (!game || !timeline) return null;
+
+  /*
+   * Ask for the role the moment a fresh game opens. Unanswered, it costs the
+   * vision, the win rate, and the one label that makes the finished record
+   * worth keeping — so it is asked before anything else, not left to be
+   * discovered in a menu.
+   *
+   * Once anything has been recorded the prompt stops appearing on its own and
+   * the banner takes over, so it can never stand between the user and a game
+   * already in progress.
+   */
+  const roleMissing = !game.viewerRole;
+  const askRoleNow = roleMissing && events.length === 0 && !roleDeferred;
 
   const claimants = new Set(getClaimants(events));
   const marks = getAllRoleMarks(events);
@@ -493,6 +509,20 @@ export default function GamePage() {
           </Link>
         </div>
 
+        {roleMissing && !askRoleNow && idle && (
+          <button
+            onClick={() => setRoleDeferred(false)}
+            className="mb-3 flex w-full items-center justify-between rounded-[12px] bg-[color:var(--fill)] px-3.5 py-2.5 text-left active:opacity-70"
+          >
+            <span className="t-footnote text-[color:var(--label-secondary)]">
+              还没填自己的身份 —— 填了才有视野和胜率
+            </span>
+            <span className="t-footnote font-semibold text-[color:var(--blue)]">
+              去填
+            </span>
+          </button>
+        )}
+
         {assassinationDue && idle && (
           <Link
             href={`/game/${game.id}/endgame`}
@@ -546,6 +576,16 @@ export default function GamePage() {
       </main>
 
       {dock}
+
+      <RoleSetupSheet
+        open={askRoleNow}
+        onDefer={() => setRoleDeferred(true)}
+        onPicked={(role) => {
+          const vision = visionFor(role, game.playerCount, game.roleSet);
+          setRoleDeferred(true); // answered — don't re-open behind the vision step
+          if (vision) setMode({ kind: "vision", role, vision, picked: [] });
+        }}
+      />
 
       <PlayerMenuSheet
         playerId={menuPlayerId}

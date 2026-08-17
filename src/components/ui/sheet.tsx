@@ -23,6 +23,7 @@ export function Sheet({
   /** Changes when the layer changes, to drive the push/pop animation. */
   layerKey,
   direction = "push",
+  dismissible = true,
   children,
 }: {
   open: boolean;
@@ -34,6 +35,12 @@ export function Sheet({
   footer?: React.ReactNode;
   layerKey?: string;
   direction?: "push" | "pop";
+  /**
+   * When false the backdrop and Escape do nothing: the sheet is asking
+   * something the caller needs an actual answer to. Such a sheet must still
+   * offer a way forward in its own body — a dead end is never acceptable.
+   */
+  dismissible?: boolean;
   children: React.ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -43,7 +50,7 @@ export function Sheet({
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (onBack) onBack();
-      else onClose();
+      else if (dismissible) onClose();
     };
     document.addEventListener("keydown", onKey);
     const previous = document.body.style.overflow;
@@ -52,7 +59,7 @@ export function Sheet({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previous;
     };
-  }, [open, onClose, onBack]);
+  }, [open, onClose, onBack, dismissible]);
 
   useEffect(() => {
     if (open) panel.current?.focus();
@@ -64,7 +71,7 @@ export function Sheet({
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div
         className="a-fade absolute inset-0 bg-black/40"
-        onClick={onClose}
+        onClick={dismissible ? onClose : undefined}
         aria-hidden
       />
       <div
@@ -101,14 +108,15 @@ export function Sheet({
             )}
           </div>
           <div className="flex w-16 shrink-0 justify-end">
-            {trailing ?? (
-              <button
-                onClick={onClose}
-                className="t-body min-h-[44px] px-2 text-[color:var(--blue)]"
-              >
-                完成
-              </button>
-            )}
+            {trailing ??
+              (dismissible ? (
+                <button
+                  onClick={onClose}
+                  className="t-body min-h-[44px] px-2 text-[color:var(--blue)]"
+                >
+                  完成
+                </button>
+              ) : null)}
           </div>
         </div>
 
