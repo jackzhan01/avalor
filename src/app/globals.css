@@ -151,6 +151,27 @@ textarea {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 
+/* The strip left over above whatever currently occupies the bottom of the
+   screen — the tab bar plus the mode dock, or a sheet that covers both. The
+   confirmation toast lives here, so it never lands on top of the controls the
+   user is still working in. `--dock-h` and `--sheet-h` are measured and
+   published by those surfaces; both default to 0 on pages that have neither.
+
+   The min() is the guard rail: a full-height sheet would otherwise push the
+   toast past the top of the viewport, where the box grows upward from
+   `bottom: 0` and takes the toast clean off screen. */
+.snack-slot {
+  padding-bottom: calc(
+    min(
+      max(
+        calc(env(safe-area-inset-bottom, 0px) + 3.6rem + var(--dock-h, 0px)),
+        var(--sheet-h, 0px)
+      ),
+      calc(100dvh - 4.5rem)
+    ) + 0.5rem
+  );
+}
+
 /* Inset separators: they start at the content, not the card edge — the detail
    that makes a grouped list read as iOS rather than as a generic table. */
 .list-row { position: relative; }

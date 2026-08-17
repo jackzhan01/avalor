@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { Rating } from "@/lib/types/events";
 import { RATING_LABELS } from "@/lib/selectors";
 import { RATING_VAR } from "@/components/table/round-table";
+import { useBottomSurface } from "@/lib/utils/bottom-surface";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -22,21 +23,7 @@ export function Dock({ children }: { children: React.ReactNode }) {
    * it. The dock changes height with the mode — one row for a rating, two for
    * a vote — so any fixed offset would either overlap it or leave a gap.
    */
-  useEffect(() => {
-    const el = card.current;
-    if (!el) return;
-    const root = document.documentElement;
-    const update = () =>
-      root.style.setProperty("--dock-h", `${el.offsetHeight}px`);
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      // Pages without a dock fall back to 0 rather than inheriting a stale one.
-      root.style.removeProperty("--dock-h");
-    };
-  }, []);
+  useBottomSurface(card, "--dock-h");
 
   return (
     <div className="pb-safe fixed inset-x-0 bottom-[3.6rem] z-30 px-3">

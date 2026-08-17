@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useBottomSurface } from "@/lib/utils/bottom-surface";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -64,6 +65,14 @@ export function Sheet({
   useEffect(() => {
     if (open) panel.current?.focus();
   }, [open]);
+
+  /*
+   * A sheet reaches from the bottom edge upward and covers the tab bar and the
+   * dock, so it — not the dock — is what the snackbar has to clear while one is
+   * open. The sheet also grows and shrinks as its layers change, which is why
+   * the height is measured rather than assumed.
+   */
+  useBottomSurface(panel, "--sheet-h", open);
 
   if (!open || typeof document === "undefined") return null;
 
