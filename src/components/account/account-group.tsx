@@ -42,8 +42,14 @@ export function AccountGroup() {
       .then((value) => setName(value ?? null));
   }, [hydrated]);
 
+  /*
+   * Read at build time from an inlined NEXT_PUBLIC_ value, so it is identical
+   * on the server and the first client render — safe to branch on directly.
+   */
+  const backend = isConfigured();
+
   useEffect(() => {
-    if (!hydrated || !isConfigured()) {
+    if (!hydrated || !backend) {
       setChecked(true);
       return;
     }
@@ -71,9 +77,11 @@ export function AccountGroup() {
     <>
       <ListGroup
         footer={
-          email
-            ? "已登录。牌局记录依然只存在这台设备上，登录不会上传任何一局。"
-            : "登录是可选的 —— 不登录，记录功能一样完整可用。"
+          !backend
+            ? "这个版本没有账号功能，所有记录都存在本机。"
+            : email
+              ? "已登录。牌局记录依然只存在这台设备上，登录不会上传任何一局。"
+              : "登录是可选的 —— 不登录，记录功能一样完整可用。"
         }
       >
         <ListRow
@@ -88,10 +96,14 @@ export function AccountGroup() {
         />
 
         {/*
-         * Rendered only once the session check has settled. Flashing 「登录」
-         * at someone who is already signed in reads as being logged out.
+         * Skipped entirely with no backend configured: offering a login that
+         * lands on a page saying there is nothing to log into is worse than
+         * not offering one. Rendered only once the session check has settled,
+         * because flashing 「登录」 at someone already signed in reads as
+         * having been logged out.
          */}
-        {checked &&
+        {backend &&
+          checked &&
           (email ? (
             <ListRow
               label="账号"
