@@ -199,6 +199,24 @@ export async function updateGame(
   });
 }
 
+/**
+ * Writes a whole game and its log back, for a cloud restore or a file import.
+ *
+ * One transaction: a game row without its events is a game that renders as
+ * empty and looks, to its owner, exactly like data loss. `bulkPut` rather than
+ * `bulkAdd` so re-running a restore is harmless.
+ */
+export async function restoreGame(
+  game: GameRecord,
+  events: GameEvent[],
+): Promise<void> {
+  const db = getDb();
+  await db.transaction("rw", db.games, db.events, async () => {
+    await db.games.put(game);
+    await db.events.bulkPut(events);
+  });
+}
+
 export async function deleteGame(gameId: string): Promise<void> {
   const db = getDb();
   await db.transaction("rw", db.events, db.games, async () => {

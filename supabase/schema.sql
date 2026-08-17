@@ -76,6 +76,53 @@ create policy "read own usage" on public.ai_usage
   for select using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
+-- game_backups：登录用户主动上传的对局备份
+--
+-- 是「备份」，不是「同步」：上传是把这台设备的版本推上去，恢复是把云端的
+-- 拉下来。双向合并要处理两台设备同时改同一局的冲突，那是另一个量级的工程，
+-- 而用户真正怕的是「换手机记录没了」—— 备份就解决了。
+--
+-- 一局一行，整份导出 JSON 存在 payload 里。复用的正是导出功能那个已经带
+-- 版本号、带校验、有测试覆盖的格式，所以云端和本地文件是同一种东西。
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.game_backups (
+  user_id uuid not null references auth.users on delete cascade,
+  -- 本地那局的 id 原样带上来，所以重复上传是覆盖，不会越备越多。
+  game_id uuid not null,
+  payload jsonb not null,
+  -- 冗余出来只为列表页显示，不用把整个 payload 拉下来才知道有几局。
+  player_count int,
+  event_count int,
+  game_created_at timestamptz,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, game_id)
+);
+
+create index if not exists game_backups_user_time
+  on public.game_backups (user_id, game_created_at desc);
+
+alter table public.game_backups enable row level security;
+
+-- 四条策略都要有：这张表是浏览器直接读写的（走 anon key），
+-- 不像 ai_usage 那样只有服务端碰。RLS 是这里唯一的边界。
+drop policy if exists "read own backups" on public.game_backups;
+create policy "read own backups" on public.game_backups
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "write own backups" on public.game_backups;
+create policy "write own backups" on public.game_backups
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "update own backups" on public.game_backups;
+create policy "update own backups" on public.game_backups
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "delete own backups" on public.game_backups;
+create policy "delete own backups" on public.game_backups
+  for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
 -- 开白名单：把邮箱换成内测用户的，跑一行
 -- ---------------------------------------------------------------------------
 --

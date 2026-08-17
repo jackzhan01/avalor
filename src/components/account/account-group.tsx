@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { backupAll, listBackups, restoreMissing } from "@/lib/cloud/backup";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,24 @@ export function AccountGroup() {
   const [email, setEmail] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
 
+  const [backupOpen, setBackupOpen] = useState(false);
+  const [cloudCount, setCloudCount] = useState<number | null>(null);
+  const [busy, setBusy] = useState<null | "up" | "down">(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  const backupDetail =
+    cloudCount === null ? "查看备份状态" : `云端有 ${cloudCount} 局`;
+
+  const refreshCloud = useCallback(() => {
+    listBackups()
+      .then((rows) => setCloudCount(rows.length))
+      .catch(() => setCloudCount(null));
+  }, []);
+
+  useEffect(() => {
+    if (email) refreshCloud();
+  }, [email, refreshCloud]);
+
   useEffect(() => {
     if (!hydrated) return;
     void repo
@@ -65,6 +84,31 @@ export function AccountGroup() {
     await repo.writeSetting(repo.SETTING_DISPLAY_NAME, value);
     setName(value || null);
     setEditing(false);
+  }
+
+  async function run(direction: "up" | "down") {
+    setBusy(direction);
+    setResult(null);
+    try {
+      if (direction === "up") {
+        const { uploaded } = await backupAll();
+        setResult(
+          uploaded === 0 ? "这台设备上还没有对局。" : `已备份 ${uploaded} 局。`,
+        );
+      } else {
+        const { restored, skipped } = await restoreMissing();
+        setResult(
+          restored === 0
+            ? "本机已经有云端的全部对局了。"
+            : `恢复了 ${restored} 局${skipped > 0 ? `，跳过本机已有的 ${skipped} 局` : ""}。`,
+        );
+      }
+      refreshCloud();
+    } catch (err) {
+      setResult(err instanceof Error ? err.message : "操作失败，稍后再试。");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function signOut() {
@@ -105,21 +149,83 @@ export function AccountGroup() {
         {backend &&
           checked &&
           (email ? (
-            <ListRow
-              label="账号"
-              detail={email}
-              value="退出"
-              onClick={() => void signOut()}
-            />
+            <>
+              <ListRow
+                label="云端备份"
+                detail={backupDetail}
+                accessory="chevron"
+                onClick={() => setBackupOpen(true)}
+              />
+              <ListRow
+                label="账号"
+                detail={email}
+                value="退出"
+                onClick={() => void signOut()}
+              />
+            </>
           ) : (
             <ListRow
               label="登录"
-              detail="解锁 AI 内测功能"
+              detail="解锁云端备份和 AI 内测"
               accessory="chevron"
               href="/login?next=/menu"
             />
           ))}
       </ListGroup>
+
+      <Sheet
+        open={backupOpen}
+        onClose={() => {
+          setBackupOpen(false);
+          setResult(null);
+        }}
+        title="云端备份"
+        subtitle={backupDetail}
+      >
+        <div className="flex flex-col gap-3">
+          <Button
+            fullWidth
+            size="lg"
+            disabled={busy !== null}
+            onClick={() => void run("up")}
+          >
+            {busy === "up" ? "上传中…" : "备份这台设备的全部对局"}
+          </Button>
+          <Button
+            fullWidth
+            size="lg"
+            variant="gray"
+            disabled={busy !== null}
+            onClick={() => void run("down")}
+          >
+            {busy === "down" ? "下载中…" : "把云端缺失的对局恢复到本机"}
+          </Button>
+
+          {result && (
+            <p className="t-footnote px-1 text-[color:var(--label-secondary)]">
+              {result}
+            </p>
+          )}
+
+          {/*
+           * Said before the tap, not after. This is the only feature in the app
+           * that sends a game off the device, and it sends the private layer
+           * too — a backup without your own role and your reads would restore
+           * a game you no longer recognise.
+           */}
+          <p className="t-footnote mt-3 px-1 leading-relaxed text-[color:var(--label-tertiary)]">
+            备份会上传完整记录，
+            <strong className="text-[color:var(--label-secondary)]">
+              包括你自己的身份和你对每个人的推测
+            </strong>
+            。只有你自己的账号读得到。不备份的话，记录只在这台设备上 ——
+            换手机或者浏览器清数据就没了。
+          </p>
+          <p className="t-footnote px-1 leading-relaxed text-[color:var(--label-tertiary)]">
+            恢复只会补上本机没有的对局，不会覆盖你正在记的那些。
+          </p>
+        </div>
+      </Sheet>
 
       <Sheet
         open={editing}
