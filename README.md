@@ -30,28 +30,16 @@
 
 <table>
 <tr>
-<td width="50%" valign="top">
-  <img src="figure/shot-table.webp" alt="圆桌主界面，打开了推测层" width="100%">
-  <p><b>圆桌就是操作界面</b><br>
-  你固定在 6 点钟，其他人按真实座次排开 —— 牌桌上没人想「3 号」，想的是「我左手第二个」。车主挂「车」、跳派挂「派」、湖中女神挂「女」，局势直接画在座位上。图里还开着「推测」层：4 号绿圈是你猜他跳派、2 号猜忠，<b>这层和下面那张草稿默认隐藏，只有你看得见</b>。</p>
-</td>
-<td width="50%" valign="top">
-  <img src="figure/shot-express.webp" alt="记录某个人公开表达的面板" width="100%">
-  <p><b>点谁，就记谁说的话</b><br>
-  「他怎么看别人」「他想带谁上车」「跳派」三件事分开存，两次点击记完，不用按保存。图里刚把 7 号标成跳派，圆桌上立刻长出「派」角标，顶上还留着一步撤销。面板下半截是「只有我知道的」，明写着<b>不会进公开记录</b>。</p>
-</td>
+<td width="25%"><img src="figure/shot-table.webp" alt="圆桌主界面，打开了推测层" width="100%"></td>
+<td width="25%"><img src="figure/shot-express.webp" alt="记录某个人公开表达的面板" width="100%"></td>
+<td width="25%"><img src="figure/shot-players.webp" alt="玩家页与保踩总表" width="100%"></td>
+<td width="25%"><img src="figure/shot-timeline.webp" alt="一局的完整事件时间线" width="100%"></td>
 </tr>
 <tr>
-<td width="50%" valign="top">
-  <img src="figure/shot-players.webp" alt="玩家页与保踩总表" width="100%">
-  <p><b>全场态度，一张表看完</b><br>
-  保踩总表：行是谁说的，列是说谁。谁被集火、谁全程不表态、谁跟谁互保，扫一眼就有。<b>「·」是没表过态，跟明确的 3（中立）是两回事</b>；右上角带小点的格子，表示这人对他改过口。</p>
-</td>
-<td width="50%" valign="top">
-  <img src="figure/shot-timeline.webp" alt="一局的完整事件时间线" width="100%">
-  <p><b>一局就是一条改不坏的时间线</b><br>
-  发车、票型、保踩、跳派、任务结果按顺序排成一条流水，<b>点任意一条都能改或删</b>。车那条摊开是座位级完整票型 —— 上票 1·2·3·5、下票 4，而不是干巴巴一个「4-1 过了」。</p>
-</td>
+<td valign="top"><b>圆桌就是操作界面</b><br><sub>按真实座次坐，车／派／女角标把局势画在座位上。推测层只有你看得见。</sub></td>
+<td valign="top"><b>点谁，就记谁说的话</b><br><sub>保踩、意向车、跳派分开存，两次点击记完，公开与私有当场分栏。</sub></td>
+<td valign="top"><b>全场态度，一张表看完</b><br><sub>行是谁说的、列是说谁。「·」是没表过态，跟明确的 3 不是一回事。</sub></td>
+<td valign="top"><b>一局就是一条改不坏的时间线</b><br><sub>发车、座位级票型、保踩顺次排开，点任意一条都能改或删。</sub></td>
 </tr>
 </table>
 
