@@ -112,6 +112,23 @@ export async function listRecentGames(limit = 30): Promise<GameSummary[]> {
   );
 }
 
+/** Every game plus its event count, for the personal stats page. */
+export async function listAllGames(): Promise<{
+  games: GameRecord[];
+  eventCounts: Record<string, number>;
+}> {
+  const db = getDb();
+  const games = await db.games.orderBy("createdAt").reverse().toArray();
+  const eventCounts: Record<string, number> = {};
+  for (const game of games) {
+    eventCounts[game.id] = await db.events
+      .where("gameId")
+      .equals(game.id)
+      .count();
+  }
+  return { games, eventCounts };
+}
+
 /** Append one event and bump the game's durable sequence counter atomically. */
 export async function appendEvent(event: GameEvent): Promise<void> {
   const db = getDb();

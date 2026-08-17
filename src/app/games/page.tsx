@@ -36,8 +36,8 @@ export default function GamesPage() {
     <main className="mx-auto min-h-dvh max-w-md px-4 pb-16">
       <header className="pt-safe flex items-center justify-between pb-1 pt-3">
         <Link
-          href="/new"
-          aria-label="返回"
+          href="/menu"
+          aria-label="返回菜单"
           className="t-body -ml-2 flex min-h-[44px] items-center px-2 text-[color:var(--blue)]"
         >
           <span aria-hidden className="text-[20px] leading-none">‹</span>

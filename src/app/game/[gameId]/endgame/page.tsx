@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { RoundTable } from "@/components/table/round-table";
 import { Button } from "@/components/ui/button";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { InlineWarning } from "@/components/ui/feedback";
 import { Sheet } from "@/components/ui/sheet";
+import { evilCount } from "@/lib/rules/avalon";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import { getAllRoleMarks } from "@/lib/selectors";
@@ -63,6 +65,27 @@ export default function EndgamePage() {
   const assassinHitMerlin =
     targetId !== null && merlinSeat !== undefined && targetId === merlinSeat.id;
   const filledCount = players.filter((p) => roleFor(p.id) !== undefined).length;
+
+  // Consistency checks on the reveal. Advisory, like everything else — but
+  // these are the labels the whole record will be judged against later, so a
+  // miscount here quietly poisons the data rather than just looking wrong.
+  const assignedEvil = players.filter((p) => {
+    const role = roleFor(p.id);
+    return role !== undefined && EVIL_ROLES.includes(role);
+  }).length;
+  const expectedEvil = evilCount(game.playerCount);
+  const merlinCount = players.filter((p) => roleFor(p.id) === "merlin").length;
+
+  const problems: string[] = [];
+  if (filledCount === players.length && assignedEvil !== expectedEvil) {
+    problems.push(
+      `${game.playerCount} 人局是 ${expectedEvil} 个坏人，你填了 ${assignedEvil} 个。`,
+    );
+  }
+  if (merlinCount > 1) problems.push("填了不止一个梅林。");
+  if (filledCount === players.length && merlinCount === 0) {
+    problems.push("没有人被填成梅林。");
+  }
 
   return (
     <main className="mx-auto max-w-md px-4 pb-32">
@@ -217,6 +240,17 @@ export default function EndgamePage() {
                   : merlinSeat
                     ? "没刺中梅林 —— 好人赢。"
                     : "填上梅林是谁，就能算出结果。"}
+              </p>
+            </div>
+          )}
+
+          {problems.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {problems.map((problem, i) => (
+                <InlineWarning key={i}>{problem}</InlineWarning>
+              ))}
+              <p className="t-footnote px-1 text-[color:var(--label-tertiary)]">
+                只是提醒，照样能存。
               </p>
             </div>
           )}

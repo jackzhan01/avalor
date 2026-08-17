@@ -82,7 +82,14 @@ export function MissionRecorder({
         ).map((option) => (
           <button
             key={option.value}
-            onClick={() => setResult(option.value)}
+            onClick={() => {
+              setResult(option.value);
+              // The result already implies the fail count in the common case:
+              // a success at one required fail can only be 0, and a failure is
+              // at least the required number. Pre-fill it rather than letting
+              // the user enter something the rules contradict and then warning.
+              setFailCount(option.value === "success" ? 0 : needed);
+            }}
             aria-pressed={result === option.value}
             className={cn(
               "t-body min-h-[54px] rounded-[12px] font-semibold active:opacity-80",
@@ -103,8 +110,10 @@ export function MissionRecorder({
         header="几张坏票"
         footer={
           needed === 2
-            ? `${game.playerCount} 人局第 4 轮，要 2 张坏票才算失败。`
-            : "不确定就留着「不清楚」，不影响记录。"
+            ? `${game.playerCount} 人局第 4 轮，要 2 张坏票才算失败 —— 所以成功也可能有 1 张。`
+            : result === "success"
+              ? "任务成功就是 0 张。要是你们规则不一样，也能照改。"
+              : "不确定就选「不清楚」，不影响记录。"
         }
       >
         <div className="flex flex-wrap gap-1.5 p-3">

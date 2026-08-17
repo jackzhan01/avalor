@@ -17,7 +17,7 @@ export default function CoverPage() {
 
   return (
     <button
-      onClick={() => router.push("/new")}
+      onClick={() => router.push("/menu")}
       aria-label="开始"
       className="fixed inset-0 flex w-full flex-col items-center justify-center overflow-hidden"
       style={{

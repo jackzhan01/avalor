@@ -98,13 +98,20 @@ export function RoundTable({
           strokeWidth="0.4"
         />
         {leaderDirection && (
-          <LeaderArc direction={leaderDirection} radius={radiusPct - 6.5} />
+          <LeaderArc
+            direction={leaderDirection}
+            // Clear of the seats: they occupy radiusPct ± seatPct/2, and the
+            // seats grow at smaller tables, so a fixed inset would slide under
+            // them exactly where it did before.
+            radius={radiusPct - seatPct / 2 - 4}
+          />
         )}
       </svg>
 
       {center && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="max-w-[46%] text-center">{center}</div>
+          {/* Narrow enough to stay inside the rotation arc at every table size. */}
+        <div className="max-w-[36%] text-center">{center}</div>
         </div>
       )}
 
@@ -255,6 +262,9 @@ function LeaderArc({
 
   return (
     <g stroke="var(--label-tertiary)" fill="none" strokeWidth="0.9">
+      {/* Native tooltip: the arrow is unlabelled by design, so hovering has to
+          be able to answer "what is this". */}
+      <title>车主按这个方向轮换</title>
       <path
         d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 ${sweepFlag} ${x2} ${y2}`}
         strokeLinecap="round"
@@ -264,6 +274,13 @@ function LeaderArc({
         fill="var(--label-tertiary)"
         stroke="none"
         transform={`translate(${x2} ${y2}) rotate(${tangent})`}
+      />
+      {/* A fat invisible stroke over the same path, so the tooltip has
+          something big enough to actually hover. */}
+      <path
+        d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 ${sweepFlag} ${x2} ${y2}`}
+        stroke="transparent"
+        strokeWidth="7"
       />
     </g>
   );

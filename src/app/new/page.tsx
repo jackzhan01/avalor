@@ -60,7 +60,7 @@ export default function NewGamePage() {
       <header className="pt-safe flex items-center justify-between pb-2 pt-3">
         <button
           onClick={() => {
-            if (step === "count") router.push("/");
+            if (step === "count") router.push("/menu");
             else if (step === "me") setStep("count");
             else setStep("me");
           }}
