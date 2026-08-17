@@ -5,6 +5,7 @@ import * as repo from "@/lib/db/repository";
 import { useHydrated } from "@/lib/store/hooks";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { PageHeader } from "@/components/ui/page-header";
+import { AccountGroup } from "@/components/account/account-group";
 
 /**
  * The menu behind the cover.
@@ -71,6 +72,8 @@ export default function MenuPage() {
             accessory="chevron"
           />
         </ListGroup>
+
+        <AccountGroup />
 
         <p className="t-footnote px-1 text-[color:var(--label-tertiary)]">
           所有记录都存在这台设备上，不会上传。

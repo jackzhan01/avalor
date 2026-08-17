@@ -13,6 +13,29 @@ import { Button } from "@/components/ui/button";
  * fails for a reason the user cannot see. A code can be carried between apps
  * by hand, so it works everywhere the link does and in the cases it doesn't.
  */
+/**
+ * Supabase reports auth failures in English, and some of them describe our
+ * infrastructure rather than anything the user did. Translating them is not
+ * politeness: "Error sending confirmation email" tells a user to keep tapping
+ * a button that cannot work, and tells us nothing either.
+ */
+function readable(message: string): string {
+  const text = message.toLowerCase();
+  if (text.includes("sending") && text.includes("email")) {
+    return "验证码发不出去，是我们邮件服务的问题，不是你的操作。请稍后再试或联系我们。";
+  }
+  if (text.includes("rate limit") || text.includes("too many")) {
+    return "请求太频繁了，等一分钟再试。";
+  }
+  if (text.includes("invalid") && text.includes("email")) {
+    return "邮箱地址格式不对。";
+  }
+  if (text.includes("signups not allowed") || text.includes("disabled")) {
+    return "这个邮箱还没开通登录权限。";
+  }
+  return message;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -49,7 +72,9 @@ export function LoginForm() {
       if (error) throw error;
       setStep("code");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "发送失败，稍后再试。");
+      setError(
+        err instanceof Error ? readable(err.message) : "发送失败，稍后再试。",
+      );
     } finally {
       setBusy(false);
     }

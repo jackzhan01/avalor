@@ -207,6 +207,26 @@ export async function deleteGame(gameId: string): Promise<void> {
   });
 }
 
+/*
+ * Device-level preferences.
+ *
+ * The `meta` table has existed since v1 for exactly this and had no occupant
+ * until now. Preferences belong here rather than in localStorage because they
+ * are read on the same tick as the games are, from the same place, and a
+ * second storage mechanism would be a second thing to migrate later.
+ */
+
+export const SETTING_DISPLAY_NAME = "displayName";
+
+export async function readSetting<T>(key: string): Promise<T | null> {
+  const row = await getDb().meta.get(key);
+  return row ? (row.value as T) : null;
+}
+
+export async function writeSetting(key: string, value: unknown): Promise<void> {
+  await getDb().meta.put({ key, value });
+}
+
 /** Highest sequence actually present, for resyncing after a write conflict. */
 export async function maxSequence(gameId: string): Promise<number> {
   const db = getDb();
