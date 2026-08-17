@@ -58,7 +58,7 @@ export function AccountGroup() {
       .then(({ data }) => setEmail(data.user?.email ?? null))
       .catch(() => setEmail(null))
       .finally(() => setChecked(true));
-  }, [hydrated]);
+  }, [hydrated, backend]);
 
   async function saveName() {
     const value = draft.trim().slice(0, 12);

@@ -20,6 +20,7 @@
  */
 
 import { adminClient, currentUser, isConfigured } from "./supabase";
+import { NEEDS_LOGIN } from "./messages";
 
 export type GateReason =
   | "unconfigured"
@@ -107,7 +108,7 @@ export async function checkAccess(): Promise<GateResult> {
       ok: false,
       status: 401,
       reason: "anonymous",
-      error: "AI 功能需要先登录。",
+      error: `AI 功能${NEEDS_LOGIN}。`,
     };
   }
 

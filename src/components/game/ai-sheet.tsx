@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { InlineWarning } from "@/components/ui/feedback";
@@ -20,6 +21,7 @@ import {
   type AnalysisResult,
   type SpeechResult,
 } from "@/lib/ai/types";
+import { NEEDS_LOGIN } from "@/lib/auth/messages";
 import { ROLE_LABELS, seatOf } from "@/lib/format/labels";
 import { cn } from "@/lib/utils/cn";
 
@@ -74,6 +76,9 @@ export function AiSheet({
   const events = useEvents();
   const setScratchpad = useGameStore((s) => s.setScratchpad);
   const showSnackbar = useGameStore((s) => s.showSnackbar);
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   const [phase, setPhase] = useState<Phase>("consent");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -237,8 +242,22 @@ export function AiSheet({
       )}
 
       {phase === "error" && (
-        <div className="py-6">
+        <div className="flex flex-col gap-3 py-6">
           <InlineWarning>{error}</InlineWarning>
+          {/*
+           * A refusal that names a requirement has to offer the way to meet
+           * it. Told 「需要先登录」 with no way to log in, the only move left
+           * is to tap the button again, which cannot work.
+           */}
+          {error.includes(NEEDS_LOGIN) && (
+            <Button
+              fullWidth
+              size="lg"
+              onClick={() => router.push(`/login?next=${encodeURIComponent(pathname)}`)}
+            >
+              去登录
+            </Button>
+          )}
         </div>
       )}
 
