@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as repo from "@/lib/db/repository";
 import { PLAYER_COUNTS, evilCount, goodCount, teamSize } from "@/lib/rules/avalon";
-import { useHydrated } from "@/lib/store/hooks";
 import type { Player, PlayerCount } from "@/lib/types/game";
 import { RoundTable } from "@/components/table/round-table";
 import { cn } from "@/lib/utils/cn";
@@ -23,17 +21,10 @@ type Step = "count" | "me" | "leader";
  */
 export default function NewGamePage() {
   const router = useRouter();
-  const hydrated = useHydrated();
   const [step, setStep] = useState<Step>("count");
   const [playerCount, setPlayerCount] = useState<PlayerCount>(10);
   const [viewerSeat, setViewerSeat] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
-  const [hasHistory, setHasHistory] = useState(false);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    void repo.listRecentGames(1).then((g) => setHasHistory(g.length > 0));
-  }, [hydrated]);
 
   /** Stand-in seats: the real game record does not exist yet. */
   const seats: Player[] = useMemo(
@@ -57,7 +48,9 @@ export default function NewGamePage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-8">
-      <header className="pt-safe flex items-center justify-between pb-2 pt-3">
+      {/* Back only. Past games live on the menu one step up — offering them
+          here too would be a second door to the same room. */}
+      <header className="pt-safe flex items-center pb-2 pt-3">
         <button
           onClick={() => {
             if (step === "count") router.push("/menu");
@@ -69,14 +62,6 @@ export default function NewGamePage() {
         >
           <span aria-hidden className="text-[20px] leading-none">‹</span>
         </button>
-        {step === "count" && hasHistory && (
-          <Link
-            href="/games"
-            className="t-body min-h-[44px] px-1 leading-[44px] text-[color:var(--blue)]"
-          >
-            之前的对局
-          </Link>
-        )}
       </header>
 
       {step === "count" && (
