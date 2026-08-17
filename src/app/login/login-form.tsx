@@ -14,6 +14,15 @@ import { Button } from "@/components/ui/button";
  * by hand, so it works everywhere the link does and in the cases it doesn't.
  */
 /**
+ * Supabase's OTP length is a project setting, not a constant — it can be set
+ * anywhere from 6 to 10 digits, and this project's is 8. So the input accepts
+ * the whole range rather than assuming one: the button unlocks at the shortest
+ * length that could be valid, and the field holds the longest.
+ */
+const OTP_MIN = 6;
+const OTP_MAX = 10;
+
+/**
  * Supabase reports auth failures in English, and some of them describe our
  * infrastructure rather than anything the user did. Translating them is not
  * politeness: "Error sending confirmation email" tells a user to keep tapping
@@ -125,24 +134,32 @@ export function LoginForm() {
       ) : (
         <>
           <p className="t-footnote text-[color:var(--label-secondary)]">
-            验证码已发到 {email}，六位数字。
+            验证码已发到 {email}
           </p>
+          {/*
+           * No fixed length. The code's length is a Supabase project setting
+           * (6–10 digits), so hardcoding one here means the input silently
+           * truncates the moment that setting changes — which is exactly what
+           * happened with a hardcoded 6 against an 8-digit code.
+           */}
           <input
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={OTP_MAX}
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="123456"
+            onChange={(e) =>
+              setCode(e.target.value.replace(/\D/g, "").slice(0, OTP_MAX))
+            }
+            placeholder="验证码"
             aria-label="验证码"
-            className="t-title2 min-h-[52px] w-full rounded-[12px] bg-[color:var(--fill)] px-3.5 text-center tabular-nums tracking-[0.3em] outline-none"
+            className="t-title2 min-h-[52px] w-full rounded-[12px] bg-[color:var(--fill)] px-3.5 text-center tabular-nums tracking-[0.24em] outline-none"
           />
           <Button
             fullWidth
             size="lg"
             onClick={() => void verify()}
-            disabled={busy || code.length < 6}
+            disabled={busy || code.length < OTP_MIN}
           >
             {busy ? "验证中…" : "登录"}
           </Button>
