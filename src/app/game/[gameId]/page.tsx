@@ -36,7 +36,13 @@ type Mode =
   | { kind: "opinionTarget"; speakerId: string }
   | { kind: "opinionRate"; speakerId: string; targetId: string }
   | { kind: "intended"; playerId: string; team: string[] }
-  | { kind: "proposal"; leaderId: string; team: string[] }
+  | {
+      kind: "proposal";
+      leaderId: string;
+      team: string[];
+      /** Set only by an explicit tap, for tables running a house rule. */
+      allowMismatch?: boolean;
+    }
   | { kind: "vote"; proposalId: string; votes: Record<string, VoteChoice> }
   | { kind: "vision"; role: RoleType; vision: Vision; picked: string[] }
   | { kind: "ladyAssign" }
@@ -75,6 +81,12 @@ export default function GamePage() {
   const [guessVisible, setGuessVisible] = useState(false);
   /** Set only when the user actively defers the role prompt. */
   const [roleDeferred, setRoleDeferred] = useState(false);
+  /**
+   * Opening it by hand is a separate switch from the automatic prompt. They
+   * used to share one, so once anything had been recorded — assigning the
+   * 女神 alone was enough — the banner's own tap could not reopen it.
+   */
+  const [rolePromptForced, setRolePromptForced] = useState(false);
 
   if (!game || !timeline) return null;
 
@@ -89,7 +101,8 @@ export default function GamePage() {
    * already in progress.
    */
   const roleMissing = !game.viewerRole;
-  const askRoleNow = roleMissing && events.length === 0 && !roleDeferred;
+  const askRoleNow =
+    roleMissing && ((events.length === 0 && !roleDeferred) || rolePromptForced);
 
   const claimants = new Set(getClaimants(events));
   const marks = getAllRoleMarks(events);
@@ -375,11 +388,7 @@ export default function GamePage() {
       <Dock>
         <DockHeader
           title={`${seatLabel(game, mode.leaderId)} 发车`}
-          hint={
-            warning.severity === "warn" && mode.team.length > 0
-              ? `这轮通常 ${warning.expected} 人，仍可记录`
-              : `第 ${missionNumber} 轮 · 第 ${timeline.proposalNumber} 车`
-          }
+          hint={`第 ${missionNumber} 轮 · 第 ${timeline.proposalNumber} 车 · 要 ${warning.expected} 个人`}
           action={{ label: "换车主", onClick: () => setSheet("leader") }}
           onCancel={() => setMode({ kind: "idle" })}
           cancelLabel="取消"
@@ -387,6 +396,14 @@ export default function GamePage() {
         <ConfirmRow
           selected={mode.team.length}
           expected={warning.expected}
+          mismatch={
+            warning.severity === "warn" && !mode.allowMismatch
+              ? mode.team.length < warning.expected
+                ? `还差 ${warning.expected - mode.team.length} 个人`
+                : `多了 ${mode.team.length - warning.expected} 个人`
+              : undefined
+          }
+          onOverride={() => setMode({ ...mode, allowMismatch: true })}
           label="记下最终车型"
           onConfirm={() => {
             void addEvent({
@@ -411,6 +428,11 @@ export default function GamePage() {
         <ConfirmRow
           selected={mode.picked.length}
           expected={mode.vision.count}
+          mismatch={
+            mode.picked.length !== mode.vision.count
+              ? `这个身份应该看到 ${mode.vision.count} 个人`
+              : undefined
+          }
           label="记下我的视野"
           onConfirm={() => {
             // `known`, not a guess: this came from the reveal.
@@ -586,7 +608,12 @@ export default function GamePage() {
         <PrimaryRow
           primaryLabel={primary}
           onPrimary={() => {
-            if (timeline.phase === "discussion") {
+            // The token is used before the next 车主 proposes, so while a check
+            // is owed it jumps ahead of the phase's own action — and the label
+            // above branches on the same condition, so the two cannot drift.
+            if (lady.due) {
+              setMode({ kind: "ladyCheck", targetId: null });
+            } else if (timeline.phase === "discussion") {
               setMode({
                 kind: "proposal",
                 leaderId: currentLeaderId ?? players[0].id,
@@ -661,7 +688,7 @@ export default function GamePage() {
 
         {roleMissing && !askRoleNow && idle && (
           <button
-            onClick={() => setRoleDeferred(false)}
+            onClick={() => setRolePromptForced(true)}
             className="mb-3 flex w-full items-center justify-between rounded-[12px] bg-[color:var(--fill)] px-3.5 py-2.5 text-left active:opacity-70"
           >
             <span className="t-footnote text-[color:var(--label-secondary)]">
@@ -743,10 +770,14 @@ export default function GamePage() {
 
       <RoleSetupSheet
         open={askRoleNow}
-        onDefer={() => setRoleDeferred(true)}
+        onDefer={() => {
+          setRoleDeferred(true);
+          setRolePromptForced(false);
+        }}
         onPicked={(role) => {
           const vision = visionFor(role, game.playerCount, game.roleSet);
           setRoleDeferred(true); // answered — don't re-open behind the vision step
+          setRolePromptForced(false);
           if (vision) setMode({ kind: "vision", role, vision, picked: [] });
         }}
       />

@@ -114,23 +114,39 @@ export function RatingRow({
   );
 }
 
-/** One confirm button plus a live count. */
+/**
+ * One confirm button plus a live count.
+ *
+ * When the count is wrong the button locks rather than warning after the fact:
+ * a car sent with the wrong number of people is a mis-tap far more often than
+ * it is a house rule, and it is a structural event that drags a vote and a
+ * mission behind it. The override keeps the unusual table possible, but makes
+ * it a deliberate second tap instead of something you do by accident.
+ */
 export function ConfirmRow({
   selected,
   expected,
   label,
   onConfirm,
   disabled,
+  mismatch,
+  onOverride,
 }: {
   selected: number;
   expected?: number;
   label: string;
   onConfirm: () => void;
   disabled?: boolean;
+  /** Text explaining why the count is off. Locks the button when present. */
+  mismatch?: string;
+  /** Offered alongside the mismatch; unlocks the button. */
+  onOverride?: () => void;
 }) {
+  const locked = disabled ?? (selected === 0 || mismatch !== undefined);
+
   return (
     <>
-      {expected !== undefined && (
+      {expected !== undefined && !mismatch && (
         <p className="t-footnote mb-2 px-1 text-[color:var(--label-secondary)]">
           已选{" "}
           <span className="font-semibold tabular-nums text-[color:var(--label)]">
@@ -139,9 +155,26 @@ export function ConfirmRow({
           / {expected} 人
         </p>
       )}
+
+      {mismatch && (
+        <div className="mb-2 flex items-center gap-2 rounded-[10px] bg-[color:var(--fill)] px-2.5 py-2">
+          <span className="t-footnote min-w-0 flex-1 text-[color:var(--orange)]">
+            {mismatch}
+          </span>
+          {onOverride && (
+            <button
+              onClick={onOverride}
+              className="t-footnote min-h-[32px] shrink-0 rounded-lg px-2 font-semibold text-[color:var(--blue)] active:opacity-60"
+            >
+              仍要记
+            </button>
+          )}
+        </div>
+      )}
+
       <button
         onClick={onConfirm}
-        disabled={disabled ?? selected === 0}
+        disabled={locked}
         className="t-body min-h-[48px] w-full rounded-[12px] bg-[color:var(--blue)] font-semibold text-white active:opacity-80 disabled:opacity-40"
       >
         {label}
