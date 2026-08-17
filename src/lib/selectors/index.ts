@@ -47,6 +47,13 @@ export {
 } from "./private";
 export type { RoleMarkState } from "./private";
 export {
+  deriveLady,
+  getLadyHolder,
+  ladyNeedsAssigning,
+  MAX_LADY_CHECKS,
+} from "./lady";
+export type { LadyState } from "./lady";
+export {
   getIntegrityWarnings,
   getWarningsForEvent,
   validateRoleSet,

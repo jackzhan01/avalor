@@ -21,6 +21,7 @@ import type {
   OpinionEvent,
   ProposalEvent,
   Rating,
+  LadyCheckEvent,
   RoleClaimEvent,
   TextEvent,
   VoteEvent,
@@ -137,6 +138,16 @@ function Editor({
       );
     case "role_claim":
       return <RoleClaimEditor event={event} game={game} onDone={onDone} />;
+    case "lady_check":
+      return <LadyCheckEditor event={event} game={game} onDone={onDone} />;
+    case "lady_assign":
+      // Nothing to edit beyond who holds it, and re-assigning is done from the
+      // table. Deleting it from the footer is the useful action here.
+      return (
+        <p className="t-subhead text-[color:var(--label-secondary)]">
+          {seatLabel(game, event.holderId)} 拿到湖中女神。要换人的话，回牌桌重新指定。
+        </p>
+      );
     case "role_mark":
       // Private marks are managed from the table, not the timeline, and the
       // timeline filters them out — this branch exists only for exhaustiveness.
@@ -409,6 +420,48 @@ function IntendedTeamEditor({
       >
         保存修改
       </Button>
+    </div>
+  );
+}
+
+function LadyCheckEditor({
+  event,
+  game,
+  onDone,
+}: {
+  event: LadyCheckEvent;
+  game: GameRecord;
+  onDone: () => void;
+}) {
+  const editEvent = useEdit();
+  return (
+    <div>
+      <p className="t-subhead mb-3 text-[color:var(--label-secondary)]">
+        <span className="font-semibold text-[color:var(--label)]">
+          {seatLabel(game, event.holderId)}
+        </span>{" "}
+        验了{" "}
+        <span className="font-semibold text-[color:var(--label)]">
+          {seatLabel(game, event.targetId)}
+        </span>
+        ，当众说的是
+      </p>
+      <SegmentedControl
+        value={event.announced}
+        onChange={(announced) => {
+          if (announced === event.announced) return;
+          void editEvent(event.id, { announced });
+          onDone();
+        }}
+        options={[
+          { value: "good", label: "好人", tone: "good" },
+          { value: "evil", label: "坏人", tone: "evil" },
+          { value: "unknown", label: "没说" },
+        ]}
+      />
+      <p className="t-footnote mt-3 text-[color:var(--label-tertiary)]">
+        这里记的是他当众说的话，不是他真看到的。
+      </p>
     </div>
   );
 }

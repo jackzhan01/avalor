@@ -49,6 +49,7 @@ export class GameBuilder {
   private lastProposalId: string | null = null;
   private firstLeaderSeat = 1;
   private status: GameRecord["status"] = "active";
+  private ladyEnabled = false;
   private winningSide: GameRecord["winningSide"] = null;
 
   constructor(playerCount: PlayerCount, names?: Record<number, string>) {
@@ -221,6 +222,37 @@ export class GameBuilder {
     return this;
   }
 
+  /** 湖中女神: hand the token to a seat. */
+  ladyTo(holderSeat: number): this {
+    this.events.push({
+      ...this.base(),
+      type: "lady_assign",
+      holderId: this.id(holderSeat),
+    });
+    return this;
+  }
+
+  /** 湖中女神验人: the holder examines a seat and says something out loud. */
+  ladyCheck(
+    holderSeat: number,
+    targetSeat: number,
+    announced: "good" | "evil" | "unknown" = "good",
+  ): this {
+    this.events.push({
+      ...this.base(),
+      type: "lady_check",
+      holderId: this.id(holderSeat),
+      targetId: this.id(targetSeat),
+      announced,
+    });
+    return this;
+  }
+
+  lady(enabled = true): this {
+    this.ladyEnabled = enabled;
+    return this;
+  }
+
   note(playerSeat: number | null, text: string): this {
     const event: TextEvent = {
       ...this.base(),
@@ -252,6 +284,7 @@ export class GameBuilder {
       playerCount: this.playerCount,
       players: this.players,
       firstLeaderId: this.id(this.firstLeaderSeat),
+      ...(this.ladyEnabled ? { ladyEnabled: true } : {}),
       status: this.status,
       winningSide: this.winningSide,
       lastSequence: this.seq,

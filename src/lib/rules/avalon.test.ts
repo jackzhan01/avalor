@@ -152,11 +152,32 @@ describe("DEFAULT_ROLE_SET", () => {
     }
   });
 
-  it("only reaches Oberon once there are four evil seats", () => {
+  it("never names more villains than there are evil seats", () => {
+    // The real constraint. An earlier version of this file asserted that
+    // Oberon needed four evil seats, which was an assumption about taste
+    // rather than a rule — 7-player tables commonly run him in the third.
+    const named = ["morgana", "mordred", "assassin", "oberon"];
     for (const count of PLAYER_COUNTS) {
-      if (DEFAULT_ROLE_SET[count].includes("oberon")) {
-        expect(evilCount(count)).toBeGreaterThanOrEqual(4);
-      }
+      const villains = DEFAULT_ROLE_SET[count].filter((r) => named.includes(r));
+      expect(villains.length).toBeLessThanOrEqual(evilCount(count));
+    }
+  });
+
+  it("matches the line-up each table size actually plays", () => {
+    const expected: Record<number, string[]> = {
+      5: ["morgana", "assassin"],
+      6: ["morgana", "assassin"],
+      7: ["morgana", "assassin", "oberon"],
+      8: ["morgana", "assassin"], // third evil seat is a plain 爪牙
+      9: ["morgana", "assassin", "mordred"],
+      10: ["morgana", "assassin", "mordred", "oberon"],
+    };
+    const named = ["morgana", "mordred", "assassin", "oberon"];
+    for (const count of PLAYER_COUNTS) {
+      const villains = DEFAULT_ROLE_SET[count]
+        .filter((r) => named.includes(r))
+        .sort();
+      expect(villains).toEqual([...expected[count]].sort());
     }
   });
 });

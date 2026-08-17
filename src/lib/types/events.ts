@@ -119,6 +119,37 @@ export interface RoleClaimEvent extends BaseGameEvent {
   claimed: boolean;
 }
 
+/**
+ * 湖中女神 — handing the token to its first holder.
+ *
+ * A separate event from a check so the opening assignment can be corrected
+ * without inventing a check that never happened.
+ */
+export interface LadyAssignEvent extends BaseGameEvent {
+  type: "lady_assign";
+  holderId: string;
+}
+
+/**
+ * 湖中女神验人 — the holder looks at someone's loyalty and says something.
+ *
+ * Two facts, and they are not the same fact: the holder privately learns a
+ * TRUE loyalty, and then makes a PUBLIC claim about it which may be a lie.
+ * Only `announced` belongs here, because only the announcement is public. If
+ * the user is the holder, what they actually saw goes in the private layer as
+ * a role_mark with certainty "known".
+ *
+ * The token then passes to the examined player, so the current holder is
+ * derived by following this chain rather than stored.
+ */
+export interface LadyCheckEvent extends BaseGameEvent {
+  type: "lady_check";
+  holderId: string;
+  targetId: string;
+  /** What the holder said out loud. "unknown" = they didn't say / you missed it. */
+  announced: "good" | "evil" | "unknown";
+}
+
 /** Escape hatch for anything pairwise ratings can't express (spec §27). */
 export interface TextEvent extends BaseGameEvent {
   type: "text";
@@ -170,6 +201,8 @@ export type GameEvent =
   | IntendedTeamEvent
   | RoleClaimEvent
   | RoleMarkEvent
+  | LadyAssignEvent
+  | LadyCheckEvent
   | TextEvent;
 
 export type GameEventType = GameEvent["type"];
@@ -218,6 +251,10 @@ export const isRoleClaimEvent = (e: GameEvent): e is RoleClaimEvent =>
   e.type === "role_claim";
 export const isRoleMarkEvent = (e: GameEvent): e is RoleMarkEvent =>
   e.type === "role_mark";
+export const isLadyAssignEvent = (e: GameEvent): e is LadyAssignEvent =>
+  e.type === "lady_assign";
+export const isLadyCheckEvent = (e: GameEvent): e is LadyCheckEvent =>
+  e.type === "lady_check";
 
 /* ── Drafts (what the UI hands to the store) ───────────────────────────── */
 
@@ -233,6 +270,8 @@ export type EventDraft =
   | Omit<IntendedTeamEvent, keyof BaseGameEvent>
   | Omit<RoleClaimEvent, keyof BaseGameEvent>
   | Omit<RoleMarkEvent, keyof BaseGameEvent>
+  | Omit<LadyAssignEvent, keyof BaseGameEvent>
+  | Omit<LadyCheckEvent, keyof BaseGameEvent>
   | Omit<TextEvent, keyof BaseGameEvent>;
 
 /**

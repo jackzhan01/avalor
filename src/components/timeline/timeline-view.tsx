@@ -345,6 +345,44 @@ function StatementRow({
     );
   }
 
+  if (event.type === "lady_assign") {
+    return (
+      <button onClick={onEdit} className={shell}>
+        <span className="t-footnote min-w-0 flex-1">
+          <span className="font-semibold">{seatLabel(game, event.holderId)}</span>
+          <span className="text-[color:var(--label-tertiary)]"> 拿到湖中女神</span>
+        </span>
+        <span className="t-caption shrink-0 rounded-[6px] bg-[color:var(--blue)] px-1.5 py-0.5 font-semibold text-white">
+          女
+        </span>
+      </button>
+    );
+  }
+
+  if (event.type === "lady_check") {
+    const said =
+      event.announced === "good"
+        ? { text: "说是好人", color: "var(--green)" }
+        : event.announced === "evil"
+          ? { text: "说是坏人", color: "var(--red)" }
+          : { text: "没说", color: "var(--gray)" };
+    return (
+      <button onClick={onEdit} className={shell}>
+        <span className="t-footnote min-w-0 flex-1">
+          <span className="font-semibold">{seatLabel(game, event.holderId)}</span>
+          <span className="text-[color:var(--label-tertiary)]"> 验 </span>
+          <span className="font-semibold">{seatLabel(game, event.targetId)}</span>
+        </span>
+        <span
+          className="t-caption shrink-0 rounded-[6px] px-1.5 py-0.5 font-semibold text-white"
+          style={{ backgroundColor: said.color }}
+        >
+          {said.text}
+        </span>
+      </button>
+    );
+  }
+
   if (event.type === "text") {
     return (
       <button

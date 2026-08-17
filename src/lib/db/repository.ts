@@ -38,6 +38,8 @@ export interface CreateGameInput {
    * group doesn't call each other by number.
    */
   viewerSeat?: number;
+  /** Whether 湖中女神 is in play. */
+  ladyEnabled?: boolean;
   name?: string;
 }
 
@@ -66,6 +68,7 @@ export function buildGame(input: CreateGameInput): GameRecord {
     ...(input.roleSet ? { roleSet: input.roleSet } : {}),
     firstLeaderId: firstLeader.id,
     viewerPlayerId: viewer.id,
+    ...(input.ladyEnabled ? { ladyEnabled: true } : {}),
     status: "active",
     winningSide: null,
     lastSequence: 0,

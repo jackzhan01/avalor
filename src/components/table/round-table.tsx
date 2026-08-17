@@ -18,6 +18,8 @@ export interface SeatVisual {
   badge?: SeatBadge | null;
   /** Top-left chip: reserved for 车 (the current leader). */
   badgeLeft?: SeatBadge | null;
+  /** Bottom chip: reserved for 女 (the 湖中女神 token). */
+  badgeBottom?: SeatBadge | null;
   /**
    * The private layer. Drawn as an outline plus a glyph so it never competes
    * with the public badges, and dashed when it is a read rather than knowledge.
@@ -217,6 +219,18 @@ export function RoundTable({
                 }}
               >
                 {visual.badgeLeft.text}
+              </span>
+            )}
+
+            {visual.badgeBottom && (
+              <span
+                title={visual.badgeBottom.title}
+                className="absolute -bottom-1 left-1/2 flex h-[19px] min-w-[19px] -translate-x-1/2 items-center justify-center rounded-full px-1 text-[11px] font-semibold text-white ring-2 ring-[color:var(--bg)]"
+                style={{
+                  backgroundColor: visual.badgeBottom.color ?? "var(--gray)",
+                }}
+              >
+                {visual.badgeBottom.text}
               </span>
             )}
 

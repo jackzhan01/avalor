@@ -113,6 +113,16 @@ export function describeEvent(event: GameEvent, game: GameRecord): string {
       return `${seatLabel(game, event.playerId)} 想带：${seatList(game, event.teamPlayerIds)}`;
     case "role_claim":
       return `${seatLabel(game, event.playerId)} ${event.claimed ? "跳派" : "收回跳派"}`;
+    case "lady_assign":
+      return `${seatLabel(game, event.holderId)} 拿到湖中女神`;
+    case "lady_check":
+      return `${seatLabel(game, event.holderId)} 验了 ${seatLabel(game, event.targetId)}：${
+        event.announced === "good"
+          ? "说是好人"
+          : event.announced === "evil"
+            ? "说是坏人"
+            : "没说结果"
+      }`;
     case "role_mark":
       return event.mark
         ? `标记 ${seatLabel(game, event.targetId)} 为 ${markLabel(event.mark)}`
@@ -132,6 +142,8 @@ export const EVENT_TYPE_LABELS: Record<GameEvent["type"], string> = {
   intended_team: "意向车",
   role_claim: "跳派",
   role_mark: "角色标记",
+  lady_assign: "女神",
+  lady_check: "女神验人",
   text: "备注",
 };
 

@@ -19,7 +19,12 @@ import { RoleSetupSheet } from "@/components/game/role-setup-sheet";
 import { Scratchpad } from "@/components/game/scratchpad";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
-import { getAllRoleMarks, getClaimants, getCurrentOpinion } from "@/lib/selectors";
+import {
+  deriveLady,
+  getAllRoleMarks,
+  getClaimants,
+  getCurrentOpinion,
+} from "@/lib/selectors";
 import { getTeamSizeWarning, visionFor, type Vision } from "@/lib/rules/avalon";
 import { markColor, markShort, seatLabel, seatList } from "@/lib/format/labels";
 import type { Rating } from "@/lib/types/events";
@@ -33,7 +38,11 @@ type Mode =
   | { kind: "intended"; playerId: string; team: string[] }
   | { kind: "proposal"; leaderId: string; team: string[] }
   | { kind: "vote"; proposalId: string; votes: Record<string, VoteChoice> }
-  | { kind: "vision"; role: RoleType; vision: Vision; picked: string[] };
+  | { kind: "vision"; role: RoleType; vision: Vision; picked: string[] }
+  | { kind: "ladyAssign" }
+  | { kind: "ladyCheck"; targetId: string | null }
+  /** Only reachable when the user held the token: what they actually saw. */
+  | { kind: "ladyReveal"; targetId: string };
 
 const VOTE_CYCLE: (VoteChoice | null)[] = ["approve", "reject", "unknown", null];
 
@@ -89,6 +98,8 @@ export default function GamePage() {
     : null;
   const missionNumber = Math.min(timeline.missionNumber, 5);
   const currentLeaderId = timeline.currentLeaderId;
+  const lady = deriveLady(events, game);
+  const ladyIsMine = lady.holderId === game.viewerPlayerId;
   const assassinationDue =
     timeline.successCount >= 3 && game.status !== "completed";
 
@@ -153,6 +164,23 @@ export default function GamePage() {
           disabled: playerId === game!.viewerPlayerId,
           dimmed: playerId === game!.viewerPlayerId,
         };
+      case "ladyAssign":
+        return { selected: playerId === lady.holderId };
+      case "ladyCheck":
+      case "ladyReveal": {
+        // Anyone who has already held the token is out of reach — that is the
+        // rule that makes the token walk across the table instead of ping-pong.
+        const reachable = lady.examinable.includes(playerId);
+        return {
+          selected: playerId === (mode.kind === "ladyCheck" ? mode.targetId : mode.targetId),
+          disabled: !reachable,
+          dimmed: !reachable,
+          badgeBottom:
+            playerId === lady.holderId
+              ? { text: "女", color: "var(--blue)", title: "拿着湖中女神" }
+              : null,
+        };
+      }
       default:
         return {
           selected: activeProposal?.event.teamPlayerIds.includes(playerId),
@@ -164,6 +192,10 @@ export default function GamePage() {
           badge: claimants.has(playerId)
             ? { text: "派", color: "var(--blue)", title: "跳了派" }
             : null,
+          badgeBottom:
+            lady.holderId === playerId
+              ? { text: "女", color: "var(--blue)", title: "拿着湖中女神" }
+              : null,
         };
     }
   }
@@ -201,6 +233,16 @@ export default function GamePage() {
         setMode({ ...mode, picked });
         break;
       }
+      case "ladyAssign":
+        void addEvent({ type: "lady_assign", holderId: playerId });
+        setMode({ kind: "idle" });
+        break;
+      case "ladyCheck":
+        if (!lady.examinable.includes(playerId)) return;
+        setMode({ kind: "ladyCheck", targetId: playerId });
+        break;
+      case "ladyReveal":
+        break;
       case "vote": {
         const current = mode.votes[playerId] ?? null;
         const next =
@@ -386,6 +428,112 @@ export default function GamePage() {
         />
       </Dock>
     );
+  } else if (mode.kind === "ladyAssign") {
+    dock = (
+      <Dock>
+        <DockHeader
+          title="谁拿湖中女神"
+          hint="第一个车主指定，点一下那个人"
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="取消"
+        />
+      </Dock>
+    );
+  } else if (mode.kind === "ladyCheck") {
+    dock = (
+      <Dock>
+        <DockHeader
+          title={
+            mode.targetId
+              ? `${seatLabel(game, lady.holderId!)} 验了 ${seatLabel(game, mode.targetId)}`
+              : `${seatLabel(game, lady.holderId!)} 要验谁`
+          }
+          hint={
+            mode.targetId
+              ? "他当众说了什么？说的不一定是真的"
+              : "拿过女神的人不能再验"
+          }
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="取消"
+        />
+        {mode.targetId && (
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                { value: "good", label: "说好人", color: "var(--green)" },
+                { value: "evil", label: "说坏人", color: "var(--red)" },
+                { value: "unknown", label: "没说", color: "var(--gray)" },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  const targetId = mode.targetId!;
+                  // Captured before the event lands: recording the check hands
+                  // the token on, so afterwards the user is no longer holder.
+                  const wasMine = ladyIsMine;
+                  void addEvent({
+                    type: "lady_check",
+                    holderId: lady.holderId!,
+                    targetId,
+                    announced: option.value,
+                  });
+                  // Only the holder saw the real card. The announcement above
+                  // is public and may be a lie; this is the truth, and it goes
+                  // in the private layer.
+                  setMode(
+                    wasMine
+                      ? { kind: "ladyReveal", targetId }
+                      : { kind: "idle" },
+                  );
+                }}
+                className="t-body min-h-[48px] rounded-[12px] font-semibold text-white active:opacity-80"
+                style={{ backgroundColor: option.color }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </Dock>
+    );
+  } else if (mode.kind === "ladyReveal") {
+    dock = (
+      <Dock>
+        <DockHeader
+          title={`你验 ${seatLabel(game, mode.targetId)}，看到的是`}
+          hint="只有你知道，存进私有层"
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="跳过"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              { side: "good", label: "好人", color: "var(--green)" },
+              { side: "evil", label: "坏人", color: "var(--red)" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.side}
+              onClick={() => {
+                void addEvent({
+                  type: "role_mark",
+                  targetId: mode.targetId,
+                  mark: { kind: "side", side: option.side },
+                  certainty: "known",
+                });
+                setVisionVisible(true);
+                setMode({ kind: "idle" });
+              }}
+              className="t-body min-h-[48px] rounded-[12px] font-semibold text-white active:opacity-80"
+              style={{ backgroundColor: option.color }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </Dock>
+    );
   } else if (mode.kind === "vote") {
     const counts = { approve: 0, reject: 0, unknown: 0 };
     for (const choice of Object.values(mode.votes)) counts[choice] += 1;
@@ -426,11 +574,13 @@ export default function GamePage() {
   } else {
     const primary = timeline.isComplete
       ? null
-      : timeline.phase === "discussion"
-        ? "最终车型"
-        : timeline.phase === "voting"
-          ? "记投票"
-          : "记任务结果";
+      : lady.due
+        ? "记女神验人"
+        : timeline.phase === "discussion"
+          ? "最终车型"
+          : timeline.phase === "voting"
+            ? "记投票"
+            : "记任务结果";
     dock = (
       <Dock>
         <PrimaryRow
@@ -519,6 +669,20 @@ export default function GamePage() {
             </span>
             <span className="t-footnote font-semibold text-[color:var(--blue)]">
               去填
+            </span>
+          </button>
+        )}
+
+        {lady.enabled && lady.holderId === null && idle && (
+          <button
+            onClick={() => setMode({ kind: "ladyAssign" })}
+            className="mb-3 flex w-full items-center justify-between rounded-[12px] bg-[color:var(--fill)] px-3.5 py-2.5 text-left active:opacity-70"
+          >
+            <span className="t-footnote text-[color:var(--label-secondary)]">
+              还没指定湖中女神 —— 第一个车主发车前定下来
+            </span>
+            <span className="t-footnote font-semibold text-[color:var(--blue)]">
+              去指定
             </span>
           </button>
         )}

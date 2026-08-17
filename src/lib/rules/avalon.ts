@@ -140,9 +140,11 @@ export const DEFAULT_ROLE_SET: Record<PlayerCount, RoleType[]> = {
   5: ["merlin", "percival", "loyal", "morgana", "assassin"],
   // 4 good / 2 evil — still no room for a third named villain
   6: ["merlin", "percival", "loyal", "morgana", "assassin"],
-  // 4 good / 3 evil — the third evil seat is where Mordred arrives
-  7: ["merlin", "percival", "loyal", "morgana", "assassin", "mordred"],
-  8: ["merlin", "percival", "loyal", "morgana", "assassin", "mordred"],
+  // 4 good / 3 evil — the third evil seat goes to Oberon
+  7: ["merlin", "percival", "loyal", "morgana", "assassin", "oberon"],
+  // 5 good / 3 evil — third evil seat is a plain 爪牙, filled in automatically
+  8: ["merlin", "percival", "loyal", "morgana", "assassin"],
+  // 6 good / 3 evil
   9: ["merlin", "percival", "loyal", "morgana", "assassin", "mordred"],
   // 6 good / 4 evil — the fourth seat is where Oberon fits
   10: [

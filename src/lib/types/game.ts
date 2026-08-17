@@ -114,6 +114,12 @@ export interface GameRecord {
    * lead the other.
    */
   leaderDirection?: TurnDirection;
+  /**
+   * Whether 湖中女神 is in this game. Common at 9 and 10 players, and it
+   * changes the flow enough (a check owed after missions 2-4) that it has to
+   * be settled before the first proposal rather than discovered mid-game.
+   */
+  ladyEnabled?: boolean;
   /** Private scratchpad for drafting what to say next. */
   scratchpad?: string;
   /** Endgame: who the assassin went for. */

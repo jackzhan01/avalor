@@ -13,6 +13,7 @@ import {
 import type { Player, PlayerCount, RoleSetConfig } from "@/lib/types/game";
 import { RoundTable } from "@/components/table/round-table";
 import { Button } from "@/components/ui/button";
+import { ListGroup, ListRow } from "@/components/ui/list";
 import {
   CompositionEditor,
   CompositionView,
@@ -36,6 +37,8 @@ export default function NewGamePage() {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(10);
   const [roleSet, setRoleSet] = useState<RoleSetConfig>(() => defaultRoleSet(10));
   const [editingRoles, setEditingRoles] = useState(false);
+  // 湖中女神 is standard at the big tables and rare at the small ones.
+  const [ladyEnabled, setLadyEnabled] = useState(true);
   const [viewerSeat, setViewerSeat] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -51,6 +54,7 @@ export default function NewGamePage() {
       const created = await repo.createGame({
         playerCount,
         roleSet,
+        ladyEnabled,
         viewerSeat: viewerSeat ?? 1,
         firstLeaderSeat,
       });
@@ -96,6 +100,7 @@ export default function NewGamePage() {
                   // Composition is bounded by the table, so the set is rebuilt
                   // from the new size rather than carried over.
                   setRoleSet(defaultRoleSet(count));
+                  setLadyEnabled(count >= 9);
                   setEditingRoles(false);
                   setViewerSeat(null);
                   setStep("roles");
@@ -143,6 +148,25 @@ export default function NewGamePage() {
                 你们这局不一样？改一下
               </button>
             )}
+
+            <ListGroup footer="有女神的话，第 2、3、4 轮之后各验一次人。">
+              <ListRow
+                label="湖中女神"
+                detail={ladyEnabled ? "第一个车主指定谁拿" : "这局不用"}
+                value={
+                  <span
+                    className={`t-footnote rounded-[6px] px-2 py-1 font-semibold ${
+                      ladyEnabled
+                        ? "bg-[color:var(--blue)] text-white"
+                        : "bg-[color:var(--fill)] text-[color:var(--label-secondary)]"
+                    }`}
+                  >
+                    {ladyEnabled ? "在场" : "不在"}
+                  </span>
+                }
+                onClick={() => setLadyEnabled((v) => !v)}
+              />
+            </ListGroup>
 
             <Button size="lg" fullWidth onClick={() => setStep("me")}>
               就是这些人
