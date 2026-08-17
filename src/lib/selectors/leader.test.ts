@@ -66,6 +66,46 @@ describe("getCurrentLeader", () => {
   });
 });
 
+describe("rotation direction", () => {
+  // Two independent directions: how seats are numbered on screen, and which
+  // way the lead travels. "Clockwise" only means seat + 1 when both agree.
+  function withDirections(
+    built: { game: GameRecord; events: GameEvent[] },
+    seatDirection: "cw" | "ccw",
+    leaderDirection: "cw" | "ccw",
+  ) {
+    return { ...built, game: { ...built.game, seatDirection, leaderDirection } };
+  }
+
+  const base = game(9)
+    .firstLeader(5)
+    .proposal(5, [1, 2, 3])
+    .vote(approveOnly(9, [1]), "rejected")
+    .build();
+
+  it("passes to the next seat number when both directions agree", () => {
+    expect(suggestedSeat(withDirections(base, "cw", "cw"))).toBe(6);
+    expect(suggestedSeat(withDirections(base, "ccw", "ccw"))).toBe(6);
+  });
+
+  it("passes to the previous seat number when they disagree", () => {
+    expect(suggestedSeat(withDirections(base, "cw", "ccw"))).toBe(4);
+    expect(suggestedSeat(withDirections(base, "ccw", "cw"))).toBe(4);
+  });
+
+  it("wraps backwards past seat 1", () => {
+    const built = game(9)
+      .proposal(1, [1, 2, 3])
+      .vote(approveOnly(9, [1]), "rejected")
+      .build();
+    expect(suggestedSeat(withDirections(built, "cw", "ccw"))).toBe(9);
+  });
+
+  it("defaults to clockwise both ways when unset", () => {
+    expect(suggestedSeat(base)).toBe(6);
+  });
+});
+
 describe("the leader is anchored, not counted", () => {
   /*
    * THE REGRESSION THIS FILE EXISTS FOR.

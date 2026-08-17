@@ -1,6 +1,6 @@
 "use client";
 
-import type { Player } from "@/lib/types/game";
+import type { Player, TurnDirection } from "@/lib/types/game";
 import { cn } from "@/lib/utils/cn";
 
 export interface SeatBadge {
@@ -44,6 +44,8 @@ export interface SeatVisual {
 export function RoundTable({
   players,
   viewerPlayerId,
+  seatDirection = "cw",
+  leaderDirection,
   seatVisual,
   onSelect,
   center,
@@ -52,6 +54,10 @@ export function RoundTable({
   /** Ascending by seat. */
   players: Player[];
   viewerPlayerId?: string | null;
+  /** Which way seat numbers run on screen. */
+  seatDirection?: TurnDirection;
+  /** Draws the 车主 rotation arrow when set. */
+  leaderDirection?: TurnDirection;
   seatVisual?: (player: Player) => SeatVisual;
   onSelect?: (playerId: string) => void;
   center?: React.ReactNode;
@@ -63,10 +69,11 @@ export function RoundTable({
   const viewerSeat =
     players.find((p) => p.id === viewerPlayerId)?.seat ?? players[0].seat;
 
-  // Bigger tables need smaller seats; a 10-player ring still leaves ~38px of
-  // gap between 51px seats on a 360px-wide phone, which is comfortable.
-  const seatPct = n <= 6 ? 19 : n <= 8 ? 17 : 15.5;
+  // Seats are as large as the ring allows: at 10 players this leaves ~20px of
+  // gap between 63px targets on a 360px phone, which is comfortable to hit.
+  const seatPct = n <= 6 ? 23 : n <= 8 ? 20 : 17.5;
   const radiusPct = 37;
+  const sweep = seatDirection === "cw" ? 1 : -1;
 
   return (
     <div
@@ -74,17 +81,26 @@ export function RoundTable({
       role="group"
       aria-label={label ?? "牌桌"}
     >
-      {/* The table edge. Decorative — the seats carry all the meaning. */}
-      <div
+      {/* The table edge, plus — when the caller asks for it — an arc showing
+          which way the 车主 passes, so the rotation is visible rather than
+          something you have to remember. */}
+      <svg
         aria-hidden
-        className="absolute rounded-full border border-[color:var(--separator)]"
-        style={{
-          left: `${50 - radiusPct}%`,
-          top: `${50 - radiusPct}%`,
-          width: `${radiusPct * 2}%`,
-          height: `${radiusPct * 2}%`,
-        }}
-      />
+        viewBox="0 0 100 100"
+        className="absolute inset-0 h-full w-full"
+      >
+        <circle
+          cx="50"
+          cy="50"
+          r={radiusPct}
+          fill="none"
+          stroke="var(--separator)"
+          strokeWidth="0.4"
+        />
+        {leaderDirection && (
+          <LeaderArc direction={leaderDirection} radius={radiusPct - 6.5} />
+        )}
+      </svg>
 
       {center && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -96,7 +112,7 @@ export function RoundTable({
         // Six o'clock is +90° in screen coordinates (y grows downward), and
         // increasing the angle from there sweeps clockwise round the face.
         const offset = (player.seat - viewerSeat + n) % n;
-        const angle = ((90 + offset * (360 / n)) * Math.PI) / 180;
+        const angle = ((90 + sweep * offset * (360 / n)) * Math.PI) / 180;
         const x = 50 + radiusPct * Math.cos(angle);
         const y = 50 + radiusPct * Math.sin(angle);
 
@@ -125,7 +141,10 @@ export function RoundTable({
               visual.ring === "speaker" && "ring-[3px] ring-[color:var(--blue)]",
               visual.dimmed && "opacity-35",
               visual.disabled && "pointer-events-none",
-              Tag === "button" && "active:scale-95",
+              // Hover matters on a pointer device: a circle of similar targets
+              // gives no other cue about which one you are about to hit.
+              Tag === "button" &&
+                "active:scale-95 hover:brightness-95 hover:ring-2 hover:ring-[color:var(--blue)]/45 dark:hover:brightness-110",
             )}
             style={{
               left: `${x}%`,
@@ -142,39 +161,42 @@ export function RoundTable({
                 : {}),
             }}
           >
-            <span className="text-[clamp(15px,4.4vw,19px)] font-semibold leading-none">
-              {player.seat}
-            </span>
+            {/* Seat number and name are set at the same size on purpose: at a
+                table people are called by either, and the name is not
+                secondary once it is filled in. */}
+            <span className={cn(SEAT_TEXT, "font-semibold")}>{player.seat}</span>
 
             {visual.mark ? (
               <span
-                className="mt-0.5 text-[9px] font-semibold leading-none"
+                className={cn(SEAT_TEXT, "mt-px font-semibold")}
                 style={{ color: visual.selected ? "#fff" : visual.mark.color }}
               >
                 {visual.mark.text}
               </span>
-            ) : isViewer ? (
+            ) : player.name ? (
               <span
                 className={cn(
-                  "mt-0.5 text-[9px] leading-none",
+                  SEAT_TEXT,
+                  "mt-px max-w-[88%] truncate",
                   visual.selected
-                    ? "text-white/80"
-                    : "text-[color:var(--label-tertiary)]",
+                    ? "text-white/85"
+                    : "text-[color:var(--label-secondary)]",
                 )}
               >
-                我
+                {player.name}
               </span>
             ) : (
-              player.name && (
+              isViewer && (
                 <span
                   className={cn(
-                    "mt-0.5 max-w-[86%] truncate text-[9px] leading-none",
+                    SEAT_TEXT,
+                    "mt-px",
                     visual.selected
-                      ? "text-white/80"
-                      : "text-[color:var(--label-secondary)]",
+                      ? "text-white/85"
+                      : "text-[color:var(--label-tertiary)]",
                   )}
                 >
-                  {player.name}
+                  我
                 </span>
               )
             )}
@@ -206,6 +228,44 @@ export function RoundTable({
         );
       })}
     </div>
+  );
+}
+
+const SEAT_TEXT = "text-[clamp(13px,3.7vw,16px)] leading-none";
+
+/** A short arc with an arrowhead, drawn at the top of the ring. */
+function LeaderArc({
+  direction,
+  radius,
+}: {
+  direction: TurnDirection;
+  radius: number;
+}) {
+  const at = (deg: number) => {
+    const rad = (deg * Math.PI) / 180;
+    return [50 + radius * Math.cos(rad), 50 + radius * Math.sin(rad)] as const;
+  };
+  // A 60° arc across the top, swept in the direction the lead travels.
+  const [x1, y1] = at(direction === "cw" ? -120 : -60);
+  const [x2, y2] = at(direction === "cw" ? -60 : -120);
+  const sweepFlag = direction === "cw" ? 1 : 0;
+  // Arrowhead sits at the end of the arc, rotated to follow the tangent.
+  const headAngle = direction === "cw" ? -60 : -120;
+  const tangent = headAngle + (direction === "cw" ? 90 : -90);
+
+  return (
+    <g stroke="var(--label-tertiary)" fill="none" strokeWidth="0.9">
+      <path
+        d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 ${sweepFlag} ${x2} ${y2}`}
+        strokeLinecap="round"
+      />
+      <polygon
+        points="0,-1.8 4,0 0,1.8"
+        fill="var(--label-tertiary)"
+        stroke="none"
+        transform={`translate(${x2} ${y2}) rotate(${tangent})`}
+      />
+    </g>
   );
 }
 

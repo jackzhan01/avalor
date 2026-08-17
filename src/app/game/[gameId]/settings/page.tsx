@@ -35,6 +35,7 @@ export default function GameSettingsPage() {
   const reopenGame = useGameStore((s) => s.reopenGame);
   const updatePlayer = useGameStore((s) => s.updatePlayer);
   const updateRoleSet = useGameStore((s) => s.updateRoleSet);
+  const updateSettings = useGameStore((s) => s.updateSettings);
 
   const [winner, setWinner] = useState<WinningSide | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -70,6 +71,42 @@ export default function GameSettingsPage() {
             label="状态"
             value={game.status === "completed" ? "已结束" : "进行中"}
           />
+        </ListGroup>
+
+        <ListGroup
+          header="牌桌方向"
+          footer="两个方向是独立的：桌上号码怎么排，和车主往哪边传，不一定一致。车主方向会在牌桌上画一个箭头。"
+        >
+          <div className="list-row px-4 py-3">
+            <p className="t-footnote mb-2 text-[color:var(--label-secondary)]">
+              号码递增方向
+            </p>
+            <SegmentedControl
+              ariaLabel="号码递增方向"
+              value={game.seatDirection ?? "cw"}
+              onChange={(seatDirection) => void updateSettings({ seatDirection })}
+              options={[
+                { value: "cw", label: "顺时针" },
+                { value: "ccw", label: "逆时针" },
+              ]}
+            />
+          </div>
+          <div className="list-row px-4 py-3">
+            <p className="t-footnote mb-2 text-[color:var(--label-secondary)]">
+              车主轮换方向
+            </p>
+            <SegmentedControl
+              ariaLabel="车主轮换方向"
+              value={game.leaderDirection ?? "cw"}
+              onChange={(leaderDirection) =>
+                void updateSettings({ leaderDirection })
+              }
+              options={[
+                { value: "cw", label: "顺时针" },
+                { value: "ccw", label: "逆时针" },
+              ]}
+            />
+          </div>
         </ListGroup>
 
         <ListGroup header="座位" footer="改名字随时生效，座位号不会变。">

@@ -112,7 +112,7 @@ export default function PlayerDetailPage({
 
         <ListGroup header="他真点的车">
           {proposals.asLeader.length === 0 ? (
-            <ListRow label="还没当过队长" />
+            <ListRow label="还没当过车主" />
           ) : (
             <>
               {proposals.asLeader.map((record) => (
@@ -144,7 +144,7 @@ export default function PlayerDetailPage({
                 />
               ))}
               <ListRow
-                label={`当队长 ${proposals.timesLed} 次`}
+                label={`当车主 ${proposals.timesLed} 次`}
                 value={`过 ${proposals.asLeaderOutcome.passed} · 否 ${proposals.asLeaderOutcome.rejected}`}
               />
             </>

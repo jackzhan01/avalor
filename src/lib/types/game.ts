@@ -54,6 +54,9 @@ export interface RoleSetConfig {
 
 export type GameStatus = "active" | "completed";
 
+/** Clockwise or counter-clockwise as seen on screen. */
+export type TurnDirection = "cw" | "ccw";
+
 export type WinningSide = "good" | "evil";
 
 /**
@@ -100,6 +103,21 @@ export interface GameRecord {
    * offered and is never treated as information about anyone else.
    */
   viewerRole?: RoleType;
+  /**
+   * Which way seat numbers run around the table on screen. Purely visual —
+   * it changes where a seat is drawn, never who follows whom.
+   */
+  seatDirection?: TurnDirection;
+  /**
+   * Which way the 车主 passes. A game rule, independent of the drawing
+   * direction above, because a table can number itself one way and pass the
+   * lead the other.
+   */
+  leaderDirection?: TurnDirection;
+  /** Private scratchpad for drafting what to say next. */
+  scratchpad?: string;
+  /** Endgame: who the assassin went for. */
+  assassinTargetId?: string;
   status: GameStatus;
   winningSide?: WinningSide | null;
   /**

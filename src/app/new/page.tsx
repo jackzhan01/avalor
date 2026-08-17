@@ -81,7 +81,7 @@ export default function NewGamePage() {
 
       {step === "count" && (
         <section className="a-push flex flex-1 flex-col">
-          <h1 className="t-large-title">几个人</h1>
+          <h1 className="t-large-title">几人局</h1>
           <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
             {goodCount(playerCount)} 好 {evilCount(playerCount)} 坏 · 每轮上车{" "}
             {[1, 2, 3, 4, 5].map((m) => teamSize(playerCount, m)).join(" / ")}
@@ -96,11 +96,16 @@ export default function NewGamePage() {
                   setViewerSeat(null);
                   setStep("me");
                 }}
+                // Hovering previews the split below, so the number you are
+                // about to press is never a blind choice.
                 onFocus={() => setPlayerCount(count)}
                 onMouseEnter={() => setPlayerCount(count)}
                 className={cn(
                   "flex min-h-[86px] items-center justify-center rounded-[14px] text-[30px] font-semibold",
-                  "bg-[color:var(--bg-elevated)] text-[color:var(--label)] active:opacity-70",
+                  "bg-[color:var(--bg-elevated)] text-[color:var(--label)]",
+                  "transition-colors active:opacity-70",
+                  "hover:bg-[color:var(--blue)] hover:text-white",
+                  "focus-visible:bg-[color:var(--blue)] focus-visible:text-white",
                 )}
               >
                 {count}
@@ -112,11 +117,14 @@ export default function NewGamePage() {
 
       {step === "me" && (
         <section className="a-push flex flex-1 flex-col">
-          <h1 className="t-large-title">你坐哪</h1>
+          <h1 className="t-large-title">你是几号位</h1>
           <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
             点一下你自己的位置，牌桌会转过来，把你放到最下方。
           </p>
-          <div className="mt-8">
+          <p className="t-footnote mt-2 rounded-[10px] bg-[color:var(--fill)] px-3 py-2 text-[color:var(--label-secondary)]">
+            如果这局没规定号码，直接点 1 号位当自己就行。
+          </p>
+          <div className="mt-6">
             <RoundTable
               players={seats}
               viewerPlayerId={viewerSeat ? `s${viewerSeat}` : "s1"}
@@ -140,7 +148,7 @@ export default function NewGamePage() {
 
       {step === "leader" && (
         <section className="a-push flex flex-1 flex-col">
-          <h1 className="t-large-title">谁先点车</h1>
+          <h1 className="t-large-title">谁是第一个车主</h1>
           <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
             之后每轮自动往下顺，随时能改。
           </p>
@@ -155,10 +163,10 @@ export default function NewGamePage() {
               }}
               center={
                 <p className="t-footnote pointer-events-none text-[color:var(--label-secondary)]">
-                  {creating ? "开局中…" : "点第一个队长"}
+                  {creating ? "开局中…" : "点第一个车主"}
                 </p>
               }
-              label="选择第一个队长"
+              label="选择第一个车主"
             />
           </div>
         </section>

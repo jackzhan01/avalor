@@ -3,26 +3,24 @@
 import { useState } from "react";
 import { Sheet } from "@/components/ui/sheet";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame } from "@/lib/store/hooks";
 import {
   getIntendedTeam,
+  getKnownSeats,
   getPlayerOpinions,
   getRoleClaim,
   getRoleMark,
 } from "@/lib/selectors";
 import { visionFor } from "@/lib/rules/avalon";
-import {
-  ROLE_LABELS,
-  markLabel,
-  playerLabel,
-  seatList,
-} from "@/lib/format/labels";
+import { ROLE_LABELS, markLabel, playerLabel, seatList } from "@/lib/format/labels";
 import type { RoleMark } from "@/lib/types/events";
 import type { RoleType } from "@/lib/types/game";
 import { EVIL_ROLES, GOOD_ROLES } from "@/lib/types/game";
 
-type Layer = "root" | "mark" | "myRole";
+type Layer = "root" | "mark" | "myRole" | "rename";
 
 const MARK_CHOICES: { label: string; mark: RoleMark }[] = [
   { label: "坏人", mark: { kind: "side", side: "evil" } },
@@ -35,19 +33,14 @@ const MARK_CHOICES: { label: string; mark: RoleMark }[] = [
   { label: "刺客", mark: { kind: "role", role: "assassin" } },
   { label: "奥伯伦", mark: { kind: "role", role: "oberon" } },
   { label: "爪牙", mark: { kind: "role", role: "minion" } },
-  { label: "梅林或莫甘娜", mark: { kind: "merlin_or_morgana" } },
 ];
 
-/**
- * What one player can be recorded as. Three public attributes, plus the
- * private read on them — and, on your own seat, your own role.
- *
- * Nothing deeper is shown until it is asked for: three rows, then a layer.
- */
 export function PlayerMenuSheet({
   playerId,
-  privateVisible,
-  onRevealPrivate,
+  visionVisible,
+  guessVisible,
+  onRevealVision,
+  onRevealGuess,
   onClose,
   onPickOpinion,
   onPickIntendedTeam,
@@ -55,8 +48,10 @@ export function PlayerMenuSheet({
   onStartVision,
 }: {
   playerId: string | null;
-  privateVisible: boolean;
-  onRevealPrivate: () => void;
+  visionVisible: boolean;
+  guessVisible: boolean;
+  onRevealVision: () => void;
+  onRevealGuess: () => void;
   onClose: () => void;
   onPickOpinion: () => void;
   onPickIntendedTeam: () => void;
@@ -66,20 +61,78 @@ export function PlayerMenuSheet({
   const game = useGame();
   const events = useEvents();
   const addEvent = useGameStore((s) => s.addEvent);
-  const updateGameRole = useGameStore((s) => s.setViewerRole);
+  const changeViewerRole = useGameStore((s) => s.changeViewerRole);
+  const updatePlayer = useGameStore((s) => s.updatePlayer);
   const [layer, setLayer] = useState<Layer>("root");
+  const [pendingRole, setPendingRole] = useState<RoleType | null>(null);
+  const [name, setName] = useState("");
 
   if (!game || !playerId) return null;
 
   const isSelf = game.viewerPlayerId === playerId;
+  const player = game.players.find((p) => p.id === playerId);
   const { expressed } = getPlayerOpinions(events, playerId);
   const intended = getIntendedTeam(events, playerId);
   const claim = getRoleClaim(events, playerId);
   const mark = getRoleMark(events, playerId);
+  const knownCount = getKnownSeats(events).length;
+
+  // Whichever layer this seat's mark belongs to has to be revealed to show it.
+  const markVisible =
+    mark === null
+      ? guessVisible
+      : mark.certainty === "known"
+        ? visionVisible
+        : guessVisible;
 
   function close() {
     setLayer("root");
+    setPendingRole(null);
     onClose();
+  }
+
+  function applyRole(role: RoleType) {
+    void changeViewerRole(role);
+    const vision = visionFor(role, game!.playerCount, game!.roleSet);
+    setPendingRole(null);
+    setLayer("root");
+    if (vision) {
+      close();
+      onStartVision(role);
+    }
+  }
+
+  if (layer === "rename") {
+    return (
+      <Sheet
+        open
+        onClose={close}
+        onBack={() => setLayer("root")}
+        title={`${player?.seat}号 叫什么`}
+        layerKey="rename"
+      >
+        <input
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="留空就只用座位号"
+          className="t-body w-full rounded-[10px] bg-[color:var(--bg-elevated)] px-3.5 py-3 outline-none placeholder:text-[color:var(--label-tertiary)]"
+        />
+        <Button
+          className="mt-3"
+          fullWidth
+          onClick={() => {
+            const trimmed = name.trim();
+            void updatePlayer(playerId!, {
+              name: trimmed.length > 0 ? trimmed : undefined,
+            });
+            setLayer("root");
+          }}
+        >
+          保存
+        </Button>
+      </Sheet>
+    );
   }
 
   if (layer === "mark") {
@@ -89,7 +142,7 @@ export function PlayerMenuSheet({
         onClose={close}
         onBack={() => setLayer("root")}
         title={`我觉得 ${playerLabel(game, playerId)} 是`}
-        subtitle="只有你看得到，不会出现在公开记录里"
+        subtitle="只有你看得到，不会进公开记录"
         layerKey="mark"
       >
         <ListGroup>
@@ -137,37 +190,48 @@ export function PlayerMenuSheet({
 
   if (layer === "myRole") {
     return (
-      <Sheet
-        open
-        onClose={close}
-        onBack={() => setLayer("root")}
-        title="我这局是什么角色"
-        subtitle="选完会带你点出你看到的人"
-        layerKey="myRole"
-      >
-        <ListGroup header="好人">
-          {GOOD_ROLES.map((role) => (
-            <RoleRow
-              key={role}
-              role={role}
-              current={game.viewerRole}
-              onPick={pickOwnRole}
-            />
-          ))}
-        </ListGroup>
-        <div className="mt-6">
-          <ListGroup header="坏人">
-            {EVIL_ROLES.map((role) => (
-              <RoleRow
+      <>
+        <Sheet
+          open
+          onClose={close}
+          onBack={() => setLayer("root")}
+          title="我这局是什么角色"
+          subtitle="选完会带你点出你看到的人"
+          layerKey="myRole"
+        >
+          <ListGroup header="好人">
+            {GOOD_ROLES.map((role) => (
+              <ListRow
                 key={role}
-                role={role}
-                current={game.viewerRole}
-                onPick={pickOwnRole}
+                label={ROLE_LABELS[role]}
+                accessory={game.viewerRole === role ? "check" : "none"}
+                onClick={() => requestRole(role)}
               />
             ))}
           </ListGroup>
-        </div>
-      </Sheet>
+          <div className="mt-6">
+            <ListGroup header="坏人">
+              {EVIL_ROLES.map((role) => (
+                <ListRow
+                  key={role}
+                  label={ROLE_LABELS[role]}
+                  accessory={game.viewerRole === role ? "check" : "none"}
+                  onClick={() => requestRole(role)}
+                />
+              ))}
+            </ListGroup>
+          </div>
+        </Sheet>
+
+        <ConfirmDialog
+          open={pendingRole !== null}
+          title="换身份会清掉视野"
+          message={`你之前按「${game.viewerRole ? ROLE_LABELS[game.viewerRole] : "旧身份"}」记下的 ${knownCount} 个视野标记会被删除，然后重新问你一次。你自己推测的标记不受影响。`}
+          confirmLabel="换"
+          onCancel={() => setPendingRole(null)}
+          onConfirm={() => applyRole(pendingRole!)}
+        />
+      </>
     );
   }
 
@@ -216,21 +280,19 @@ export function PlayerMenuSheet({
       </ListGroup>
 
       <div className="mt-6">
-        {/* The private layer stays hidden until asked for, even in here — the
-            whole point is that a glance at the phone gives nothing away. */}
-        <ListGroup header="只有我知道的" footer="不会出现在公开记录里。">
+        <ListGroup header="只有我知道的" footer="不会进公开记录。">
           <ListRow
             label="我觉得他是"
             value={
-              !privateVisible
+              !markVisible
                 ? "已隐藏"
                 : mark
-                  ? `${markLabel(mark.mark)}${mark.certainty === "known" ? "（确定）" : ""}`
+                  ? `${markLabel(mark.mark)}${mark.certainty === "known" ? "（视野）" : ""}`
                   : "没标记"
             }
             accessory="chevron"
             onClick={() => {
-              if (!privateVisible) onRevealPrivate();
+              if (!guessVisible) onRevealGuess();
               setLayer("mark");
             }}
           />
@@ -238,7 +300,7 @@ export function PlayerMenuSheet({
             <ListRow
               label="我这局的角色"
               value={
-                !privateVisible
+                !visionVisible
                   ? "已隐藏"
                   : game.viewerRole
                     ? ROLE_LABELS[game.viewerRole]
@@ -246,7 +308,7 @@ export function PlayerMenuSheet({
               }
               accessory="chevron"
               onClick={() => {
-                if (!privateVisible) onRevealPrivate();
+                if (!visionVisible) onRevealVision();
                 setLayer("myRole");
               }}
             />
@@ -255,40 +317,31 @@ export function PlayerMenuSheet({
       </div>
 
       <div className="mt-6">
-        <ListGroup footer="保踩、意向车都表达不了的，写这里。">
+        <ListGroup>
+          <ListRow
+            label="改名字"
+            value={player?.name ?? "没填"}
+            accessory="chevron"
+            onClick={() => {
+              setName(player?.name ?? "");
+              setLayer("rename");
+            }}
+          />
           <ListRow label="记一条备注" accessory="chevron" onClick={onOpenNote} />
         </ListGroup>
       </div>
     </Sheet>
   );
 
-  function pickOwnRole(role: RoleType) {
-    void updateGameRole(role);
-    const vision = visionFor(role, game!.playerCount, game!.roleSet);
-    setLayer("root");
-    if (vision) {
-      close();
-      onStartVision(role);
+  function requestRole(role: RoleType) {
+    if (role === game!.viewerRole) {
+      setLayer("root");
+      return;
     }
+    // Only warn when there is actually vision to lose.
+    if (knownCount > 0) setPendingRole(role);
+    else applyRole(role);
   }
-}
-
-function RoleRow({
-  role,
-  current,
-  onPick,
-}: {
-  role: RoleType;
-  current?: RoleType;
-  onPick: (role: RoleType) => void;
-}) {
-  return (
-    <ListRow
-      label={ROLE_LABELS[role]}
-      accessory={current === role ? "check" : "none"}
-      onClick={() => onPick(role)}
-    />
-  );
 }
 
 function Switch({

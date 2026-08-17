@@ -4,7 +4,7 @@ import type { LeaderSource } from "@/lib/types/derived";
 import { deriveTimeline, nextSeatAfter } from "./derive-timeline";
 
 /**
- * Who holds the队长 seat right now.
+ * Who is the 车主 right now.
  *
  * Anchored on the last observed fact, never computed as
  * (firstLeader + proposalCount) % playerCount — a modulo counter desynchronises

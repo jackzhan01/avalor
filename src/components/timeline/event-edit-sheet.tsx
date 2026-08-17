@@ -137,6 +137,10 @@ function Editor({
       );
     case "role_claim":
       return <RoleClaimEditor event={event} game={game} onDone={onDone} />;
+    case "role_mark":
+      // Private marks are managed from the table, not the timeline, and the
+      // timeline filters them out — this branch exists only for exhaustiveness.
+      return null;
   }
 }
 
@@ -321,7 +325,7 @@ function ProposalEditor({
     <div className="flex flex-col gap-5">
       <div>
         <p className="t-footnote mb-2 uppercase tracking-[0.06em] text-[color:var(--label-secondary)]">
-          队长
+          车主
         </p>
         <SeatPicker
           players={players}

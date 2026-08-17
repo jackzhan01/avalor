@@ -6,7 +6,7 @@ import { EmptyState, InlineWarning } from "@/components/ui/feedback";
 import { EventEditSheet } from "./event-edit-sheet";
 import { useEvents, useGame, useOpinions, useTimeline } from "@/lib/store/hooks";
 import { seatLabel, seatList } from "@/lib/format/labels";
-import type { GameEvent } from "@/lib/types/events";
+import { isPrivateEvent, type GameEvent } from "@/lib/types/events";
 import type { DerivedTimeline, ProposalState } from "@/lib/types/derived";
 import type { GameRecord } from "@/lib/types/game";
 import { cn } from "@/lib/utils/cn";
@@ -57,6 +57,10 @@ export function TimelineView() {
   for (let n = 1; n <= maxMission; n++) {
     const inMission = events.filter(
       (e) =>
+        // The private layer is deliberately absent here: the timeline is the
+        // record of the game, and it should be safe to hand to someone or
+        // glance at with people around. Marks live on the table instead.
+        !isPrivateEvent(e) &&
         (timeline.eventContext.get(e.id)?.missionNumber ?? e.missionNumber) === n,
     );
     if (inMission.length > 0) groups.push({ missionNumber: n, events: inMission });

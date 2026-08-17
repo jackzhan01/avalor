@@ -377,7 +377,14 @@ function computeTimeline(
   };
 }
 
-/** Next seat in ascending order, wrapping past the last seat back to the first. */
+/**
+ * The seat that takes the lead next, wrapping around the table.
+ *
+ * The step is +1 or -1 in seat numbers depending on how the two directions
+ * relate: a table can number itself one way and pass the lead the other, so
+ * "the lead moves clockwise" only means "seat + 1" when the numbers also run
+ * clockwise.
+ */
 export function nextSeatAfter(
   game: GameRecord,
   playerId: string,
@@ -386,7 +393,12 @@ export function nextSeatAfter(
   if (ordered.length === 0) return null;
   const index = ordered.findIndex((p) => p.id === playerId);
   if (index === -1) return ordered[0].id;
-  return ordered[(index + 1) % ordered.length].id;
+
+  const seatDirection = game.seatDirection ?? "cw";
+  const leaderDirection = game.leaderDirection ?? "cw";
+  const step = leaderDirection === seatDirection ? 1 : -1;
+  const n = ordered.length;
+  return ordered[(index + step + n) % n].id;
 }
 
 export const deriveTimeline = memoize2ByRef(computeTimeline);

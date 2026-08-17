@@ -66,6 +66,23 @@ interface GameStore {
   /** The user's own role. Private — never used as information about others. */
   setViewerRole: (role: RoleType | undefined) => Promise<void>;
   updateRoleSet: (roleSet: RoleSetConfig | undefined) => Promise<void>;
+  setScratchpad: (text: string) => Promise<void>;
+  updateSettings: (patch: Partial<GameRecord>) => Promise<void>;
+  /**
+   * Changing your own role invalidates the vision you recorded under the old
+   * one, so those marks are dropped in the same step. Guessed marks survive —
+   * they were your reads, not a consequence of the role.
+   */
+  changeViewerRole: (role: RoleType | undefined) => Promise<void>;
+  /**
+   * Endgame reveal. This is what turns a recorded game into a labelled one:
+   * observations plus actions plus ground truth.
+   */
+  revealEndgame: (input: {
+    assassinTargetId?: string;
+    roles: Record<string, RoleType | undefined>;
+    winningSide: WinningSide | null;
+  }) => Promise<void>;
   showSnackbar: (message: string, undoable?: boolean) => void;
   dismissSnackbar: () => void;
 }
@@ -345,6 +362,78 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!game) return;
       set({ game: { ...game, roleSet } });
       write(game.id, () => repo.updateGame(game.id, { roleSet }), "保存失败");
+    },
+
+    async setScratchpad(text) {
+      const { game } = get();
+      if (!game) return;
+      set({ game: { ...game, scratchpad: text } });
+      write(
+        game.id,
+        () => repo.updateGame(game.id, { scratchpad: text }),
+        "草稿保存失败",
+      );
+    },
+
+    async updateSettings(patch) {
+      const { game } = get();
+      if (!game) return;
+      set({ game: { ...game, ...patch } });
+      write(game.id, () => repo.updateGame(game.id, patch), "保存失败");
+    },
+
+    async changeViewerRole(role) {
+      const { game, events } = get();
+      if (!game) return;
+
+      // Vision recorded as `known` was a consequence of the previous role. It
+      // is no longer true, so it goes; guesses were the user's own reads and
+      // survive untouched.
+      const stale = events.filter(
+        (e) => e.type === "role_mark" && e.certainty === "known",
+      );
+      const remaining =
+        stale.length > 0 ? removeEvents(events, stale.map((e) => e.id)) : events;
+      const { events: reconciled, changed } = assignContext(remaining, game);
+
+      set({
+        game: { ...game, viewerRole: role },
+        events: reconciled,
+        undoStack: [],
+      });
+
+      write(
+        game.id,
+        async () => {
+          if (stale.length > 0) {
+            await repo.deleteEvents(
+              game.id,
+              stale.map((e) => e.id),
+              changed,
+            );
+          }
+          await repo.updateGame(game.id, { viewerRole: role });
+        },
+        "保存失败",
+      );
+    },
+
+    async revealEndgame({ assassinTargetId, roles, winningSide }) {
+      const { game } = get();
+      if (!game) return;
+      const players = game.players.map((p) => ({
+        ...p,
+        actualRole: roles[p.id],
+      }));
+      const patch: Partial<GameRecord> = {
+        players,
+        ...(assassinTargetId ? { assassinTargetId } : {}),
+        winningSide,
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      };
+      set({ game: { ...game, ...patch } });
+      write(game.id, () => repo.updateGame(game.id, patch), "保存失败");
     },
 
     showSnackbar(message, undoable = false) {

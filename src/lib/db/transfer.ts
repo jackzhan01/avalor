@@ -41,8 +41,9 @@ export function buildExport(
   const kept = includePrivate ? events : events.filter((e) => !isPrivateEvent(e));
   const exportedGame = includePrivate
     ? game
-    : // The user's own role is private information too.
-      { ...game, viewerRole: undefined };
+    : // The user's own role and their speech drafts are private too — dropping
+      // the marks alone would still leak both.
+      { ...game, viewerRole: undefined, scratchpad: undefined };
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),

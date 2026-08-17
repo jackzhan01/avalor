@@ -4,16 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { RoundTable, RATING_VAR } from "@/components/table/round-table";
 import {
-  ModeBanner,
-  PrimaryDock,
-  RatingDock,
-  TeamDock,
-  VoteDock,
+  ConfirmRow,
+  Dock,
+  DockHeader,
+  PrimaryRow,
+  RatingRow,
+  VoteRow,
 } from "@/components/game/mode-bar";
 import { PlayerMenuSheet } from "@/components/game/player-menu-sheet";
 import { MissionRecorder } from "@/components/game/mission-recorder";
 import { TextNoteComposer } from "@/components/game/text-note-composer";
 import { LeaderPickerSheet } from "@/components/game/leader-picker-sheet";
+import { Scratchpad } from "@/components/game/scratchpad";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import { getAllRoleMarks, getClaimants, getCurrentOpinion } from "@/lib/selectors";
@@ -23,13 +25,6 @@ import type { Rating } from "@/lib/types/events";
 import type { RoleType, VoteChoice } from "@/lib/types/game";
 import type { SeatVisual } from "@/components/table/round-table";
 
-/**
- * The table is the screen.
- *
- * Everything in a round happens on one circle that mirrors the real seating.
- * Modes change what a tap means; the banner always names the current mode,
- * because that is the one thing this design can genuinely confuse.
- */
 type Mode =
   | { kind: "idle" }
   | { kind: "opinionTarget"; speakerId: string }
@@ -59,12 +54,15 @@ export default function GamePage() {
   const [menuPlayerId, setMenuPlayerId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"mission" | "note" | "leader" | null>(null);
   const [notePlayerId, setNotePlayerId] = useState<string | null>(null);
-  /**
-   * The private layer starts hidden on every load and every navigation back
-   * here. Someone glancing over your shoulder mid-game sees nothing, and this
-   * state is deliberately not persisted so it can never be left on.
+  /*
+   * Vision and guesses are separate layers because they are separate kinds of
+   * information: one is what the game told you, the other is what you decided.
+   * Both start hidden on every load and every navigation back here, and
+   * neither is persisted, so they cannot be left switched on for someone to
+   * read over your shoulder.
    */
-  const [privateVisible, setPrivateVisible] = useState(false);
+  const [visionVisible, setVisionVisible] = useState(false);
+  const [guessVisible, setGuessVisible] = useState(false);
 
   if (!game || !timeline) return null;
 
@@ -75,15 +73,19 @@ export default function GamePage() {
     : null;
   const missionNumber = Math.min(timeline.missionNumber, 5);
   const currentLeaderId = timeline.currentLeaderId;
+  const assassinationDue =
+    timeline.successCount >= 3 && game.status !== "completed";
 
   function seatVisual(playerId: string): SeatVisual {
-    const markState = marks.get(playerId);
+    const state = marks.get(playerId);
+    const layerShown =
+      state && (state.certainty === "known" ? visionVisible : guessVisible);
     const privateMark =
-      privateVisible && markState
+      state && layerShown
         ? {
-            text: markShort(markState.mark),
-            color: markColor(markState.mark),
-            certain: markState.certainty === "known",
+            text: markShort(state.mark),
+            color: markColor(state.mark),
+            certain: state.certainty === "known",
           }
         : null;
 
@@ -118,7 +120,7 @@ export default function GamePage() {
           mark: privateMark,
           badgeLeft:
             playerId === mode.leaderId
-              ? { text: "车", color: "var(--yellow)", title: "这辆车的队长" }
+              ? { text: "车", color: "var(--yellow)", title: "这辆车的车主" }
               : null,
         };
       case "vote": {
@@ -141,7 +143,7 @@ export default function GamePage() {
           mark: privateMark,
           badgeLeft:
             currentLeaderId === playerId
-              ? { text: "车", color: "var(--yellow)", title: "当前队长" }
+              ? { text: "车", color: "var(--yellow)", title: "当前车主" }
               : null,
           badge: claimants.has(playerId)
             ? { text: "派", color: "var(--blue)", title: "跳了派" }
@@ -204,313 +206,327 @@ export default function GamePage() {
     );
   }
 
-  const center =
-    mode.kind === "idle" ? (
-      <div className="pointer-events-none">
-        <p className="t-caption text-[color:var(--label-secondary)]">
-          第 {missionNumber} 轮 · 第 {timeline.proposalNumber} 车
-        </p>
-        <p className="mt-1 text-[26px] font-bold leading-none tabular-nums">
-          <span className="text-[color:var(--good)]">{timeline.successCount}</span>
-          <span className="mx-1 text-[color:var(--label-tertiary)]">–</span>
-          <span className="text-[color:var(--evil)]">{timeline.failCount}</span>
-        </p>
-        <p className="t-caption mt-1 text-[color:var(--label-tertiary)]">
-          好人 — 坏人
-        </p>
-      </div>
-    ) : (
-      <p className="t-footnote pointer-events-none text-[color:var(--label-secondary)]">
-        {mode.kind === "opinionTarget" && "点一个人"}
-        {mode.kind === "opinionRate" && "换个人或打分"}
-        {(mode.kind === "intended" || mode.kind === "proposal") && "点座位选人"}
-        {mode.kind === "vote" && "点座位切换票型"}
-        {mode.kind === "vision" && `还差 ${mode.vision.count - mode.picked.length} 个`}
+  const idle = mode.kind === "idle";
+
+  const center = idle ? (
+    <div className="pointer-events-none">
+      <p className="t-caption text-[color:var(--label-secondary)]">
+        第 {missionNumber} 轮 · 第 {timeline.proposalNumber} 车
       </p>
+      <p className="mt-1 text-[26px] font-bold leading-none tabular-nums">
+        <span className="text-[color:var(--good)]">{timeline.successCount}</span>
+        <span className="mx-1 text-[color:var(--label-tertiary)]">–</span>
+        <span className="text-[color:var(--evil)]">{timeline.failCount}</span>
+      </p>
+      <p className="t-caption mt-1 text-[color:var(--label-tertiary)]">
+        好人 — 坏人
+      </p>
+    </div>
+  ) : (
+    <p className="t-footnote pointer-events-none text-[color:var(--label-secondary)]">
+      {mode.kind === "opinionTarget" && "点一个人"}
+      {mode.kind === "opinionRate" && "换个人或打分"}
+      {(mode.kind === "intended" || mode.kind === "proposal") && "点座位选人"}
+      {mode.kind === "vote" && "点座位切换票型"}
+      {mode.kind === "vision" &&
+        `还差 ${Math.max(0, mode.vision.count - mode.picked.length)} 个`}
+    </p>
+  );
+
+  /* ── The dock. Always reflects the mode, so the idle actions can never be
+        mis-tapped while a recording flow is open. ─────────────────────── */
+
+  let dock: React.ReactNode;
+  if (mode.kind === "opinionTarget") {
+    dock = (
+      <Dock>
+        <DockHeader
+          title={`${seatLabel(game, mode.speakerId)} 说 →`}
+          hint="点一个人，记他怎么看这个人"
+          onCancel={() => setMode({ kind: "idle" })}
+        />
+      </Dock>
     );
-
-  const teamWarning =
-    mode.kind === "proposal"
-      ? getTeamSizeWarning(game.playerCount, missionNumber, mode.team.length)
-      : null;
-
-  let dock: React.ReactNode = null;
-  if (mode.kind === "opinionRate") {
+  } else if (mode.kind === "opinionRate") {
     const cell = getCurrentOpinion(events, mode.speakerId, mode.targetId);
     dock = (
-      <RatingDock
-        targetLabel={seatLabel(game, mode.targetId)}
-        current={cell?.rating ?? null}
-        onPick={(rating: Rating) => {
-          if (cell?.rating !== rating) {
-            void addEvent({
-              type: "opinion",
-              speakerId: mode.speakerId,
-              targetId: mode.targetId,
-              rating,
-            });
+      <Dock>
+        <DockHeader
+          title={`${seatLabel(game, mode.speakerId)} 说 ${seatLabel(game, mode.targetId)}`}
+          hint="点分数存下，然后回到选人"
+          action={
+            cell
+              ? {
+                  label: "清除",
+                  onClick: () => {
+                    void deleteEvent(cell.eventId);
+                    setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
+                  },
+                }
+              : undefined
           }
-          setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
-        }}
-        onClear={
-          cell
-            ? () => {
-                void deleteEvent(cell.eventId);
-                setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
-              }
-            : undefined
-        }
-      />
+          onCancel={() => setMode({ kind: "idle" })}
+        />
+        <RatingRow
+          current={cell?.rating ?? null}
+          onPick={(rating: Rating) => {
+            if (cell?.rating !== rating) {
+              void addEvent({
+                type: "opinion",
+                speakerId: mode.speakerId,
+                targetId: mode.targetId,
+                rating,
+              });
+            }
+            setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
+          }}
+        />
+      </Dock>
     );
   } else if (mode.kind === "intended") {
     dock = (
-      <TeamDock
-        selected={mode.team.length}
-        expected={timeline.missions[missionNumber - 1].expectedTeamSize}
-        confirmLabel="记下他想带的人"
-        onConfirm={() => {
-          void addEvent({
-            type: "intended_team",
-            playerId: mode.playerId,
-            teamPlayerIds: sortBySeat(mode.team),
-          });
-          setMode({ kind: "idle" });
-        }}
-      />
+      <Dock>
+        <DockHeader
+          title={`${seatLabel(game, mode.playerId)} 想带谁`}
+          hint="他嘴上说的，不是真发的车"
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="取消"
+        />
+        <ConfirmRow
+          selected={mode.team.length}
+          expected={timeline.missions[missionNumber - 1].expectedTeamSize}
+          label="记下他想带的人"
+          onConfirm={() => {
+            void addEvent({
+              type: "intended_team",
+              playerId: mode.playerId,
+              teamPlayerIds: sortBySeat(mode.team),
+            });
+            setMode({ kind: "idle" });
+          }}
+        />
+      </Dock>
     );
   } else if (mode.kind === "proposal") {
+    const warning = getTeamSizeWarning(
+      game.playerCount,
+      missionNumber,
+      mode.team.length,
+    );
     dock = (
-      <TeamDock
-        selected={mode.team.length}
-        expected={teamWarning?.expected ?? 0}
-        warning={
-          teamWarning?.severity === "warn" ? "人数不对，仍可记录" : undefined
-        }
-        confirmLabel="记下这辆车"
-        onConfirm={() => {
-          void addEvent({
-            type: "proposal",
-            leaderId: mode.leaderId,
-            teamPlayerIds: sortBySeat(mode.team),
-          });
-          setMode({ kind: "idle" });
-        }}
-      />
+      <Dock>
+        <DockHeader
+          title={`${seatLabel(game, mode.leaderId)} 发车`}
+          hint={
+            warning.severity === "warn" && mode.team.length > 0
+              ? `这轮通常 ${warning.expected} 人，仍可记录`
+              : `第 ${missionNumber} 轮 · 第 ${timeline.proposalNumber} 车`
+          }
+          action={{ label: "换车主", onClick: () => setSheet("leader") }}
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="取消"
+        />
+        <ConfirmRow
+          selected={mode.team.length}
+          expected={warning.expected}
+          label="记下最终车型"
+          onConfirm={() => {
+            void addEvent({
+              type: "proposal",
+              leaderId: mode.leaderId,
+              teamPlayerIds: sortBySeat(mode.team),
+            });
+            setMode({ kind: "idle" });
+          }}
+        />
+      </Dock>
     );
   } else if (mode.kind === "vision") {
     dock = (
-      <TeamDock
-        selected={mode.picked.length}
-        expected={mode.vision.count}
-        warning={mode.vision.hint}
-        confirmLabel="记下我的视野"
-        onConfirm={() => {
-          // Marked as `known`, not a guess: this came from the reveal.
-          for (const targetId of mode.picked) {
-            void addEvent({
-              type: "role_mark",
-              targetId,
-              mark: mode.vision.mark,
-              certainty: "known",
-            });
-          }
-          setPrivateVisible(true);
-          setMode({ kind: "idle" });
-        }}
-      />
+      <Dock>
+        <DockHeader
+          title={mode.vision.prompt}
+          hint={mode.vision.hint ?? "只有你看得到"}
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="取消"
+        />
+        <ConfirmRow
+          selected={mode.picked.length}
+          expected={mode.vision.count}
+          label="记下我的视野"
+          onConfirm={() => {
+            // `known`, not a guess: this came from the reveal.
+            for (const targetId of mode.picked) {
+              void addEvent({
+                type: "role_mark",
+                targetId,
+                mark: mode.vision.mark,
+                certainty: "known",
+              });
+            }
+            setVisionVisible(true);
+            setMode({ kind: "idle" });
+          }}
+        />
+      </Dock>
     );
   } else if (mode.kind === "vote") {
     const counts = { approve: 0, reject: 0, unknown: 0 };
     for (const choice of Object.values(mode.votes)) counts[choice] += 1;
     dock = (
-      <VoteDock
-        approve={counts.approve}
-        reject={counts.reject}
-        unknown={counts.unknown}
-        unrecorded={players.length - Object.keys(mode.votes).length}
-        onSetAll={(choice) => {
-          const votes: Record<string, VoteChoice> = {};
-          for (const player of players) votes[player.id] = choice;
-          setMode({ ...mode, votes });
-        }}
-        onResult={(finalResult) => {
-          void addEvent({
-            type: "vote",
-            proposalId: mode.proposalId,
-            votes: mode.votes,
-            finalResult,
-          });
-          setMode({ kind: "idle" });
-        }}
-      />
+      <Dock>
+        <DockHeader
+          title="记票型"
+          hint={
+            activeProposal
+              ? `车上：${seatList(game, activeProposal.event.teamPlayerIds)}`
+              : undefined
+          }
+          onCancel={() => setMode({ kind: "idle" })}
+          cancelLabel="取消"
+        />
+        <VoteRow
+          approve={counts.approve}
+          reject={counts.reject}
+          unknown={counts.unknown}
+          unrecorded={players.length - Object.keys(mode.votes).length}
+          onSetAll={(choice) => {
+            const votes: Record<string, VoteChoice> = {};
+            for (const player of players) votes[player.id] = choice;
+            setMode({ ...mode, votes });
+          }}
+          onResult={(finalResult) => {
+            void addEvent({
+              type: "vote",
+              proposalId: mode.proposalId,
+              votes: mode.votes,
+              finalResult,
+            });
+            setMode({ kind: "idle" });
+          }}
+        />
+      </Dock>
     );
   } else {
     const primary = timeline.isComplete
       ? null
       : timeline.phase === "discussion"
-        ? "点车"
+        ? "最终车型"
         : timeline.phase === "voting"
           ? "记投票"
           : "记任务结果";
     dock = (
-      <PrimaryDock
-        primaryLabel={primary}
-        onPrimary={() => {
-          if (timeline.phase === "discussion") {
-            setMode({
-              kind: "proposal",
-              leaderId: currentLeaderId ?? players[0].id,
-              team: [],
-            });
-          } else if (timeline.phase === "voting" && activeProposal) {
-            setMode({
-              kind: "vote",
-              proposalId: activeProposal.event.id,
-              votes: {},
-            });
-          } else {
-            setSheet("mission");
-          }
-        }}
-        onNote={() => {
-          setNotePlayerId(null);
-          setSheet("note");
-        }}
-      />
-    );
-  }
-
-  let banner: React.ReactNode = null;
-  if (mode.kind === "opinionTarget" || mode.kind === "opinionRate") {
-    banner = (
-      <ModeBanner
-        title={`${seatLabel(game, mode.speakerId)} 说 →`}
-        hint="点一个人，记他怎么看这个人"
-        onCancel={() => setMode({ kind: "idle" })}
-      />
-    );
-  } else if (mode.kind === "intended") {
-    banner = (
-      <ModeBanner
-        title={`${seatLabel(game, mode.playerId)} 想带谁`}
-        hint="他嘴上说的，不是真点的车"
-        onCancel={() => setMode({ kind: "idle" })}
-        cancelLabel="取消"
-      />
-    );
-  } else if (mode.kind === "proposal") {
-    banner = (
-      <ModeBanner
-        title={`${seatLabel(game, mode.leaderId)} 点车`}
-        hint={`第 ${missionNumber} 轮 · 第 ${timeline.proposalNumber} 车`}
-        action={{ label: "换队长", onClick: () => setSheet("leader") }}
-        onCancel={() => setMode({ kind: "idle" })}
-        cancelLabel="取消"
-      />
-    );
-  } else if (mode.kind === "vote" && activeProposal) {
-    banner = (
-      <ModeBanner
-        title="记票型"
-        hint={`车上：${seatList(game, activeProposal.event.teamPlayerIds)}`}
-        onCancel={() => setMode({ kind: "idle" })}
-        cancelLabel="取消"
-      />
-    );
-  } else if (mode.kind === "vision") {
-    banner = (
-      <ModeBanner
-        title={mode.vision.prompt}
-        hint="只有你看得到"
-        onCancel={() => setMode({ kind: "idle" })}
-        cancelLabel="取消"
-      />
+      <Dock>
+        <PrimaryRow
+          primaryLabel={primary}
+          onPrimary={() => {
+            if (timeline.phase === "discussion") {
+              setMode({
+                kind: "proposal",
+                leaderId: currentLeaderId ?? players[0].id,
+                team: [],
+              });
+            } else if (timeline.phase === "voting" && activeProposal) {
+              setMode({
+                kind: "vote",
+                proposalId: activeProposal.event.id,
+                votes: {},
+              });
+            } else {
+              setSheet("mission");
+            }
+          }}
+          onNote={() => {
+            setNotePlayerId(null);
+            setSheet("note");
+          }}
+        />
+      </Dock>
     );
   }
 
   return (
     <>
-      {banner}
-
-      <main className="mx-auto max-w-md px-4 pb-40 pt-3">
-        {mode.kind === "idle" && (
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="flex gap-1">
-              {timeline.missions.map((mission) => (
-                <span
-                  key={mission.missionNumber}
-                  title={`第 ${mission.missionNumber} 轮 · ${mission.expectedTeamSize} 人${mission.requiredFails === 2 ? " · 要 2 张坏票" : ""}`}
-                  className={`flex h-6 w-7 items-center justify-center rounded-md text-[12px] font-semibold ${
-                    mission.result === "success"
-                      ? "bg-[color:var(--good)] text-white"
-                      : mission.result === "fail"
-                        ? "bg-[color:var(--evil)] text-white"
-                        : mission.status === "in_progress"
-                          ? "bg-[color:var(--fill-2)] text-[color:var(--blue)]"
-                          : "bg-[color:var(--fill)] text-[color:var(--label-tertiary)]"
-                  }`}
-                >
-                  {mission.result
-                    ? mission.result === "success"
-                      ? "✓"
-                      : "✕"
-                    : mission.expectedTeamSize}
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPrivateVisible((v) => !v)}
-                aria-pressed={privateVisible}
-                aria-label={privateVisible ? "隐藏视野" : "显示视野"}
-                className={`t-caption flex h-9 items-center gap-1 rounded-full px-2.5 font-medium active:opacity-70 ${
-                  privateVisible
-                    ? "bg-[color:var(--blue)] text-white"
-                    : "bg-[color:var(--fill)] text-[color:var(--label-secondary)]"
+      <main className="mx-auto max-w-md px-4 pb-48 pt-3">
+        {/* The header stays put in every mode — the round, the score and the
+            layer toggles are exactly what you want visible mid-flow. */}
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex gap-1">
+            {timeline.missions.map((mission) => (
+              <span
+                key={mission.missionNumber}
+                title={`第 ${mission.missionNumber} 轮 · ${mission.expectedTeamSize} 人${mission.requiredFails === 2 ? " · 要 2 张坏票" : ""}`}
+                className={`flex h-6 w-7 items-center justify-center rounded-md text-[12px] font-semibold ${
+                  mission.result === "success"
+                    ? "bg-[color:var(--good)] text-white"
+                    : mission.result === "fail"
+                      ? "bg-[color:var(--evil)] text-white"
+                      : mission.status === "in_progress"
+                        ? "bg-[color:var(--fill-2)] text-[color:var(--blue)]"
+                        : "bg-[color:var(--fill)] text-[color:var(--label-tertiary)]"
                 }`}
               >
-                <span aria-hidden>{privateVisible ? "◉" : "◌"}</span>
-                视野
-              </button>
-              <Link
-                href={`/game/${game.id}/settings`}
-                aria-label="对局设置"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
-              >
-                <span aria-hidden>⋯</span>
-              </Link>
-            </div>
+                {mission.result
+                  ? mission.result === "success"
+                    ? "✓"
+                    : "✕"
+                  : mission.expectedTeamSize}
+              </span>
+            ))}
           </div>
+          <div className="flex items-center gap-1">
+            <LayerToggle
+              label="视野"
+              on={visionVisible}
+              onClick={() => setVisionVisible((v) => !v)}
+            />
+            <LayerToggle
+              label="推测"
+              on={guessVisible}
+              onClick={() => setGuessVisible((v) => !v)}
+            />
+            <Link
+              href={`/game/${game.id}/settings`}
+              aria-label="对局设置"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
+            >
+              <span aria-hidden>⋯</span>
+            </Link>
+          </div>
+        </div>
+
+        {assassinationDue && idle && (
+          <Link
+            href={`/game/${game.id}/endgame`}
+            className="mb-3 block rounded-[12px] bg-[color:var(--red)] px-4 py-3 text-center text-white active:opacity-85"
+          >
+            <p className="t-headline">好人拿下 3 轮 · 进入刺杀环节</p>
+            <p className="t-caption mt-0.5 text-white/80">点这里开始</p>
+          </Link>
         )}
 
         <RoundTable
           players={players}
           viewerPlayerId={game.viewerPlayerId}
+          seatDirection={game.seatDirection ?? "cw"}
+          leaderDirection={idle ? (game.leaderDirection ?? "cw") : undefined}
           seatVisual={(player) => seatVisual(player.id)}
           onSelect={onSeat}
           center={center}
           label="牌桌"
         />
 
-        {mode.kind === "idle" && (
-          <div className="mt-4 text-center">
-            {timeline.isComplete ? (
-              <Link
-                href={`/game/${game.id}/settings`}
-                className="t-subhead text-[color:var(--blue)]"
-              >
-                这局打完了 · 去结束或导出
-              </Link>
-            ) : (
-              <p className="t-footnote text-[color:var(--label-secondary)]">
-                点谁，就记谁说的话
-                {timeline.rejectionStreak > 0 && (
-                  <span className="ml-2 text-[color:var(--orange)]">
-                    已连挂 {timeline.rejectionStreak} 次
-                  </span>
-                )}
-              </p>
-            )}
+        {idle && (
+          <div className="mt-4 flex flex-col gap-3">
+            <p className="t-footnote text-center text-[color:var(--label-secondary)]">
+              点谁，就记谁说的话
+              {timeline.rejectionStreak > 0 && (
+                <span className="ml-2 text-[color:var(--orange)]">
+                  已连挂 {timeline.rejectionStreak} 次
+                </span>
+              )}
+            </p>
+            <Scratchpad visible={visionVisible || guessVisible} />
           </div>
         )}
       </main>
@@ -519,8 +535,10 @@ export default function GamePage() {
 
       <PlayerMenuSheet
         playerId={menuPlayerId}
-        privateVisible={privateVisible}
-        onRevealPrivate={() => setPrivateVisible(true)}
+        visionVisible={visionVisible}
+        guessVisible={guessVisible}
+        onRevealVision={() => setVisionVisible(true)}
+        onRevealGuess={() => setGuessVisible(true)}
         onClose={() => setMenuPlayerId(null)}
         onPickOpinion={() => {
           const speakerId = menuPlayerId!;
@@ -565,5 +583,31 @@ export default function GamePage() {
         }}
       />
     </>
+  );
+}
+
+function LayerToggle({
+  label,
+  on,
+  onClick,
+}: {
+  label: string;
+  on: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={on}
+      aria-label={on ? `隐藏${label}` : `显示${label}`}
+      className={`t-caption flex h-8 items-center gap-0.5 rounded-full px-2 font-medium active:opacity-70 ${
+        on
+          ? "bg-[color:var(--blue)] text-white"
+          : "bg-[color:var(--fill)] text-[color:var(--label-secondary)]"
+      }`}
+    >
+      <span aria-hidden>{on ? "◉" : "◌"}</span>
+      {label}
+    </button>
   );
 }

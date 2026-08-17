@@ -71,7 +71,7 @@ export default function PlayersPage() {
                     {player.name ?? playerLabel(game, player.id)}
                     {timeline.currentLeaderId === player.id && (
                       <span className="t-caption rounded-[5px] bg-[color:var(--fill)] px-1.5 font-medium text-[color:var(--blue)]">
-                        队长
+                        车主
                       </span>
                     )}
                     {claimants.has(player.id) && (
