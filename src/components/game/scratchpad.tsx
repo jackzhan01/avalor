@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/lib/store/game-store";
 import { useGame } from "@/lib/store/hooks";
 
@@ -24,6 +24,30 @@ export function Scratchpad() {
   const [text, setText] = useState(game?.scratchpad ?? "");
   const [hidden, setHidden] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
+
+  /*
+   * Grow with the text instead of scrolling inside a fixed three rows.
+   *
+   * Collapsing to `auto` first is what makes it shrink again — `scrollHeight`
+   * of an element already tall enough reports the height it has, not the
+   * height it needs, so measuring without the reset only ever grows.
+   *
+   * Past the cap it scrolls, with the bar hidden. Pagination was the other
+   * idea and is not worth it here: text that reflows between pages as you
+   * type means owning the caret across page boundaries, and no editor does
+   * this because the answer people already expect is a taller box.
+   */
+  const fit = useCallback(() => {
+    const el = box.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => {
+    if (!hidden) fit();
+  }, [hidden, fit]);
 
   useEffect(() => {
     return () => {
@@ -35,6 +59,7 @@ export function Scratchpad() {
 
   function onChange(next: string) {
     setText(next);
+    fit();
     // Typing shouldn't hit IndexedDB on every keystroke.
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void setScratchpad(next), 500);
@@ -74,11 +99,20 @@ export function Scratchpad() {
       </div>
       <textarea
         id="scratchpad"
+        ref={box}
         value={text}
         onChange={(e) => onChange(e.target.value)}
-        rows={3}
         placeholder="下一轮想说什么，先记这儿"
-        className="t-footnote w-full resize-none bg-transparent px-1 outline-none placeholder:text-[color:var(--label-tertiary)]"
+        style={{
+          minHeight: "3.6rem",
+          /*
+           * Stops just short of the dock. The dock publishes its own measured
+           * height, so this holds in vote mode where it is two rows tall —
+           * a fixed cap would have slid under it exactly then.
+           */
+          maxHeight: "calc(58dvh - var(--dock-h, 0px))",
+        }}
+        className="t-footnote no-scrollbar w-full resize-none overflow-y-auto bg-transparent px-1 outline-none placeholder:text-[color:var(--label-tertiary)]"
       />
     </div>
   );

@@ -148,6 +148,13 @@ textarea {
 .t-footnote { font-size: 13px; line-height: 1.35; }
 .t-caption { font-size: 12px; line-height: 1.3; }
 
+/* Scrollable, but without the bar. For a field you are typing in: the caret
+   is scrolled into view on its own, so the bar adds nothing but clutter —
+   which is why iOS text views hide it too. Never use this on something the
+   user has to discover is scrollable. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 
