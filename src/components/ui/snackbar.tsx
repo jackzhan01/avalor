@@ -28,8 +28,24 @@ export function SnackbarHost() {
 
   if (!mounted || !snackbar || typeof document === "undefined") return null;
 
+  /*
+   * Sits directly above the dock, not at the top of the screen.
+   *
+   * At the top it covered the round counter and the layer toggles — exactly
+   * what you want to keep seeing while recording. Down here it also puts 撤销
+   * within thumb reach, which is where an undo belongs.
+   *
+   * `--dock-h` is published by the dock itself and defaults to 0 on the pages
+   * that have no dock.
+   */
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]">
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3"
+      style={{
+        paddingBottom:
+          "calc(env(safe-area-inset-bottom, 0px) + 3.6rem + var(--dock-h, 0px) + 0.5rem)",
+      }}
+    >
       <div
         role="status"
         aria-live="polite"

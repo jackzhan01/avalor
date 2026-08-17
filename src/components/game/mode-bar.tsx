@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { Rating } from "@/lib/types/events";
 import { RATING_LABELS } from "@/lib/selectors";
 import { RATING_VAR } from "@/components/table/round-table";
@@ -14,9 +15,35 @@ import { cn } from "@/lib/utils/cn";
  * to the controls it describes and covers nothing.
  */
 export function Dock({ children }: { children: React.ReactNode }) {
+  const card = useRef<HTMLDivElement>(null);
+
+  /*
+   * Publish the dock's real height so the snackbar can sit directly on top of
+   * it. The dock changes height with the mode — one row for a rating, two for
+   * a vote — so any fixed offset would either overlap it or leave a gap.
+   */
+  useEffect(() => {
+    const el = card.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const update = () =>
+      root.style.setProperty("--dock-h", `${el.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      // Pages without a dock fall back to 0 rather than inheriting a stale one.
+      root.style.removeProperty("--dock-h");
+    };
+  }, []);
+
   return (
     <div className="pb-safe fixed inset-x-0 bottom-[3.6rem] z-30 px-3">
-      <div className="a-rise mx-auto max-w-md rounded-[14px] border border-[color:var(--separator)] bg-[color:var(--bg-elevated)] p-2.5 shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
+      <div
+        ref={card}
+        className="a-rise mx-auto max-w-md rounded-[14px] border border-[color:var(--separator)] bg-[color:var(--bg-elevated)] p-2.5 shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
+      >
         {children}
       </div>
     </div>
