@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white" alt="React 19">
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5">
   <img src="https://img.shields.io/badge/storage-IndexedDB%20·%20local--first-2ea44f" alt="Local first">
-  <img src="https://img.shields.io/badge/tests-227%20passing-2ea44f" alt="227 tests">
+  <img src="https://img.shields.io/badge/tests-238%20passing-2ea44f" alt="238 tests">
 </p>
 
 <p align="center">
@@ -117,6 +117,17 @@ Avalor 分两层解决这件事：
 - 不点就一个字节都不发；不配 API key 时整个功能不存在，App 其余部分照常离线可用
 - 结果从不写回你的记录 —— 除非你自己点「存进草稿」
 
+### 想连我们也绕开：填自己的 API key
+
+个人主页里可以填你自己的 key，之后 AI 就跑在你自己的额度上。**填了之后，请求由你的浏览器直接发给模型服务商，我们的服务器完全不在链路上** —— key 不经过我们，这局记录也不经过我们。
+
+这不是一句承诺，是个可以核实的事实：打开浏览器的网络面板，你会看到请求直接打到 `api.openai.com`，而不是我们的 `/api/ai`。这个项目在别处也是这么做的 —— 私有层是一个独立的事件类型，而不是「我们保证导出时会仔细过滤」。**能用结构保证的事，就不要用承诺保证。**
+
+- key 只存在这台设备的浏览器里，不上传、不同步、不进对局导出的 JSON
+- 「测一下」按钮花 0 token 就能验证 key 和模型是否可用（它只查询模型是否存在）
+- 模型和接口地址都能改，所以 DeepSeek、Qwen、自建 vLLM 之类的 OpenAI 兼容服务都能接（前提是对方允许浏览器跨域调用）
+- 代价说在明处：浏览器里存着的东西，这台设备上的其他脚本理论上读得到。公用电脑别存，用完可以一键删。把它交给我们保管并不会更安全 —— 那只是把风险从你的设备挪到我们的数据库
+
 ---
 
 ## 怎么开一局
@@ -157,7 +168,9 @@ src/lib/
     briefing.ts          ← 纯函数：事件日志 → 给模型读的中文局势简报
     prompts.ts           ← 提示词，按身份分岔
     parse.ts             ← 宽容解析模型输出
-src/app/api/ai/route.ts  ← 唯一持有 API key 的地方（服务端）
+    byok.ts              ← 用户自己的 key，只存在浏览器里
+    direct.ts            ← 自带 key 时：浏览器直连服务商，不经过我们
+src/app/api/ai/route.ts  ← 用我们额度时的转发路由（唯一持有我们 key 的地方）
 ```
 
 两个值得一提的判断：
@@ -174,7 +187,7 @@ src/app/api/ai/route.ts  ← 唯一持有 API key 的地方（服务端）
 npm install
 npm run dev                  # http://localhost:3000
 npm run dev -- -H 0.0.0.0    # 手机同 WiFi 访问
-npm test                     # 227 项单元测试
+npm test                     # 238 项单元测试
 npm run build
 ```
 
@@ -197,6 +210,7 @@ cp .env.example .env.local   # 然后填上 OPENAI_API_KEY
 - 记录、查看、导出、复盘：全程离线，一个请求都不发
 - 点「分析局势」或「帮我发言」：把**这一局**的记录（含你的身份、视野、推测）发一份快照给模型服务商。首次会明确询问，之后可随时在结果页查看发出去的原文
 - 其他对局的记录永远不会被带上
+- **填了自己的 API key 之后，连这一份快照也不经过我们** —— 浏览器直连服务商，我们的服务器不在链路上
 
 代价是浏览器可能清理长期未访问站点的数据 —— 所以建议把页面**添加到主屏幕**（已安装的 PWA 不受影响），并在打完一局后导出 JSON 备份。
 

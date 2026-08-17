@@ -14,6 +14,7 @@ import {
   winRate,
   type ProfileStats,
 } from "@/lib/stats/profile";
+import { ApiKeyCard } from "@/components/settings/api-key-card";
 import { ROLE_LABELS } from "@/lib/format/labels";
 
 export default function ProfilePage() {
@@ -142,6 +143,12 @@ export default function ProfilePage() {
           </p>
         </div>
       )}
+
+      {/* Outside the empty-state branch on purpose: someone who has not
+          recorded a game yet is exactly who might want to set this up first. */}
+      <div className="mt-7">
+        <ApiKeyCard />
+      </div>
     </main>
   );
 }

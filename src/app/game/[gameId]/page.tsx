@@ -18,6 +18,9 @@ import { TextNoteComposer } from "@/components/game/text-note-composer";
 import { LeaderPickerSheet } from "@/components/game/leader-picker-sheet";
 import { RoleSetupSheet } from "@/components/game/role-setup-sheet";
 import { Scratchpad } from "@/components/game/scratchpad";
+import { AiSheet } from "@/components/game/ai-sheet";
+import { hasEnoughToAnalyze } from "@/lib/ai/client";
+import type { AiTask } from "@/lib/ai/types";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import {
@@ -68,6 +71,14 @@ export default function GamePage() {
   const deleteEvent = useGameStore((s) => s.deleteEvent);
 
   const [mode, setMode] = useState<Mode>({ kind: "idle" });
+  const [aiTask, setAiTask] = useState<AiTask | null>(null);
+  /**
+   * Bumped when the AI writes a speech outline into the scratchpad. The
+   * scratchpad seeds its text once on mount and never syncs back from the
+   * store — that is what keeps typing from racing the debounced write — so a
+   * write from outside has to remount it to become visible.
+   */
+  const [scratchpadVersion, setScratchpadVersion] = useState(0);
   const [menuPlayerId, setMenuPlayerId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"mission" | "note" | "leader" | null>(null);
   const [notePlayerId, setNotePlayerId] = useState<string | null>(null);
@@ -758,7 +769,33 @@ export default function GamePage() {
               />
             </div>
 
-            <Scratchpad key={game.id} />
+            {/* The only two things here that leave the device. They sit with
+                the private controls because that is what they read from, and
+                what they produce is for your eyes only too. */}
+            <div className="grid grid-cols-2 gap-2">
+              <AiButton
+                label="分析局势"
+                hint={
+                  hasEnoughToAnalyze(events)
+                    ? "谁好谁坏，帮你捋一遍"
+                    : "再记两笔才有得分析"
+                }
+                disabled={!hasEnoughToAnalyze(events)}
+                onClick={() => setAiTask("analysis")}
+              />
+              <AiButton
+                label="帮我发言"
+                hint={
+                  hasEnoughToAnalyze(events)
+                    ? "一分钟发言的大纲"
+                    : "再记两笔才有得说"
+                }
+                disabled={!hasEnoughToAnalyze(events)}
+                onClick={() => setAiTask("speech")}
+              />
+            </div>
+
+            <Scratchpad key={`${game.id}:${scratchpadVersion}`} />
           </div>
         )}
       </main>
@@ -820,6 +857,15 @@ export default function GamePage() {
 
       <MissionRecorder open={sheet === "mission"} onClose={() => setSheet(null)} />
 
+      {/* Keyed on the task so switching between the two features starts a
+          fresh run rather than showing the previous one's result. */}
+      <AiSheet
+        key={aiTask ?? "none"}
+        task={aiTask}
+        onClose={() => setAiTask(null)}
+        onScratchpadWritten={() => setScratchpadVersion((v) => v + 1)}
+      />
+
       <TextNoteComposer
         open={sheet === "note"}
         defaultPlayerId={notePlayerId}
@@ -829,6 +875,34 @@ export default function GamePage() {
         }}
       />
     </>
+  );
+}
+
+/** One of the two AI entry points. Sized to be tapped without looking. */
+function AiButton({
+  label,
+  hint,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  hint: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex min-h-[52px] flex-col items-center justify-center rounded-[12px] bg-[color:var(--fill)] px-2 py-1.5 active:opacity-70 disabled:opacity-40"
+    >
+      <span className="t-subhead font-semibold text-[color:var(--blue)]">
+        {label}
+      </span>
+      <span className="t-caption mt-0.5 text-[color:var(--label-tertiary)]">
+        {hint}
+      </span>
+    </button>
   );
 }
 

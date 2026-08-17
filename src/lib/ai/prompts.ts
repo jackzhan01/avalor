@@ -130,7 +130,9 @@ ${goalsFor(role)}
 严格按这个结构输出 JSON：
 ${ANALYSIS_SCHEMA}
 
-seats 数组要覆盖除玩家自己以外的**每一个**座位，按座位号从小到大排。玩家自己那一格也要给出来，read 写「我自己」。`;
+seats 数组要覆盖场上的**每一个**座位，按座位号从小到大排。玩家自己那一格 read 写「我自己」。
+
+注意：玩家自己是哪个座位，在「我自己」那一段里写着。**不要把他当成需要你判断阵营的对象**，也不要在结论里说他「像好人」或「像坏人」—— 关于他，唯一值得说的是他暴露了没有。`;
 }
 
 export function speechSystemPrompt(role: RoleType | undefined): string {

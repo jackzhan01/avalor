@@ -54,13 +54,15 @@ export type AiResponse =
 /**
  * Colour bucket for a free-text read.
  *
- * Order matters: 「可能是坏人」 contains 「坏人」, and the evil roles are
- * checked before the bare side words so 莫甘娜 lands on evil rather than
- * falling through to neutral.
+ * Order is load-bearing. 「不好说」 contains 「好」 and would otherwise be
+ * painted green — an "I don't know" rendered as "he's good" is the one
+ * mistranslation here that could actually cost someone the game — so the
+ * hedges are matched first, before either side's keywords.
  */
 export function readTone(read: string): "evil" | "good" | "neutral" | "self" {
   const text = read.trim();
   if (text.includes("我自己") || text === "我") return "self";
+  if (/不好说|说不好|不确定|不清楚|看不出|存疑|中立/.test(text)) return "neutral";
   if (/莫甘娜|刺客|莫德雷德|奥伯伦|爪牙|坏/.test(text)) return "evil";
   if (/梅林|派西维尔|忠臣|好/.test(text)) return "good";
   return "neutral";

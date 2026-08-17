@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template, which carries no secrets and is how a new checkout
+# learns which variables the AI feature needs.
+!.env.example
 
 # vercel
 .vercel
