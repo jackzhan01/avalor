@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as repo from "@/lib/db/repository";
 import { PLAYER_COUNTS, evilCount, goodCount, teamSize } from "@/lib/rules/avalon";
-import { validateRoleSet } from "@/lib/selectors/integrity";
+import { validateRoleSet } from "@/lib/selectors";
+import { useHydrated } from "@/lib/store/hooks";
 import type { PlayerCount, RoleType } from "@/lib/types/game";
 import { Button } from "@/components/ui/button";
-import { Card, SectionTitle, WarningBanner } from "@/components/ui/feedback";
+import { ListGroup, ListRow } from "@/components/ui/list";
+import { InlineWarning } from "@/components/ui/feedback";
 import { cn } from "@/lib/utils/cn";
 
-const ROLE_LABELS: { value: RoleType; label: string; side: "good" | "evil" }[] = [
+const ROLES: { value: RoleType; label: string; side: "good" | "evil" }[] = [
   { value: "merlin", label: "梅林", side: "good" },
   { value: "percival", label: "派西维尔", side: "good" },
   { value: "loyal", label: "忠臣", side: "good" },
@@ -24,128 +26,142 @@ const ROLE_LABELS: { value: RoleType; label: string; side: "good" | "evil" }[] =
 
 export default function NewGamePage() {
   const router = useRouter();
+  const hydrated = useHydrated();
   const [playerCount, setPlayerCount] = useState<PlayerCount>(10);
-  const [names, setNames] = useState<Record<number, string>>({});
+  const [viewerSeat, setViewerSeat] = useState(1);
   const [firstLeaderSeat, setFirstLeaderSeat] = useState(1);
+  const [names, setNames] = useState<Record<number, string>>({});
   const [roles, setRoles] = useState<RoleType[]>([]);
   const [showNames, setShowNames] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [hasHistory, setHasHistory] = useState(false);
 
   const seats = useMemo(
     () => Array.from({ length: playerCount }, (_, i) => i + 1),
     [playerCount],
   );
 
+  useEffect(() => {
+    if (!hydrated) return;
+    void repo.listRecentGames(1).then((games) => setHasHistory(games.length > 0));
+  }, [hydrated]);
+
+  function changeCount(next: PlayerCount) {
+    setPlayerCount(next);
+    if (viewerSeat > next) setViewerSeat(1);
+    if (firstLeaderSeat > next) setFirstLeaderSeat(1);
+  }
+
   const roleWarning = validateRoleSet(
     roles.length > 0 ? { rolesIncluded: roles } : undefined,
     playerCount,
   );
 
-  function changeCount(next: PlayerCount) {
-    setPlayerCount(next);
-    if (firstLeaderSeat > next) setFirstLeaderSeat(1);
-  }
-
   async function start() {
     setCreating(true);
     try {
-      const game = await repo.createGame({
+      const created = await repo.createGame({
         playerCount,
         names,
+        viewerSeat,
         firstLeaderSeat,
         ...(roles.length > 0 ? { roleSet: { rolesIncluded: roles } } : {}),
       });
-      router.replace(`/game/${game.id}`);
+      router.replace(`/game/${created.id}`);
     } catch {
       setCreating(false);
     }
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md px-4 pb-32 pt-6">
-      <div className="mb-6 flex items-center gap-3">
+    <main className="mx-auto min-h-dvh max-w-md px-4 pb-32">
+      <header className="pt-safe flex items-center justify-between pb-1 pt-3">
         <Link
           href="/"
-          aria-label="返回"
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-fg-muted active:bg-surface-2"
+          aria-label="返回封面"
+          className="t-body -ml-2 flex min-h-[44px] items-center px-2 text-[color:var(--blue)]"
         >
-          <span aria-hidden className="text-lg">
-            ←
-          </span>
+          <span aria-hidden className="mr-0.5 text-[20px] leading-none">‹</span>
         </Link>
-        <h1 className="text-xl font-semibold">开一局新的</h1>
-      </div>
+        {hasHistory && (
+          <Link
+            href="/games"
+            className="t-body min-h-[44px] px-1 leading-[44px] text-[color:var(--blue)]"
+          >
+            之前的对局
+          </Link>
+        )}
+      </header>
 
-      <section className="mb-6">
-        <SectionTitle>几个人</SectionTitle>
-        <div className="grid grid-cols-6 gap-1.5">
-          {PLAYER_COUNTS.map((count) => (
-            <button
-              key={count}
-              onClick={() => changeCount(count)}
-              aria-pressed={playerCount === count}
-              className={cn(
-                "min-h-[52px] rounded-xl border text-lg font-semibold transition-colors",
-                playerCount === count
-                  ? "border-accent bg-accent text-accent-fg"
-                  : "border-border bg-surface-2 active:bg-surface-3",
-              )}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-[12px] text-fg-subtle">
-          {goodCount(playerCount)} 好 {evilCount(playerCount)} 坏 · 每轮上车人数{" "}
-          {seats.length > 0 &&
-            [1, 2, 3, 4, 5]
-              .map((m) => teamSize(playerCount, m))
-              .join(" / ")}
-        </p>
-      </section>
+      <h1 className="t-large-title mb-6">开一局</h1>
 
-      <section className="mb-6">
-        <SectionTitle>第一个队长</SectionTitle>
-        <div className="grid grid-cols-5 gap-1.5">
-          {seats.map((seat) => (
-            <button
-              key={seat}
-              onClick={() => setFirstLeaderSeat(seat)}
-              aria-pressed={firstLeaderSeat === seat}
-              className={cn(
-                "min-h-[48px] rounded-xl border font-semibold transition-colors",
-                firstLeaderSeat === seat
-                  ? "border-accent bg-accent text-accent-fg"
-                  : "border-border bg-surface-2 active:bg-surface-3",
-              )}
-            >
-              {seat}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-[12px] text-fg-subtle">
-          之后每轮队长自动往下顺，随时可以手动改。
-        </p>
-      </section>
-
-      <section className="mb-4">
-        <button
-          onClick={() => setShowNames((v) => !v)}
-          className="flex min-h-[44px] w-full items-center justify-between rounded-xl border border-border bg-surface-2 px-3 text-left active:bg-surface-3"
+      <div className="flex flex-col gap-6">
+        <ListGroup
+          header="几个人"
+          footer={`${goodCount(playerCount)} 好 ${evilCount(playerCount)} 坏 · 每轮上车 ${[1, 2, 3, 4, 5].map((m) => teamSize(playerCount, m)).join(" / ")}`}
         >
-          <span className="text-[15px]">
-            填名字 <span className="text-fg-subtle">（可跳过）</span>
-          </span>
-          <span aria-hidden className="text-fg-subtle">
-            {showNames ? "▲" : "▼"}
-          </span>
-        </button>
-        {showNames && (
-          <Card className="mt-2 space-y-2">
+          <div className="grid grid-cols-6 gap-1.5 p-3">
+            {PLAYER_COUNTS.map((count) => (
+              <NumberKey
+                key={count}
+                value={count}
+                active={playerCount === count}
+                onClick={() => changeCount(count)}
+              />
+            ))}
+          </div>
+        </ListGroup>
+
+        {/* The view anchor: it pins the user to six o'clock so the on-screen
+            table matches where everyone actually sits. */}
+        <ListGroup
+          header="我坐几号"
+          footer="牌桌上你会固定在最下方，其他人按顺时针排开。如果这局大家不按号叫人，留着 1 号就行。"
+        >
+          <div className="grid grid-cols-5 gap-1.5 p-3">
             {seats.map((seat) => (
-              <div key={seat} className="flex items-center gap-3">
-                <span className="w-10 shrink-0 text-sm font-medium text-fg-muted">
+              <NumberKey
+                key={seat}
+                value={seat}
+                active={viewerSeat === seat}
+                onClick={() => setViewerSeat(seat)}
+              />
+            ))}
+          </div>
+        </ListGroup>
+
+        <ListGroup
+          header="第一个队长"
+          footer="之后每轮自动往下顺，点车时随时能改。"
+        >
+          <div className="grid grid-cols-5 gap-1.5 p-3">
+            {seats.map((seat) => (
+              <NumberKey
+                key={seat}
+                value={seat}
+                active={firstLeaderSeat === seat}
+                onClick={() => setFirstLeaderSeat(seat)}
+              />
+            ))}
+          </div>
+        </ListGroup>
+
+        <ListGroup>
+          <ListRow
+            label="填名字"
+            value={
+              Object.values(names).filter((n) => n?.trim()).length > 0
+                ? `${Object.values(names).filter((n) => n?.trim()).length} 个`
+                : "可跳过"
+            }
+            accessory="chevron"
+            onClick={() => setShowNames((v) => !v)}
+          />
+          {showNames &&
+            seats.map((seat) => (
+              <div key={seat} className="list-row flex items-center gap-3 px-4 py-1.5">
+                <span className="t-subhead w-11 shrink-0 text-[color:var(--label-secondary)]">
                   {seat}号
                 </span>
                 <input
@@ -154,69 +170,66 @@ export default function NewGamePage() {
                     setNames((prev) => ({ ...prev, [seat]: e.target.value }))
                   }
                   placeholder="可留空"
-                  className="min-h-[44px] w-full rounded-lg border border-border bg-surface px-3 text-[15px] outline-none focus:border-accent"
+                  className="t-body min-h-[40px] w-full bg-transparent outline-none placeholder:text-[color:var(--label-tertiary)]"
                 />
               </div>
             ))}
-          </Card>
-        )}
-      </section>
+        </ListGroup>
 
-      <section className="mb-6">
-        <button
-          onClick={() => setShowRoles((v) => !v)}
-          className="flex min-h-[44px] w-full items-center justify-between rounded-xl border border-border bg-surface-2 px-3 text-left active:bg-surface-3"
+        <ListGroup
+          footer={
+            showRoles
+              ? "只记这局有哪些角色，不需要知道谁是谁。这条信息现在不参与任何推理。"
+              : undefined
+          }
         >
-          <span className="text-[15px]">
-            本局有哪些角色 <span className="text-fg-subtle">（可跳过）</span>
-          </span>
-          <span aria-hidden className="text-fg-subtle">
-            {showRoles ? "▲" : "▼"}
-          </span>
-        </button>
-        {showRoles && (
-          <Card className="mt-2">
-            <p className="mb-3 text-[12px] leading-relaxed text-fg-subtle">
-              只记录这局有哪些角色，不需要知道谁是谁。这条信息现在不参与任何推理，只是存下来备用。
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {ROLE_LABELS.map((role) => {
-                const on = roles.includes(role.value);
-                return (
-                  <button
-                    key={role.value}
-                    onClick={() =>
-                      setRoles((prev) =>
-                        prev.includes(role.value)
-                          ? prev.filter((r) => r !== role.value)
-                          : [...prev, role.value],
-                      )
-                    }
-                    aria-pressed={on}
-                    className={cn(
-                      "min-h-[40px] rounded-lg border px-3 text-sm transition-colors",
-                      on
-                        ? role.side === "evil"
-                          ? "border-evil bg-evil text-white"
-                          : "border-good bg-good text-white"
-                        : "border-border bg-surface-2 active:bg-surface-3",
-                    )}
-                  >
-                    {role.label}
-                  </button>
-                );
-              })}
+          <ListRow
+            label="本局有哪些角色"
+            value={roles.length > 0 ? `${roles.length} 个` : "可跳过"}
+            accessory="chevron"
+            onClick={() => setShowRoles((v) => !v)}
+          />
+          {showRoles && (
+            <div className="list-row p-3">
+              <div className="flex flex-wrap gap-1.5">
+                {ROLES.map((role) => {
+                  const on = roles.includes(role.value);
+                  return (
+                    <button
+                      key={role.value}
+                      onClick={() =>
+                        setRoles((prev) =>
+                          prev.includes(role.value)
+                            ? prev.filter((r) => r !== role.value)
+                            : [...prev, role.value],
+                        )
+                      }
+                      aria-pressed={on}
+                      className={cn(
+                        "t-subhead min-h-[40px] rounded-[10px] px-3 font-medium active:opacity-70",
+                        on
+                          ? role.side === "evil"
+                            ? "bg-[color:var(--red)] text-white"
+                            : "bg-[color:var(--green)] text-white"
+                          : "bg-[color:var(--fill)] text-[color:var(--label)]",
+                      )}
+                    >
+                      {role.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {roleWarning.severity === "warn" && (
+                <InlineWarning className="mt-3">
+                  {roleWarning.message}
+                </InlineWarning>
+              )}
             </div>
-            {roleWarning.severity === "warn" && (
-              <WarningBanner className="mt-3">
-                {roleWarning.message}
-              </WarningBanner>
-            )}
-          </Card>
-        )}
-      </section>
+          )}
+        </ListGroup>
+      </div>
 
-      <div className="pb-safe fixed inset-x-0 bottom-0 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur">
+      <div className="pb-safe fixed inset-x-0 bottom-0 border-t border-[color:var(--separator)] bg-[color:var(--bg)]/92 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto max-w-md">
           <Button size="lg" fullWidth onClick={start} disabled={creating}>
             {creating ? "正在开局…" : "开始记录"}
@@ -224,5 +237,30 @@ export default function NewGamePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function NumberKey({
+  value,
+  active,
+  onClick,
+}: {
+  value: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "min-h-[48px] rounded-[10px] text-[17px] font-semibold active:opacity-70",
+        active
+          ? "bg-[color:var(--blue)] text-white"
+          : "bg-[color:var(--fill)] text-[color:var(--label)]",
+      )}
+    >
+      {value}
+    </button>
   );
 }

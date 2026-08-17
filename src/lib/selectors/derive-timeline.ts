@@ -180,8 +180,11 @@ function computeTimeline(
 
     switch (e.type) {
       case "opinion":
+      case "intended_team":
+      case "role_claim":
       case "text":
-        // Social, not structural. Context only.
+        // Statements: what someone SAID. A player talking cannot advance the
+        // game, so these carry context and nothing else.
         break;
 
       case "proposal": {

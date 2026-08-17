@@ -32,6 +32,12 @@ export interface CreateGameInput {
   roleSet?: RoleSetConfig;
   /** Seat number of the first leader. Defaults to seat 1. */
   firstLeaderSeat?: number;
+  /**
+   * Which seat the user is sitting in. Anchors them to six o'clock on the
+   * round table. Defaults to seat 1, which is the right assumption when a
+   * group doesn't call each other by number.
+   */
+  viewerSeat?: number;
   name?: string;
 }
 
@@ -48,6 +54,8 @@ export function buildGame(input: CreateGameInput): GameRecord {
   const firstSeat = input.firstLeaderSeat ?? 1;
   const firstLeader =
     players.find((p) => p.seat === firstSeat) ?? players[0];
+  const viewer =
+    players.find((p) => p.seat === (input.viewerSeat ?? 1)) ?? players[0];
 
   return {
     id: newId(),
@@ -57,6 +65,7 @@ export function buildGame(input: CreateGameInput): GameRecord {
     players,
     ...(input.roleSet ? { roleSet: input.roleSet } : {}),
     firstLeaderId: firstLeader.id,
+    viewerPlayerId: viewer.id,
     status: "active",
     winningSide: null,
     lastSequence: 0,

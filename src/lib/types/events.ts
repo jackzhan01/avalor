@@ -88,6 +88,37 @@ export interface MissionEvent extends BaseGameEvent {
   failCount?: number;
 }
 
+/**
+ * 意向车 — "if I were leader I'd take 1/3/5".
+ *
+ * A SPEECH ACT, not a game action, and that distinction is why this exists
+ * separately from ProposalEvent. Anyone can say it at any time, they need not
+ * be the leader, it never goes to a vote, and they can change their mind —
+ * exactly like an opinion, except the object is a team rather than a person.
+ *
+ * Deliberately never merged with the proposal they later make as leader, so
+ * "said they'd take 1/3/5 but actually took 2/4/6" stays visible.
+ */
+export interface IntendedTeamEvent extends BaseGameEvent {
+  type: "intended_team";
+  playerId: string;
+  teamPlayerIds: string[];
+}
+
+/**
+ * 跳派 — publicly claiming to be Percival.
+ *
+ * Binary on purpose: in practice it is the only role claim with a payoff.
+ * Claiming Merlin invites the assassin; claiming a loyal servant says nothing.
+ * `claimed: false` records a retraction (反跳), so the history reads as a chain
+ * the same way opinions do.
+ */
+export interface RoleClaimEvent extends BaseGameEvent {
+  type: "role_claim";
+  playerId: string;
+  claimed: boolean;
+}
+
 /** Escape hatch for anything pairwise ratings can't express (spec §27). */
 export interface TextEvent extends BaseGameEvent {
   type: "text";
@@ -101,9 +132,27 @@ export type GameEvent =
   | ProposalEvent
   | VoteEvent
   | MissionEvent
+  | IntendedTeamEvent
+  | RoleClaimEvent
   | TextEvent;
 
 export type GameEventType = GameEvent["type"];
+
+/**
+ * Events that record what somebody SAID, as opposed to what the game DID.
+ *
+ * These never affect phase or numbering — a player talking cannot advance the
+ * game. They only carry context so the timeline files them under the right
+ * round. Everything a player can be recorded as expressing lives here.
+ */
+export const STATEMENT_TYPES = [
+  "opinion",
+  "intended_team",
+  "role_claim",
+  "text",
+] as const;
+
+export type StatementEventType = (typeof STATEMENT_TYPES)[number];
 
 /* ── Type guards ───────────────────────────────────────────────────────── */
 
@@ -115,6 +164,10 @@ export const isVoteEvent = (e: GameEvent): e is VoteEvent => e.type === "vote";
 export const isMissionEvent = (e: GameEvent): e is MissionEvent =>
   e.type === "mission";
 export const isTextEvent = (e: GameEvent): e is TextEvent => e.type === "text";
+export const isIntendedTeamEvent = (e: GameEvent): e is IntendedTeamEvent =>
+  e.type === "intended_team";
+export const isRoleClaimEvent = (e: GameEvent): e is RoleClaimEvent =>
+  e.type === "role_claim";
 
 /* ── Drafts (what the UI hands to the store) ───────────────────────────── */
 
@@ -127,6 +180,8 @@ export type EventDraft =
   | Omit<ProposalEvent, keyof BaseGameEvent>
   | Omit<VoteEvent, keyof BaseGameEvent>
   | Omit<MissionEvent, keyof BaseGameEvent>
+  | Omit<IntendedTeamEvent, keyof BaseGameEvent>
+  | Omit<RoleClaimEvent, keyof BaseGameEvent>
   | Omit<TextEvent, keyof BaseGameEvent>;
 
 /**

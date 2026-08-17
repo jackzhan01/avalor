@@ -5,47 +5,39 @@ import { cn } from "@/lib/utils/cn";
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
-  /** Shown alongside the label, never instead of it. */
-  icon?: string;
   tone?: "default" | "good" | "evil";
 }
 
 /**
- * Two or three mutually exclusive choices: 上票/下票, 过/否, 成功/失败.
- *
- * Tone adds colour, but the label always carries the meaning on its own — the
- * app must stay readable without relying on red/green discrimination.
+ * Two or three mutually exclusive choices. The label always carries the
+ * meaning on its own — colour is a second channel, never the only one.
  */
 export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
-  size = "md",
   ariaLabel,
 }: {
   options: SegmentOption<T>[];
   value: T | null;
   onChange: (value: T) => void;
-  size?: "sm" | "md";
   ariaLabel?: string;
 }) {
   return (
     <div
       role="group"
       aria-label={ariaLabel}
-      className={cn(
-        "grid gap-1.5",
-        options.length === 2 ? "grid-cols-2" : "grid-cols-3",
-      )}
+      className="grid gap-1 rounded-[10px] bg-[color:var(--fill)] p-1"
+      style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
     >
       {options.map((option) => {
         const selected = value === option.value;
-        const toneClass =
+        const tone =
           option.tone === "good"
-            ? "bg-good text-white border-good"
+            ? "var(--green)"
             : option.tone === "evil"
-              ? "bg-evil text-white border-evil"
-              : "bg-accent text-accent-fg border-accent";
+              ? "var(--red)"
+              : "var(--bg-elevated)";
         return (
           <button
             key={option.value}
@@ -53,15 +45,16 @@ export function SegmentedControl<T extends string>({
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex items-center justify-center gap-1.5 rounded-xl border font-medium transition-colors",
-              size === "md" ? "min-h-[48px] text-[15px]" : "min-h-[40px] text-sm",
+              "t-subhead min-h-[36px] rounded-[8px] font-medium transition-colors",
               selected
-                ? toneClass
-                : "border-border bg-surface-2 text-fg active:bg-surface-3",
+                ? option.tone && option.tone !== "default"
+                  ? "text-white"
+                  : "text-[color:var(--label)] shadow-sm"
+                : "text-[color:var(--label-secondary)]",
             )}
+            style={selected ? { backgroundColor: tone } : undefined}
           >
-            {option.icon && <span aria-hidden>{option.icon}</span>}
-            <span>{option.label}</span>
+            {option.label}
           </button>
         );
       })}
@@ -69,50 +62,7 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-/** Numeric stepper for fail counts and player counts. */
-export function Stepper({
-  value,
-  min,
-  max,
-  onChange,
-  label,
-  formatValue,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  onChange: (value: number) => void;
-  label?: string;
-  formatValue?: (value: number) => string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        aria-label={`${label ?? "数值"}减一`}
-        disabled={value <= min}
-        onClick={() => onChange(Math.max(min, value - 1))}
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-2 text-xl active:bg-surface-3 disabled:opacity-30"
-      >
-        −
-      </button>
-      <div className="min-w-16 text-center text-xl font-semibold tabular-nums">
-        {formatValue ? formatValue(value) : value}
-      </div>
-      <button
-        type="button"
-        aria-label={`${label ?? "数值"}加一`}
-        disabled={value >= max}
-        onClick={() => onChange(Math.min(max, value + 1))}
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-2 text-xl active:bg-surface-3 disabled:opacity-30"
-      >
-        +
-      </button>
-    </div>
-  );
-}
-
-/** Row of discrete choices, e.g. fail counts 0/1/2/3 plus "不清楚". */
+/** Row of discrete values, e.g. fail counts plus "不清楚". */
 export function ChoiceRow<T extends string | number>({
   options,
   value,
@@ -126,25 +76,22 @@ export function ChoiceRow<T extends string | number>({
 }) {
   return (
     <div className="flex flex-wrap gap-1.5" role="group" aria-label={ariaLabel}>
-      {options.map((option) => {
-        const selected = value === option.value;
-        return (
-          <button
-            key={String(option.value)}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onChange(option.value)}
-            className={cn(
-              "min-h-[44px] min-w-[52px] rounded-xl border px-3 font-medium transition-colors",
-              selected
-                ? "border-accent bg-accent text-accent-fg"
-                : "border-border bg-surface-2 text-fg active:bg-surface-3",
-            )}
-          >
-            {option.label}
-          </button>
-        );
-      })}
+      {options.map((option) => (
+        <button
+          key={String(option.value)}
+          type="button"
+          aria-pressed={value === option.value}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "t-body min-h-[44px] min-w-[52px] rounded-[10px] px-3 font-medium active:opacity-70",
+            value === option.value
+              ? "bg-[color:var(--blue)] text-white"
+              : "bg-[color:var(--fill)] text-[color:var(--label)]",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

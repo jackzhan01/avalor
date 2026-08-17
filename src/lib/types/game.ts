@@ -86,6 +86,15 @@ export interface GameRecord {
   roleSet?: RoleSetConfig;
   /** Seat rotation anchor for the very first proposal. */
   firstLeaderId: string;
+  /**
+   * Which seat the person holding the phone occupies.
+   *
+   * Purely a VIEW ANCHOR: it pins the user to six o'clock on the round table so
+   * everyone else sits where they actually sit. It is not a player-identity
+   * system (spec §3) and never feeds a derivation. Optional — when a group
+   * doesn't number its seats out loud, seat 1 is simply assumed to be the user.
+   */
+  viewerPlayerId?: string;
   status: GameStatus;
   winningSide?: WinningSide | null;
   /**

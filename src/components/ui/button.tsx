@@ -2,42 +2,37 @@
 
 import { cn } from "@/lib/utils/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
-type Size = "md" | "lg";
+type Variant = "filled" | "tinted" | "gray" | "plain" | "destructive";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-accent text-accent-fg active:brightness-95",
-  secondary:
-    "bg-surface-2 text-fg border border-border active:bg-surface-3",
-  ghost: "text-fg-muted active:bg-surface-2",
-  danger: "bg-danger text-white active:brightness-95",
-};
-
-const SIZES: Record<Size, string> = {
-  // 44px is the accessibility floor for a touch target, and this app is used
-  // one-handed at a table while talking.
-  md: "min-h-[44px] px-4 text-[15px]",
-  lg: "min-h-[52px] px-5 text-base",
+  filled: "bg-[color:var(--blue)] text-white active:opacity-80",
+  tinted:
+    "bg-[color:var(--fill)] text-[color:var(--blue)] active:bg-[color:var(--fill-2)]",
+  gray: "bg-[color:var(--fill)] text-[color:var(--label)] active:bg-[color:var(--fill-2)]",
+  plain: "text-[color:var(--blue)] active:opacity-60",
+  destructive: "bg-[color:var(--red)] text-white active:opacity-80",
 };
 
 export function Button({
-  variant = "primary",
+  variant = "filled",
   size = "md",
   fullWidth,
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
-  size?: Size;
+  size?: "md" | "lg";
   fullWidth?: boolean;
 }) {
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-medium",
-        "transition-[filter,background-color] disabled:opacity-40 disabled:pointer-events-none",
+        "inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold",
+        "transition-opacity disabled:pointer-events-none disabled:opacity-40",
+        size === "lg"
+          ? "min-h-[50px] px-5 text-[17px]"
+          : "min-h-[44px] px-4 text-[17px]",
         VARIANTS[variant],
-        SIZES[size],
         fullWidth && "w-full",
         className,
       )}

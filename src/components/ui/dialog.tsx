@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "./button";
+import { cn } from "@/lib/utils/cn";
 
 /**
- * Confirmation for destructive actions only.
+ * iOS-style alert, reserved for destructive actions.
  *
- * Opinions, votes and quick notes never get one — they are undoable from the
- * snackbar, and a modal on every tap would destroy the interaction speed the
+ * Opinions, votes and notes never get one — they are undoable from the
+ * snackbar, and a modal on every tap would destroy the recording speed the
  * whole product depends on.
  */
 export function ConfirmDialog({
@@ -44,9 +44,9 @@ export function ConfirmDialog({
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-8">
       <div
-        className="animate-fade-in absolute inset-0 bg-black/50"
+        className="a-fade absolute inset-0 bg-black/30"
         onClick={onCancel}
         aria-hidden
       />
@@ -54,25 +54,35 @@ export function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
-        className="animate-fade-in relative w-full max-w-sm rounded-2xl border border-border bg-surface p-4 shadow-2xl"
+        className="a-fade relative w-full max-w-[270px] overflow-hidden rounded-[14px] bg-[color:var(--bg-elevated)] shadow-2xl"
       >
-        <h2 className="text-base font-semibold">{title}</h2>
-        <div className="mt-2 text-sm text-fg-muted">{message}</div>
-        {detail && (
-          <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-muted">
-            {detail}
+        <div className="px-4 py-4 text-center">
+          <h2 className="t-headline">{title}</h2>
+          <div className="t-footnote mt-1 text-[color:var(--label-secondary)]">
+            {message}
           </div>
-        )}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={onCancel}>
+          {detail && (
+            <div className="t-footnote mt-2 text-[color:var(--label-secondary)]">
+              {detail}
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 border-t border-[color:var(--separator)]">
+          <button
+            onClick={onCancel}
+            className="t-body min-h-[44px] border-r border-[color:var(--separator)] text-[color:var(--blue)] active:bg-[color:var(--fill)]"
+          >
             {cancelLabel}
-          </Button>
-          <Button
-            variant={destructive ? "danger" : "primary"}
+          </button>
+          <button
             onClick={onConfirm}
+            className={cn(
+              "t-body min-h-[44px] font-semibold active:bg-[color:var(--fill)]",
+              destructive ? "text-[color:var(--red)]" : "text-[color:var(--blue)]",
+            )}
           >
             {confirmLabel}
-          </Button>
+          </button>
         </div>
       </div>
     </div>,

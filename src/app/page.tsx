@@ -1,130 +1,108 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import * as repo from "@/lib/db/repository";
-import type { GameSummary } from "@/lib/db/repository";
-import { useHydrated } from "@/lib/store/hooks";
-import { Button } from "@/components/ui/button";
-import { Card, EmptyState, SectionTitle, Skeleton } from "@/components/ui/feedback";
-import { ConfirmDialog } from "@/components/ui/dialog";
-import { formatGameDate } from "@/lib/format/labels";
+import { useRouter } from "next/navigation";
 
-export default function HomePage() {
-  const hydrated = useHydrated();
-  const [games, setGames] = useState<GameSummary[] | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<GameSummary | null>(null);
-  const [standalone, setStandalone] = useState(true);
-
-  const refresh = useCallback(async () => {
-    setGames(await repo.listRecentGames());
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    void refresh();
-    // An installed PWA is exempt from Safari's 7-day storage cleanup, so the
-    // hint below is only worth showing to people browsing in a tab.
-    setStandalone(
-      window.matchMedia("(display-mode: standalone)").matches ||
-        // iOS Safari predates the display-mode media query for this.
-        (navigator as { standalone?: boolean }).standalone === true,
-    );
-  }, [hydrated, refresh]);
+/**
+ * The cover.
+ *
+ * A cover is a fixed object: it keeps its own colours regardless of the
+ * viewer's theme, the way a printed one does. Tap anywhere to begin.
+ *
+ * The wordmark is set in Papyrus at the user's request. It is a system font on
+ * macOS, iOS and Windows; Android has no equivalent and falls back through the
+ * stack, which is the one place this cover will not look identical.
+ */
+export default function CoverPage() {
+  const router = useRouter();
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md px-4 pb-10 pt-8">
-      <header className="mb-7">
-        <h1 className="text-[2.6rem] font-semibold leading-none tracking-tight">
-          Avalor
-        </h1>
-        <p className="mt-2 text-sm text-fg-muted">阿瓦隆记录本</p>
-      </header>
-
-      <Link href="/new" className="block">
-        <Button size="lg" fullWidth>
-          开一局新的
-        </Button>
-      </Link>
-
-      <section className="mt-8">
-        <SectionTitle>最近的对局</SectionTitle>
-
-        {!hydrated || games === null ? (
-          <div className="space-y-2">
-            <Skeleton className="h-[68px] w-full" />
-            <Skeleton className="h-[68px] w-full" />
-          </div>
-        ) : games.length === 0 ? (
-          <EmptyState
-            title="还没有记录过对局"
-            hint="开一局，边打边记。"
-          />
-        ) : (
-          <ul className="space-y-2">
-            {games.map((game) => (
-              <li key={game.id}>
-                <Card className="flex items-center gap-3 p-0">
-                  <Link
-                    href={`/game/${game.id}`}
-                    className="min-w-0 flex-1 px-3 py-3"
-                  >
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-[15px] font-medium">
-                        {game.playerCount} 人局
-                      </span>
-                      <span
-                        className={
-                          game.status === "completed"
-                            ? "text-[12px] text-fg-subtle"
-                            : "text-[12px] font-medium text-accent"
-                        }
-                      >
-                        {game.status === "completed" ? "已结束" : "进行中"}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-[12px] text-fg-subtle">
-                      {formatGameDate(game.createdAt)} · {game.eventCount} 条记录
-                    </p>
-                  </Link>
-                  <button
-                    onClick={() => setPendingDelete(game)}
-                    aria-label="删除这局记录"
-                    className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-fg-subtle active:bg-surface-2"
-                  >
-                    <span aria-hidden>🗑</span>
-                  </button>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {hydrated && !standalone && (
-        <p className="mt-8 rounded-xl bg-surface-2 px-3 py-2.5 text-[12px] leading-relaxed text-fg-muted">
-          记录只存在这台设备上。建议把本页
-          <strong className="font-medium text-fg">「添加到主屏幕」</strong>
-          —— 浏览器会清理长期没打开的网站数据，装成 App 后就不会被清掉。
-        </p>
-      )}
-
-      <ConfirmDialog
-        open={pendingDelete !== null}
-        title="删除这局记录？"
-        message={
-          pendingDelete
-            ? `${pendingDelete.playerCount} 人局，共 ${pendingDelete.eventCount} 条记录。删掉之后没法恢复。`
-            : ""
-        }
-        confirmLabel="删除"
-        onCancel={() => setPendingDelete(null)}
-        onConfirm={async () => {
-          if (pendingDelete) await repo.deleteGame(pendingDelete.id);
-          setPendingDelete(null);
-          await refresh();
-        }}
+    <button
+      onClick={() => router.push("/new")}
+      aria-label="开始"
+      className="fixed inset-0 flex w-full flex-col items-center justify-center overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(125% 80% at 50% 12%, var(--cover-ground-2) 0%, var(--cover-ground) 62%)",
+      }}
+    >
+      {/* Hairline frame, the way an inscription sits inside a cut border. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-[5vmin] border"
+        style={{ borderColor: "rgba(236,230,216,0.14)" }}
       />
-    </main>
+
+      <TableMark />
+
+      <h1
+        className="mt-[7vmin] text-[clamp(2.6rem,15vw,4.5rem)] leading-none"
+        style={{
+          fontFamily: "var(--font-display)",
+          color: "var(--cover-ink)",
+          letterSpacing: "0.12em",
+          textIndent: "0.12em",
+        }}
+      >
+        AVALOR
+      </h1>
+
+      <p
+        className="mt-[4vmin] text-[clamp(0.75rem,3.4vw,0.95rem)]"
+        style={{
+          color: "var(--cover-ink-dim)",
+          letterSpacing: "0.4em",
+          textIndent: "0.4em",
+        }}
+      >
+        阿瓦隆记录本
+      </p>
+
+      <p
+        className="absolute bottom-[9vmin] text-[11px]"
+        style={{ color: "rgba(139,150,164,0.75)", letterSpacing: "0.18em" }}
+      >
+        轻触任意位置开始
+      </p>
+    </button>
+  );
+}
+
+/** Ten seats round a table, one of them the leader. The app's whole subject. */
+function TableMark() {
+  const seats = Array.from({ length: 10 }, (_, i) => {
+    const angle = ((-90 + i * 36) * Math.PI) / 180;
+    return {
+      cx: 100 + 68 * Math.cos(angle),
+      cy: 100 + 68 * Math.sin(angle),
+      leader: i === 0,
+    };
+  });
+
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      className="w-[26vmin] max-w-[132px]"
+      role="img"
+      aria-label="十个座位围成的圆桌"
+    >
+      <circle
+        cx="100"
+        cy="100"
+        r="38"
+        fill="none"
+        stroke="var(--cover-ink)"
+        strokeOpacity="0.22"
+        strokeWidth="2"
+      />
+      {seats.map((seat, i) => (
+        <circle
+          key={i}
+          cx={seat.cx}
+          cy={seat.cy}
+          r={seat.leader ? 10 : 7.5}
+          fill={seat.leader ? "var(--cover-gold)" : "var(--cover-ink)"}
+        />
+      ))}
+    </svg>
   );
 }

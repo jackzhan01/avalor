@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { PlayerGrid } from "@/components/ui/player-grid";
 import { useGameStore } from "@/lib/store/game-store";
-import { usePlayers } from "@/lib/store/hooks";
+import { useGame, usePlayers } from "@/lib/store/hooks";
+import { seatLabel } from "@/lib/format/labels";
+import { cn } from "@/lib/utils/cn";
 
 /**
- * Escape hatch for everything pairwise ratings can't express: "3号说2号和5号
- * 不可能都是好人", conditional claims, role claims, table reads.
+ * Escape hatch for what保踩 and 意向车 can't express: conditional claims,
+ * "2号和5号不可能都是好人", table reads.
  *
- * Deliberately unstructured — forcing natural language into categories mid-game
- * would cost more time than it saves.
+ * Deliberately unstructured — forcing natural language into categories
+ * mid-game costs more time than it saves.
  */
 export function TextNoteComposer({
   open,
@@ -23,39 +24,39 @@ export function TextNoteComposer({
   onClose: () => void;
   defaultPlayerId?: string | null;
 }) {
+  const game = useGame();
   const players = usePlayers();
   const addEvent = useGameStore((s) => s.addEvent);
   const [playerId, setPlayerId] = useState<string | null>(defaultPlayerId ?? null);
   const [text, setText] = useState("");
 
-  async function save() {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    await addEvent({
-      type: "text",
-      ...(playerId ? { playerId } : {}),
-      text: trimmed,
-    });
-    setText("");
-    setPlayerId(defaultPlayerId ?? null);
-    onClose();
-  }
+  if (!game || !open) return null;
 
   return (
-    <BottomSheet
-      open={open}
+    <Sheet
+      open
       onClose={() => {
         setText("");
         onClose();
       }}
       title="记一条"
-      subtitle="没法用保踩表达的都写这里"
+      layerKey="note"
+      trailing={<span className="w-16" />}
       footer={
         <Button
           size="lg"
           fullWidth
           disabled={text.trim().length === 0}
-          onClick={() => void save()}
+          onClick={() => {
+            void addEvent({
+              type: "text",
+              ...(playerId ? { playerId } : {}),
+              text: text.trim(),
+            });
+            setText("");
+            setPlayerId(defaultPlayerId ?? null);
+            onClose();
+          }}
         >
           记下来
         </Button>
@@ -67,30 +68,29 @@ export function TextNoteComposer({
         rows={4}
         autoFocus
         placeholder="比如：3号说 2号 和 5号 不可能都是好人"
-        className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-[15px] outline-none focus:border-accent"
+        className="t-body w-full rounded-[10px] bg-[color:var(--bg-elevated)] px-3.5 py-3 outline-none placeholder:text-[color:var(--label-tertiary)]"
       />
 
-      <div className="mt-4">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[13px] font-semibold uppercase tracking-wide text-fg-subtle">
-            关于谁 <span className="font-normal normal-case">（可不选）</span>
-          </span>
-          {playerId && (
-            <button
-              onClick={() => setPlayerId(null)}
-              className="min-h-[32px] rounded-lg px-2 text-[13px] text-accent active:bg-surface-2"
-            >
-              取消选择
-            </button>
-          )}
-        </div>
-        <PlayerGrid
-          players={players}
-          mode="single"
-          selectedIds={playerId ? [playerId] : []}
-          onSelect={(id) => setPlayerId((prev) => (prev === id ? null : id))}
-        />
+      <p className="t-footnote mb-2 mt-5 px-1 uppercase tracking-[0.06em] text-[color:var(--label-secondary)]">
+        关于谁（可不选）
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {players.map((player) => (
+          <button
+            key={player.id}
+            onClick={() => setPlayerId((prev) => (prev === player.id ? null : player.id))}
+            aria-pressed={playerId === player.id}
+            className={cn(
+              "t-subhead min-h-[44px] min-w-[52px] rounded-[10px] px-3 font-medium active:opacity-70",
+              playerId === player.id
+                ? "bg-[color:var(--blue)] text-white"
+                : "bg-[color:var(--bg-elevated)] text-[color:var(--label)]",
+            )}
+          >
+            {seatLabel(game, player.id)}
+          </button>
+        ))}
       </div>
-    </BottomSheet>
+    </Sheet>
   );
 }

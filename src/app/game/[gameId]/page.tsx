@@ -2,211 +2,479 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { GameHeader } from "@/components/game/game-header";
-import { OpinionSheet } from "@/components/game/opinion-sheet";
-import { ProposalBuilder } from "@/components/game/proposal-builder";
-import { VoteRecorder } from "@/components/game/vote-recorder";
+import { RoundTable, RATING_VAR } from "@/components/table/round-table";
+import {
+  ModeBanner,
+  PrimaryDock,
+  RatingDock,
+  TeamDock,
+  VoteDock,
+} from "@/components/game/mode-bar";
+import { PlayerMenuSheet } from "@/components/game/player-menu-sheet";
 import { MissionRecorder } from "@/components/game/mission-recorder";
 import { TextNoteComposer } from "@/components/game/text-note-composer";
-import { PlayerGrid } from "@/components/ui/player-grid";
-import { Button } from "@/components/ui/button";
-import { Card, SectionTitle, WarningBanner } from "@/components/ui/feedback";
-import { RatingBadge } from "@/components/ui/rating-chips";
-import {
-  useEvents,
-  useGame,
-  useOpinions,
-  usePlayers,
-  useTimeline,
-} from "@/lib/store/hooks";
-import { describeEvent, seatLabel, seatList } from "@/lib/format/labels";
+import { LeaderPickerSheet } from "@/components/game/leader-picker-sheet";
+import { useGameStore } from "@/lib/store/game-store";
+import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
+import { getClaimants, getCurrentOpinion } from "@/lib/selectors";
+import { getTeamSizeWarning } from "@/lib/rules/avalon";
+import { seatLabel, seatList } from "@/lib/format/labels";
+import type { Rating } from "@/lib/types/events";
+import type { VoteChoice } from "@/lib/types/game";
+import type { SeatVisual } from "@/components/table/round-table";
 
-type Sheet = "opinion" | "proposal" | "vote" | "mission" | "note" | null;
+/**
+ * The table is the screen.
+ *
+ * Everything that happens in a round — choosing who spoke, what they said,
+ * who is on the bus, how the vote split — happens on one circle that mirrors
+ * the real seating. Modes change what a tap means; the banner always says
+ * which mode you are in, because that is the one thing this design can get
+ * confusing about.
+ */
+type Mode =
+  | { kind: "idle" }
+  | { kind: "opinionTarget"; speakerId: string }
+  | { kind: "opinionRate"; speakerId: string; targetId: string }
+  | { kind: "intended"; playerId: string; team: string[] }
+  | { kind: "proposal"; leaderId: string; team: string[] }
+  | { kind: "vote"; proposalId: string; votes: Record<string, VoteChoice> };
+
+const VOTE_CYCLE: (VoteChoice | null)[] = ["approve", "reject", "unknown", null];
+
+const VOTE_BADGE: Record<VoteChoice, { text: string; color: string }> = {
+  approve: { text: "✓", color: "var(--green)" },
+  reject: { text: "✕", color: "var(--red)" },
+  unknown: { text: "?", color: "var(--gray)" },
+};
 
 export default function GamePage() {
   const game = useGame();
-  const timeline = useTimeline();
   const events = useEvents();
   const players = usePlayers();
-  const opinions = useOpinions();
-  const [sheet, setSheet] = useState<Sheet>(null);
-  const [speakerId, setSpeakerId] = useState<string | null>(null);
+  const timeline = useTimeline();
+  const addEvent = useGameStore((s) => s.addEvent);
+  const deleteEvent = useGameStore((s) => s.deleteEvent);
+
+  const [mode, setMode] = useState<Mode>({ kind: "idle" });
+  const [menuPlayerId, setMenuPlayerId] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<"mission" | "note" | "leader" | null>(null);
+  const [notePlayerId, setNotePlayerId] = useState<string | null>(null);
 
   if (!game || !timeline) return null;
 
-  const proposal = timeline.activeProposalId
+  const claimants = new Set(getClaimants(events));
+  const activeProposal = timeline.activeProposalId
     ? timeline.proposalsById.get(timeline.activeProposalId)
     : null;
-  const recent = events.slice(-6).reverse();
+  const missionNumber = Math.min(timeline.missionNumber, 5);
+  // Hoisted so the closures below don't lose the null-narrowing above.
+  const currentLeaderId = timeline.currentLeaderId;
 
-  /*
-   * GamePhase controls exactly one thing: which primary action is offered.
-   * Opinion and note input stay available in every phase — players keep talking
-   * while a vote is being counted.
-   */
-  const cta = timeline.isComplete
-    ? null
-    : timeline.phase === "discussion"
-      ? { label: "点车", sheet: "proposal" as const }
-      : timeline.phase === "voting"
-        ? { label: "记投票", sheet: "vote" as const }
-        : { label: "记任务结果", sheet: "mission" as const };
+  /* ── What a seat looks like right now ─────────────────────────────── */
+
+  function seatVisual(playerId: string): SeatVisual {
+    switch (mode.kind) {
+      case "opinionTarget":
+      case "opinionRate": {
+        if (playerId === mode.speakerId) {
+          return { ring: "speaker", disabled: mode.kind === "opinionRate" };
+        }
+        const cell = getCurrentOpinion(events, mode.speakerId, playerId);
+        return {
+          selected: mode.kind === "opinionRate" && playerId === mode.targetId,
+          badge: cell
+            ? {
+                text: String(cell.rating),
+                color: RATING_VAR[cell.rating],
+                title: `已记 ${cell.rating}`,
+              }
+            : null,
+        };
+      }
+      case "intended":
+        return {
+          selected: mode.team.includes(playerId),
+          ring: playerId === mode.playerId ? "speaker" : null,
+        };
+      case "proposal":
+        return {
+          selected: mode.team.includes(playerId),
+          ring: playerId === mode.leaderId ? "leader" : null,
+        };
+      case "vote": {
+        const choice = mode.votes[playerId];
+        return {
+          selected: activeProposal?.event.teamPlayerIds.includes(playerId),
+          badge: choice ? VOTE_BADGE[choice] : null,
+        };
+      }
+      default:
+        return {
+          selected: activeProposal?.event.teamPlayerIds.includes(playerId),
+          ring: currentLeaderId === playerId ? "leader" : null,
+          badge: claimants.has(playerId)
+            ? { text: "派", color: "var(--blue)", title: "跳了派" }
+            : null,
+        };
+    }
+  }
+
+  /* ── What a tap means right now ───────────────────────────────────── */
+
+  function onSeat(playerId: string) {
+    switch (mode.kind) {
+      case "idle":
+        setMenuPlayerId(playerId);
+        break;
+      case "opinionTarget":
+        if (playerId === mode.speakerId) return;
+        setMode({ ...mode, kind: "opinionRate", targetId: playerId });
+        break;
+      case "opinionRate":
+        if (playerId === mode.speakerId) return;
+        setMode({ kind: "opinionRate", speakerId: mode.speakerId, targetId: playerId });
+        break;
+      case "intended":
+      case "proposal": {
+        const team = mode.team.includes(playerId)
+          ? mode.team.filter((id) => id !== playerId)
+          : [...mode.team, playerId];
+        setMode({ ...mode, team });
+        break;
+      }
+      case "vote": {
+        const current = mode.votes[playerId] ?? null;
+        const next = VOTE_CYCLE[(VOTE_CYCLE.indexOf(current) + 1) % VOTE_CYCLE.length];
+        const votes = { ...mode.votes };
+        if (next === null) delete votes[playerId];
+        else votes[playerId] = next;
+        setMode({ ...mode, votes });
+        break;
+      }
+    }
+  }
+
+  function sortBySeat(ids: string[]): string[] {
+    return [...ids].sort(
+      (a, b) =>
+        (game!.players.find((p) => p.id === a)?.seat ?? 0) -
+        (game!.players.find((p) => p.id === b)?.seat ?? 0),
+    );
+  }
+
+  /* ── Center of the table ──────────────────────────────────────────── */
+
+  const center =
+    mode.kind === "idle" ? (
+      <div className="pointer-events-none">
+        <p className="t-caption text-[color:var(--label-secondary)]">
+          第 {missionNumber} 轮 · 第 {timeline.proposalNumber} 车
+        </p>
+        <p className="mt-1 text-[26px] font-bold leading-none tabular-nums">
+          <span className="text-[color:var(--good)]">{timeline.successCount}</span>
+          <span className="mx-1 text-[color:var(--label-tertiary)]">–</span>
+          <span className="text-[color:var(--evil)]">{timeline.failCount}</span>
+        </p>
+        <p className="t-caption mt-1 text-[color:var(--label-tertiary)]">
+          好人 — 坏人
+        </p>
+      </div>
+    ) : (
+      <p className="t-footnote pointer-events-none text-[color:var(--label-secondary)]">
+        {mode.kind === "opinionTarget" && "点一个人"}
+        {mode.kind === "opinionRate" && "换个人或打分"}
+        {(mode.kind === "intended" || mode.kind === "proposal") && "点座位选人"}
+        {mode.kind === "vote" && "点座位切换票型"}
+      </p>
+    );
+
+  /* ── Docked controls ──────────────────────────────────────────────── */
+
+  const teamWarning =
+    mode.kind === "proposal"
+      ? getTeamSizeWarning(game.playerCount, missionNumber, mode.team.length)
+      : null;
+
+  let dock: React.ReactNode = null;
+  if (mode.kind === "opinionRate") {
+    const cell = getCurrentOpinion(events, mode.speakerId, mode.targetId);
+    dock = (
+      <RatingDock
+        targetLabel={seatLabel(game, mode.targetId)}
+        current={cell?.rating ?? null}
+        onPick={(rating: Rating) => {
+          // Re-tapping the same value would add an event that changes nothing.
+          if (cell?.rating !== rating) {
+            void addEvent({
+              type: "opinion",
+              speakerId: mode.speakerId,
+              targetId: mode.targetId,
+              rating,
+            });
+          }
+          // Straight back to picking a target, so a player running through
+          // their whole read costs two taps per person.
+          setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
+        }}
+        onClear={
+          cell
+            ? () => {
+                void deleteEvent(cell.eventId);
+                setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
+              }
+            : undefined
+        }
+      />
+    );
+  } else if (mode.kind === "intended") {
+    dock = (
+      <TeamDock
+        selected={mode.team.length}
+        expected={timeline.missions[missionNumber - 1].expectedTeamSize}
+        confirmLabel="记下他想带的人"
+        onConfirm={() => {
+          void addEvent({
+            type: "intended_team",
+            playerId: mode.playerId,
+            teamPlayerIds: sortBySeat(mode.team),
+          });
+          setMode({ kind: "idle" });
+        }}
+      />
+    );
+  } else if (mode.kind === "proposal") {
+    dock = (
+      <TeamDock
+        selected={mode.team.length}
+        expected={teamWarning?.expected ?? 0}
+        warning={teamWarning?.severity === "warn" ? "人数不对，仍可记录" : undefined}
+        confirmLabel="记下这辆车"
+        onConfirm={() => {
+          void addEvent({
+            type: "proposal",
+            leaderId: mode.leaderId,
+            teamPlayerIds: sortBySeat(mode.team),
+          });
+          setMode({ kind: "idle" });
+        }}
+      />
+    );
+  } else if (mode.kind === "vote") {
+    const counts = { approve: 0, reject: 0, unknown: 0 };
+    for (const choice of Object.values(mode.votes)) counts[choice] += 1;
+    dock = (
+      <VoteDock
+        approve={counts.approve}
+        reject={counts.reject}
+        unknown={counts.unknown}
+        unrecorded={players.length - Object.keys(mode.votes).length}
+        onSetAll={(choice) => {
+          const votes: Record<string, VoteChoice> = {};
+          for (const player of players) votes[player.id] = choice;
+          setMode({ ...mode, votes });
+        }}
+        onResult={(finalResult) => {
+          void addEvent({
+            type: "vote",
+            proposalId: mode.proposalId,
+            votes: mode.votes,
+            finalResult,
+          });
+          setMode({ kind: "idle" });
+        }}
+      />
+    );
+  } else {
+    const primary = timeline.isComplete
+      ? null
+      : timeline.phase === "discussion"
+        ? "点车"
+        : timeline.phase === "voting"
+          ? "记投票"
+          : "记任务结果";
+    dock = (
+      <PrimaryDock
+        primaryLabel={primary}
+        onPrimary={() => {
+          if (timeline.phase === "discussion") {
+            setMode({
+              kind: "proposal",
+              leaderId: timeline.currentLeaderId ?? players[0].id,
+              team: [],
+            });
+          } else if (timeline.phase === "voting" && activeProposal) {
+            setMode({ kind: "vote", proposalId: activeProposal.event.id, votes: {} });
+          } else {
+            setSheet("mission");
+          }
+        }}
+        onNote={() => {
+          setNotePlayerId(null);
+          setSheet("note");
+        }}
+      />
+    );
+  }
+
+  /* ── Banner ───────────────────────────────────────────────────────── */
+
+  let banner: React.ReactNode = null;
+  if (mode.kind === "opinionTarget" || mode.kind === "opinionRate") {
+    banner = (
+      <ModeBanner
+        title={`${seatLabel(game, mode.speakerId)} 说 →`}
+        hint="点一个人，记他怎么看这个人"
+        onCancel={() => setMode({ kind: "idle" })}
+      />
+    );
+  } else if (mode.kind === "intended") {
+    banner = (
+      <ModeBanner
+        title={`${seatLabel(game, mode.playerId)} 想带谁`}
+        hint="他嘴上说的，不是真点的车"
+        onCancel={() => setMode({ kind: "idle" })}
+        cancelLabel="取消"
+      />
+    );
+  } else if (mode.kind === "proposal") {
+    banner = (
+      <ModeBanner
+        title={`${seatLabel(game, mode.leaderId)} 点车`}
+        hint={`第 ${missionNumber} 轮 · 第 ${timeline.proposalNumber} 车`}
+        action={{ label: "换队长", onClick: () => setSheet("leader") }}
+        onCancel={() => setMode({ kind: "idle" })}
+        cancelLabel="取消"
+      />
+    );
+  } else if (mode.kind === "vote" && activeProposal) {
+    banner = (
+      <ModeBanner
+        title="记票型"
+        hint={`车上：${seatList(game, activeProposal.event.teamPlayerIds)}`}
+        onCancel={() => setMode({ kind: "idle" })}
+        cancelLabel="取消"
+      />
+    );
+  }
 
   return (
     <>
-      <GameHeader game={game} timeline={timeline} />
+      {banner}
 
-      <main className="mx-auto max-w-md px-4 pb-28 pt-4">
-        {timeline.isComplete && (
-          <Card className="mb-4 border-accent">
-            <p className="text-[15px] font-medium">这局已经打完了</p>
-            <p className="mt-1 text-[13px] text-fg-muted">
-              {timeline.completionReason === "missions_good" && "好人拿下 3 轮任务。"}
-              {timeline.completionReason === "missions_evil" && "坏人拿下 3 轮任务。"}
-              {timeline.completionReason === "rejection_limit" && "连挂 5 次，坏人获胜。"}
-              {timeline.completionReason === "manual" && "已手动结束。"}
-            </p>
-            <Link href={`/game/${game.id}/settings`} className="mt-3 block">
-              <Button variant="secondary" fullWidth>
-                结束对局 / 导出记录
-              </Button>
-            </Link>
-          </Card>
-        )}
-
-        {proposal && (
-          <section className="mb-5">
-            <SectionTitle>
-              {proposal.status === "voting" ? "这辆车等投票" : "这辆车过了，等任务结果"}
-            </SectionTitle>
-            <Card>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[15px]">
-                  <span className="font-medium">
-                    {seatLabel(game, proposal.event.leaderId)}
-                  </span>{" "}
-                  点车
-                </span>
-                <span className="text-[12px] text-fg-subtle">
-                  {proposal.event.teamPlayerIds.length} / {proposal.expectedTeamSize} 人
-                </span>
-              </div>
-              <p className="mt-1.5 text-lg font-semibold tabular-nums">
-                {seatList(game, proposal.event.teamPlayerIds)}
-              </p>
-              {proposal.teamSizeMismatch && (
-                <WarningBanner className="mt-2">
-                  这轮通常是 {proposal.expectedTeamSize} 个人上车。
-                </WarningBanner>
-              )}
-            </Card>
-          </section>
-        )}
-
-        <section className="mb-5">
-          <SectionTitle>点一个人，记他怎么看别人</SectionTitle>
-          <PlayerGrid
-            players={players}
-            leaderId={timeline.currentLeaderId}
-            onSelect={(id) => {
-              setSpeakerId(id);
-              setSheet("opinion");
-            }}
-            renderSubtitle={(player) => {
-              const said = opinions?.current.get(player.id)?.size ?? 0;
-              return said > 0 ? `表态 ${said}` : undefined;
-            }}
-          />
-          <p className="mt-2 text-[12px] text-fg-subtle">
-            蓝色的是当前队长。空白格表示还没表过态。
-          </p>
-        </section>
-
-        <section>
-          <SectionTitle
-            action={
-              <Link
-                href={`/game/${game.id}/timeline`}
-                className="text-[13px] font-medium text-accent"
-              >
-                全部
-              </Link>
-            }
-          >
-            刚刚记的
-          </SectionTitle>
-          {recent.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-[13px] text-fg-subtle">
-              还没记东西。听到谁保谁踩，点上面的座位号。
-            </p>
-          ) : (
-            <ul className="space-y-1.5">
-              {recent.map((event) => (
-                <li
-                  key={event.id}
-                  className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-[13px]"
+      <main className="mx-auto max-w-md px-4 pb-40 pt-3">
+        {mode.kind === "idle" && (
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex gap-1">
+              {timeline.missions.map((mission) => (
+                <span
+                  key={mission.missionNumber}
+                  title={`第 ${mission.missionNumber} 轮 · ${mission.expectedTeamSize} 人${mission.requiredFails === 2 ? " · 要 2 张坏票" : ""}`}
+                  className={`flex h-6 w-7 items-center justify-center rounded-md text-[12px] font-semibold ${
+                    mission.result === "success"
+                      ? "bg-[color:var(--good)] text-white"
+                      : mission.result === "fail"
+                        ? "bg-[color:var(--evil)] text-white"
+                        : mission.status === "in_progress"
+                          ? "bg-[color:var(--fill-2)] text-[color:var(--blue)]"
+                          : "bg-[color:var(--fill)] text-[color:var(--label-tertiary)]"
+                  }`}
                 >
-                  {event.type === "opinion" ? (
-                    <>
-                      <RatingBadge rating={event.rating} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {seatLabel(game, event.speakerId)} →{" "}
-                        {seatLabel(game, event.targetId)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="min-w-0 flex-1 truncate">
-                      {describeEvent(event, game)}
-                    </span>
-                  )}
-                  <span className="shrink-0 text-[11px] text-fg-subtle">
-                    第{event.missionNumber}轮
-                  </span>
-                </li>
+                  {mission.result
+                    ? mission.result === "success"
+                      ? "✓"
+                      : "✕"
+                    : mission.expectedTeamSize}
+                </span>
               ))}
-            </ul>
-          )}
-        </section>
+            </div>
+            <Link
+              href={`/game/${game.id}/settings`}
+              aria-label="对局设置"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
+            >
+              <span aria-hidden>⋯</span>
+            </Link>
+          </div>
+        )}
+
+        <RoundTable
+          players={players}
+          viewerPlayerId={game.viewerPlayerId}
+          seatVisual={(player) => seatVisual(player.id)}
+          onSelect={onSeat}
+          center={center}
+          label="牌桌"
+        />
+
+        {mode.kind === "idle" && (
+          <div className="mt-4 text-center">
+            {timeline.isComplete ? (
+              <Link
+                href={`/game/${game.id}/settings`}
+                className="t-subhead text-[color:var(--blue)]"
+              >
+                这局打完了 · 去结束或导出
+              </Link>
+            ) : (
+              <p className="t-footnote text-[color:var(--label-secondary)]">
+                点谁，就记谁说的话
+                {timeline.rejectionStreak > 0 && (
+                  <span className="ml-2 text-[color:var(--orange)]">
+                    已连挂 {timeline.rejectionStreak} 次
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+        )}
       </main>
 
-      {/* Primary actions sit in the lower half of the screen: this app is used
-          one-handed, mid-conversation. */}
-      <div className="pb-safe fixed inset-x-0 bottom-[4.5rem] z-30 px-4">
-        <div className="mx-auto flex max-w-md gap-2">
-          {cta && (
-            <Button
-              size="lg"
-              className="flex-1 shadow-lg"
-              onClick={() => setSheet(cta.sheet)}
-            >
-              {cta.label}
-            </Button>
-          )}
-          <Button
-            size="lg"
-            variant="secondary"
-            className={cta ? "shadow-lg" : "flex-1 shadow-lg"}
-            onClick={() => setSheet("note")}
-          >
-            记一条
-          </Button>
-        </div>
-      </div>
+      {dock}
 
-      <OpinionSheet
-        speakerId={sheet === "opinion" ? speakerId : null}
-        onClose={() => setSheet(null)}
+      <PlayerMenuSheet
+        playerId={menuPlayerId}
+        onClose={() => setMenuPlayerId(null)}
+        onPickOpinion={() => {
+          const speakerId = menuPlayerId!;
+          setMenuPlayerId(null);
+          setMode({ kind: "opinionTarget", speakerId });
+        }}
+        onPickIntendedTeam={() => {
+          const playerId = menuPlayerId!;
+          setMenuPlayerId(null);
+          setMode({ kind: "intended", playerId, team: [] });
+        }}
+        onOpenNote={() => {
+          setNotePlayerId(menuPlayerId);
+          setMenuPlayerId(null);
+          setSheet("note");
+        }}
       />
-      <ProposalBuilder
-        open={sheet === "proposal"}
+
+      <LeaderPickerSheet
+        open={sheet === "leader"}
+        currentId={mode.kind === "proposal" ? mode.leaderId : null}
         onClose={() => setSheet(null)}
+        onPick={(leaderId) => {
+          if (mode.kind === "proposal") setMode({ ...mode, leaderId });
+          setSheet(null);
+        }}
       />
-      <VoteRecorder open={sheet === "vote"} onClose={() => setSheet(null)} />
+
       <MissionRecorder
         open={sheet === "mission"}
         onClose={() => setSheet(null)}
       />
-      <TextNoteComposer open={sheet === "note"} onClose={() => setSheet(null)} />
+
+      <TextNoteComposer
+        open={sheet === "note"}
+        defaultPlayerId={notePlayerId}
+        onClose={() => {
+          setSheet(null);
+          setNotePlayerId(null);
+        }}
+      />
     </>
   );
 }

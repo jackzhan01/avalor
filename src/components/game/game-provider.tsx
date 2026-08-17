@@ -46,8 +46,8 @@ export function GameProvider({
         <p className="text-sm text-fg-muted">
           可能是链接不对，或者这局记录已经被删掉了。
         </p>
-        <Link href="/">
-          <Button variant="secondary">回到首页</Button>
+        <Link href="/games">
+          <Button variant="gray">看看之前的对局</Button>
         </Link>
       </div>
     );

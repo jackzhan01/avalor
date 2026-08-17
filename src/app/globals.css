@@ -1,188 +1,201 @@
 @import "tailwindcss";
 
 /*
- * Theme.
+ * iOS semantic colour system.
  *
- * Dark mode is driven purely by prefers-color-scheme — no class toggle, no
- * localStorage read. That means no theme flash and no hydration mismatch, at
- * the cost of not offering a manual override (which a board-game notebook does
- * not need: the room is either dark or it isn't).
+ * Named after what a colour MEANS, not what it looks like, so the dark palette
+ * is a re-definition rather than an inversion. Dark mode follows
+ * prefers-color-scheme only — no class toggle, no localStorage read, therefore
+ * no theme flash and no hydration mismatch.
  */
 
 :root {
-  --bg: #f4f6f8;
-  --surface: #ffffff;
-  --surface-2: #eef1f5;
-  --surface-3: #e3e8ee;
-  --border: #d6dce4;
-  --border-strong: #b9c2cd;
-  --fg: #131820;
-  --fg-muted: #5b6774;
-  --fg-subtle: #8b96a3;
-  --accent: #2563eb;
-  --accent-fg: #ffffff;
-  --accent-soft: #dbe6fe;
+  /* Backgrounds — grouped-list convention: grey ground, white cards. */
+  --bg: #f2f2f7;
+  --bg-elevated: #ffffff;
+  --fill: rgba(120, 120, 128, 0.12);
+  --fill-secondary: rgba(120, 120, 128, 0.16);
+  --separator: rgba(60, 60, 67, 0.29);
+  --separator-opaque: #c6c6c8;
+
+  /* Labels */
+  --label: #000000;
+  --label-secondary: rgba(60, 60, 67, 0.6);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
+  --label-quaternary: rgba(60, 60, 67, 0.18);
+
+  /* System colours */
+  --blue: #007aff;
+  --red: #ff3b30;
+  --green: #34c759;
+  --orange: #ff9500;
+  --teal: #30b0c7;
+  --gray: #8e8e93;
+  --yellow: #ffcc00;
+  --on-color: #ffffff;
 
   /* Rating scale 1..5 — 强踩 / 踩 / 中立 / 保 / 强保.
-     Colour is always paired with the digit itself, never the only channel. */
-  --rate-1: #d92d20;
-  --rate-2: #e07a1a;
-  --rate-3: #6b7684;
-  --rate-4: #0f9488;
-  --rate-5: #15a34a;
+     Always rendered together with the digit; colour is never the only channel. */
+  --rate-1: var(--red);
+  --rate-2: var(--orange);
+  --rate-3: var(--gray);
+  --rate-4: var(--teal);
+  --rate-5: var(--green);
 
-  --good: #15a34a;
-  --evil: #d92d20;
-  --warn: #b45309;
-  --warn-bg: #fef3c7;
-  --danger: #d92d20;
+  --good: var(--green);
+  --evil: var(--red);
+
+  /* The cover is a fixed object — a printed cover keeps its own colours
+     regardless of the light in the room. */
+  --cover-ground: #0b131f;
+  --cover-ground-2: #14202f;
+  --cover-ink: #ece6d8;
+  --cover-ink-dim: #8b96a4;
+  --cover-gold: #c9a227;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0a0e13;
-    --surface: #141a22;
-    --surface-2: #1b232d;
-    --surface-3: #243040;
-    --border: #2a3644;
-    --border-strong: #3d4c5e;
-    --fg: #e9eef4;
-    --fg-muted: #9aa7b5;
-    --fg-subtle: #6d7b8a;
-    --accent: #5b9bf8;
-    --accent-fg: #08111f;
-    --accent-soft: #1c2f4d;
+    --bg: #000000;
+    --bg-elevated: #1c1c1e;
+    --fill: rgba(120, 120, 128, 0.24);
+    --fill-secondary: rgba(120, 120, 128, 0.32);
+    --separator: rgba(84, 84, 88, 0.65);
+    --separator-opaque: #38383a;
 
-    --rate-1: #f97066;
-    --rate-2: #fba94c;
-    --rate-3: #8b97a5;
-    --rate-4: #2dd4bf;
-    --rate-5: #4ade80;
+    --label: #ffffff;
+    --label-secondary: rgba(235, 235, 245, 0.6);
+    --label-tertiary: rgba(235, 235, 245, 0.3);
+    --label-quaternary: rgba(235, 235, 245, 0.18);
 
-    --good: #4ade80;
-    --evil: #f97066;
-    --warn: #fbbf24;
-    --warn-bg: #3b2f0f;
-    --danger: #f97066;
+    --blue: #0a84ff;
+    --red: #ff453a;
+    --green: #30d158;
+    --orange: #ff9f0a;
+    --teal: #40c8e0;
+    --gray: #98989d;
+    --yellow: #ffd60a;
+    --on-color: #ffffff;
   }
 }
 
 @theme inline {
   --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
-  --color-fg: var(--fg);
-  --color-fg-muted: var(--fg-muted);
-  --color-fg-subtle: var(--fg-subtle);
-  --color-accent: var(--accent);
-  --color-accent-fg: var(--accent-fg);
-  --color-accent-soft: var(--accent-soft);
-  --color-rate-1: var(--rate-1);
-  --color-rate-2: var(--rate-2);
-  --color-rate-3: var(--rate-3);
-  --color-rate-4: var(--rate-4);
-  --color-rate-5: var(--rate-5);
+  --color-elevated: var(--bg-elevated);
+  --color-fill: var(--fill);
+  --color-fill-2: var(--fill-secondary);
+  --color-separator: var(--separator);
+  --color-label: var(--label);
+  --color-label-2: var(--label-secondary);
+  --color-label-3: var(--label-tertiary);
+  --color-blue: var(--blue);
+  --color-red: var(--red);
+  --color-green: var(--green);
+  --color-orange: var(--orange);
+  --color-teal: var(--teal);
+  --color-gray: var(--gray);
+  --color-yellow: var(--yellow);
   --color-good: var(--good);
   --color-evil: var(--evil);
-  --color-warn: var(--warn);
-  --color-warn-bg: var(--warn-bg);
-  --color-danger: var(--danger);
+  --color-on-color: var(--on-color);
 
+  /* SF Pro on Apple platforms, PingFang/YaHei for Chinese elsewhere. */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Helvetica, Arial,
     sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  /* Cover / wordmark only — never used in the interface itself. */
+  --font-display: Papyrus, "Papyrus", "Bradley Hand", "Segoe Print", fantasy;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
-  /* Stop iOS from enlarging text when the phone is turned sideways. */
   -webkit-text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--label);
   font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  /* A notebook is tapped, not selected. Long-press selecting a seat number
-     mid-game is pure friction. Inputs re-enable it below. */
-  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
 }
 
 input,
 textarea {
+  font-family: inherit;
   -webkit-user-select: text;
   user-select: text;
 }
 
-/* Pull-to-refresh would discard a half-written note. */
-.no-overscroll {
-  overscroll-behavior-y: contain;
+/* iOS type ramp, used verbatim so hierarchy stays consistent everywhere. */
+.t-large-title { font-size: 34px; line-height: 1.15; font-weight: 700; letter-spacing: 0.01em; }
+.t-title2 { font-size: 22px; line-height: 1.25; font-weight: 700; }
+.t-title3 { font-size: 20px; line-height: 1.3; font-weight: 600; }
+.t-headline { font-size: 17px; line-height: 1.3; font-weight: 600; }
+.t-body { font-size: 17px; line-height: 1.4; }
+.t-callout { font-size: 16px; line-height: 1.4; }
+.t-subhead { font-size: 15px; line-height: 1.35; }
+.t-footnote { font-size: 13px; line-height: 1.35; }
+.t-caption { font-size: 12px; line-height: 1.3; }
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+
+/* Inset separators: they start at the content, not the card edge — the detail
+   that makes a grouped list read as iOS rather than as a generic table. */
+.list-row { position: relative; }
+.list-row + .list-row::before {
+  content: "";
+  position: absolute;
+  left: var(--inset, 16px);
+  right: 0;
+  top: 0;
+  height: 0.5px;
+  background: var(--separator);
 }
 
-/* iOS home indicator otherwise sits on top of the bottom nav. */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.mb-safe {
-  margin-bottom: env(safe-area-inset-bottom, 0px);
-}
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-/* Focus ring that stays visible on both themes. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
 
-@keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-@keyframes snackbar-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.75rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes push-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-sheet-in {
-  animation: sheet-in 0.22s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.animate-fade-in {
-  animation: fade-in 0.18s ease-out;
-}
-.animate-snackbar-in {
-  animation: snackbar-in 0.2s ease-out;
-}
+.a-sheet { animation: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1); }
+.a-fade { animation: fade 0.2s ease-out; }
+.a-push { animation: push-in 0.26s cubic-bezier(0.32, 0.72, 0, 1); }
+.a-pop { animation: pop-in 0.26s cubic-bezier(0.32, 0.72, 0, 1); }
+.a-rise { animation: rise 0.24s ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-sheet-in,
-  .animate-fade-in,
-  .animate-snackbar-in {
-    animation: none;
-  }
+  .a-sheet, .a-fade, .a-push, .a-pop, .a-rise { animation: none; }
 }

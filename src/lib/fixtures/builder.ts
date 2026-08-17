@@ -183,6 +183,28 @@ export class GameBuilder {
     return this;
   }
 
+  /** 意向车: this seat says who they would take if they were leader. */
+  intendedTeam(playerSeat: number, teamSeats: number[]): this {
+    this.events.push({
+      ...this.base(),
+      type: "intended_team",
+      playerId: this.id(playerSeat),
+      teamPlayerIds: teamSeats.map((s) => this.id(s)),
+    });
+    return this;
+  }
+
+  /** 跳派: claim (or retract a claim to) Percival. */
+  claim(playerSeat: number, claimed = true): this {
+    this.events.push({
+      ...this.base(),
+      type: "role_claim",
+      playerId: this.id(playerSeat),
+      claimed,
+    });
+    return this;
+  }
+
   note(playerSeat: number | null, text: string): this {
     const event: TextEvent = {
       ...this.base(),

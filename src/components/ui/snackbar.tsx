@@ -7,10 +7,10 @@ import { useGameStore } from "@/lib/store/game-store";
 const VISIBLE_MS = 6000;
 
 /**
- * Single-slot transient message with an Undo action.
+ * Confirmation of what was just saved, with undo riding along.
  *
- * Mis-taps are common in a live game, so undo has to be reachable without
- * hunting for it — it rides along with the confirmation of what was just saved.
+ * Mis-taps are constant in a live game, so undo has to arrive without being
+ * hunted for — that is why it lives on the confirmation rather than in a menu.
  */
 export function SnackbarHost() {
   const snackbar = useGameStore((s) => s.snackbar);
@@ -24,25 +24,24 @@ export function SnackbarHost() {
     if (!snackbar) return;
     const timer = setTimeout(dismiss, VISIBLE_MS);
     return () => clearTimeout(timer);
-    // Keyed on the snackbar id so each new message restarts the timer.
   }, [snackbar?.id, snackbar, dismiss]);
 
   if (!mounted || !snackbar || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]">
       <div
         role="status"
         aria-live="polite"
-        className="animate-snackbar-in pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-xl border border-border-strong bg-surface-3 px-3 py-2.5 shadow-lg"
+        className="a-rise pointer-events-auto flex w-full max-w-md items-center gap-2 rounded-[14px] bg-[color:var(--bg-elevated)]/95 px-3 py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl"
       >
-        <span className="min-w-0 flex-1 truncate text-[13px]">
+        <span className="t-footnote min-w-0 flex-1 truncate">
           {snackbar.message}
         </span>
         {snackbar.undoable && (
           <button
             onClick={() => void undo()}
-            className="min-h-[36px] shrink-0 rounded-lg px-3 text-[13px] font-semibold text-accent active:bg-surface-2"
+            className="t-footnote min-h-[34px] shrink-0 rounded-lg px-2 font-semibold text-[color:var(--blue)] active:opacity-60"
           >
             撤销
           </button>
@@ -50,7 +49,7 @@ export function SnackbarHost() {
         <button
           onClick={dismiss}
           aria-label="关闭提示"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-subtle active:bg-surface-2"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--label-tertiary)] active:opacity-60"
         >
           <span aria-hidden>✕</span>
         </button>

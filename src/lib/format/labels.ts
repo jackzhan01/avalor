@@ -48,6 +48,10 @@ export function describeEvent(event: GameEvent, game: GameRecord): string {
       return `投票结果：${event.finalResult === "passed" ? "车过了" : "车被否"}`;
     case "mission":
       return `第 ${event.missionNumber} 轮任务${event.result === "success" ? "成功" : "失败"}`;
+    case "intended_team":
+      return `${seatLabel(game, event.playerId)} 想带：${seatList(game, event.teamPlayerIds)}`;
+    case "role_claim":
+      return `${seatLabel(game, event.playerId)} ${event.claimed ? "跳派" : "收回跳派"}`;
     case "text":
       return event.playerId
         ? `${seatLabel(game, event.playerId)}：${event.text}`
@@ -60,6 +64,8 @@ export const EVENT_TYPE_LABELS: Record<GameEvent["type"], string> = {
   proposal: "点车",
   vote: "投票",
   mission: "任务",
+  intended_team: "意向车",
+  role_claim: "跳派",
   text: "备注",
 };
 

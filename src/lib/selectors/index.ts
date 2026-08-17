@@ -28,6 +28,16 @@ export {
 } from "./missions";
 export { getCurrentLeader, getSuggestedLeader } from "./leader";
 export {
+  deriveStatements,
+  getIntendedTeam,
+  getIntendedTeamHistory,
+  getRoleClaim,
+  getRoleClaimHistory,
+  getClaimants,
+  getPlayerStatements,
+} from "./statements";
+export type { RoleClaimState } from "./statements";
+export {
   getIntegrityWarnings,
   getWarningsForEvent,
   validateRoleSet,
