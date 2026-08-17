@@ -6,6 +6,7 @@ import * as repo from "@/lib/db/repository";
 import type { GameSummary } from "@/lib/db/repository";
 import { useHydrated } from "@/lib/store/hooks";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, Skeleton } from "@/components/ui/feedback";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,17 +35,7 @@ export default function GamesPage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-md px-4 pb-16">
-      <header className="pt-safe flex items-center justify-between pb-1 pt-3">
-        <Link
-          href="/menu"
-          aria-label="返回菜单"
-          className="t-body -ml-2 flex min-h-[44px] items-center px-2 text-[color:var(--blue)]"
-        >
-          <span aria-hidden className="text-[20px] leading-none">‹</span>
-        </Link>
-      </header>
-
-      <h1 className="t-large-title mb-6">之前的对局</h1>
+      <PageHeader back={{ href: "/menu", label: "返回菜单" }} title="之前的对局" />
 
       {!hydrated || games === null ? (
         <div className="flex flex-col gap-2">

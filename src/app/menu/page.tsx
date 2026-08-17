@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import * as repo from "@/lib/db/repository";
 import { useHydrated } from "@/lib/store/hooks";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 
 /**
  * The menu behind the cover.
@@ -30,15 +30,7 @@ export default function MenuPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-10">
-      <header className="pt-safe pb-2 pt-3">
-        <Link
-          href="/"
-          aria-label="返回封面"
-          className="t-body -ml-2 flex min-h-[44px] w-11 items-center px-2 text-[color:var(--blue)]"
-        >
-          <span aria-hidden className="text-[20px] leading-none">‹</span>
-        </Link>
-      </header>
+      <PageHeader back={{ href: "/", label: "返回封面" }} />
 
       <div className="mb-8">
         <h1

@@ -1,6 +1,7 @@
 "use client";
 
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 import { OpinionMatrix } from "@/components/players/opinion-matrix";
 import {
   useEvents,
@@ -28,9 +29,7 @@ export default function PlayersPage() {
 
   return (
     <main className="mx-auto max-w-md px-4 pb-6">
-      <header className="pt-safe pb-4 pt-3">
-        <h1 className="t-large-title">玩家</h1>
-      </header>
+      <PageHeader title="玩家" />
 
       <div className="flex flex-col gap-7">
         <ListGroup>

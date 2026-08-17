@@ -14,6 +14,7 @@ import type { Player, PlayerCount, RoleSetConfig } from "@/lib/types/game";
 import { RoundTable } from "@/components/table/round-table";
 import { Button } from "@/components/ui/button";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   CompositionEditor,
   CompositionView,
@@ -68,20 +69,17 @@ export default function NewGamePage() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-8">
       {/* Back only. Past games live on the menu one step up — offering them
           here too would be a second door to the same room. */}
-      <header className="pt-safe flex items-center pb-2 pt-3">
-        <button
-          onClick={() => {
+      <PageHeader
+        back={{
+          label: step === "count" ? "返回菜单" : "返回上一步",
+          onClick: () => {
             if (step === "count") router.push("/menu");
             else if (step === "roles") setStep("count");
             else if (step === "me") setStep("roles");
             else setStep("me");
-          }}
-          aria-label="返回"
-          className="t-body -ml-2 flex min-h-[44px] items-center px-2 text-[color:var(--blue)]"
-        >
-          <span aria-hidden className="text-[20px] leading-none">‹</span>
-        </button>
-      </header>
+          },
+        }}
+      />
 
       {step === "count" && (
         <section className="a-push flex flex-1 flex-col">

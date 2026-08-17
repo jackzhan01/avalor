@@ -1,9 +1,9 @@
 "use client";
 
 import { use } from "react";
-import Link from "next/link";
 import { RatingBadge } from "@/components/ui/rating-chips";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/feedback";
 import { useEvents, useGame, usePlayers } from "@/lib/store/hooks";
 import {
@@ -46,16 +46,10 @@ export default function PlayerDetailPage({
 
   return (
     <main className="mx-auto max-w-md px-4 pb-6">
-      <header className="pt-safe pb-4 pt-3">
-        <Link
-          href={`/game/${gameId}/players`}
-          className="t-body -ml-2 mb-1 inline-flex min-h-[36px] items-center px-2 text-[color:var(--blue)]"
-        >
-          <span aria-hidden className="mr-0.5 text-[20px] leading-none">‹</span>
-          玩家
-        </Link>
-        <h1 className="t-large-title">{playerLabel(game, playerId)}</h1>
-      </header>
+      <PageHeader
+        back={{ href: `/game/${gameId}/players`, label: "返回玩家列表" }}
+        title={playerLabel(game, playerId)}
+      />
 
       <div className="flex flex-col gap-7">
         {/* 跳派 first: it is a single binary fact and the most compressed

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RoundTable } from "@/components/table/round-table";
 import { Button } from "@/components/ui/button";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 import { InlineWarning } from "@/components/ui/feedback";
 import { Sheet } from "@/components/ui/sheet";
 import { evilCount, rolesInPlay } from "@/lib/rules/avalon";
@@ -90,18 +90,12 @@ export default function EndgamePage() {
 
   return (
     <main className="mx-auto max-w-md px-4 pb-32">
-      <header className="pt-safe pb-4 pt-3">
-        <Link
-          href={`/game/${game.id}`}
-          className="t-body -ml-2 mb-1 inline-flex min-h-[36px] items-center px-2 text-[color:var(--blue)]"
-        >
-          <span aria-hidden className="mr-0.5 text-[20px] leading-none">‹</span>
-          牌桌
-        </Link>
-        <h1 className="t-large-title">
-          {step === "waiting" ? "刺杀环节" : step === "target" ? "刺了谁" : "复盘"}
-        </h1>
-      </header>
+      <PageHeader
+        back={{ href: `/game/${game.id}`, label: "返回牌桌" }}
+        title={
+          step === "waiting" ? "刺杀环节" : step === "target" ? "刺了谁" : "复盘"
+        }
+      />
 
       {step === "waiting" && (
         <section className="a-push flex flex-col gap-5">

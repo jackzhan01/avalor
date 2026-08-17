@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { RoundTable, RATING_VAR } from "@/components/table/round-table";
+import { RoundButton } from "@/components/ui/page-header";
 import {
   ConfirmRow,
   Dock,
@@ -645,13 +646,11 @@ export default function GamePage() {
             exactly what you want visible mid-flow. The private toggles sit
             below the table instead, next to the other private controls. */}
         <div className="mb-3 flex items-center gap-2">
-          <Link
+          <RoundButton
+            glyph="‹"
+            label="退出这局，回到对局列表"
             href="/games"
-            aria-label="退出这局，回到对局列表"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
-          >
-            <span aria-hidden className="text-[18px] leading-none">‹</span>
-          </Link>
+          />
 
           <div className="flex flex-1 justify-center gap-1">
             {timeline.missions.map((mission) => (
@@ -677,13 +676,11 @@ export default function GamePage() {
             ))}
           </div>
 
-          <Link
+          <RoundButton
+            glyph="⋯"
+            label="对局设置"
             href={`/game/${game.id}/settings`}
-            aria-label="对局设置"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
-          >
-            <span aria-hidden>⋯</span>
-          </Link>
+          />
         </div>
 
         {roleMissing && !askRoleNow && idle && (

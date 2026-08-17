@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as repo from "@/lib/db/repository";
 import { useHydrated } from "@/lib/store/hooks";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, Skeleton } from "@/components/ui/feedback";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,16 +36,7 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-md px-4 pb-10">
-      <header className="pt-safe pb-4 pt-3">
-        <Link
-          href="/menu"
-          className="t-body -ml-2 mb-1 inline-flex min-h-[36px] items-center px-2 text-[color:var(--blue)]"
-        >
-          <span aria-hidden className="mr-0.5 text-[20px] leading-none">‹</span>
-          菜单
-        </Link>
-        <h1 className="t-large-title">个人主页</h1>
-      </header>
+      <PageHeader back={{ href: "/menu", label: "返回菜单" }} title="个人主页" />
 
       {!hydrated || stats === null ? (
         <div className="flex flex-col gap-2">
