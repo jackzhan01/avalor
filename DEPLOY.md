@@ -5,8 +5,8 @@
 ## 1. 导入仓库
 
 1. 打开 [vercel.com/new](https://vercel.com/new)，用 GitHub 账号登录
-2. 在列表里找到 **`jackzhan01/best_avalon`**，点 **Import**
-   - 如果列表里看不到（私有仓库常见），点 **Adjust GitHub App Permissions**，把 `best_avalon` 勾上再回来
+2. 在列表里找到 **`jackzhan01/avalor`**，点 **Import**
+   - 如果列表里看不到（私有仓库常见），点 **Adjust GitHub App Permissions**，把 `avalor` 勾上再回来
 
 ## 2. 直接点 Deploy
 
@@ -22,7 +22,7 @@
 
 Node 版本如果可选，选 **20.x**（项目里的 `.nvmrc` 已经写了 20.9.0）。
 
-首次构建约 1–2 分钟，完成后会给一个 `https://best-avalon-xxxx.vercel.app` 的地址。
+首次构建约 1–2 分钟，完成后会给一个 `https://avalor-xxxx.vercel.app` 的地址。
 
 ## 3. 手机上打开并装到桌面
 
