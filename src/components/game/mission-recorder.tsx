@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ListGroup, ListRow } from "@/components/ui/list";
+import { ListGroup } from "@/components/ui/list";
 import { useGameStore } from "@/lib/store/game-store";
 import { useGame, useTimeline } from "@/lib/store/hooks";
 import { requiredFails } from "@/lib/rules/avalon";

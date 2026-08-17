@@ -448,10 +448,19 @@ export default function GamePage() {
   return (
     <>
       <main className="mx-auto max-w-md px-4 pb-48 pt-3">
-        {/* The header stays put in every mode — the round, the score and the
-            layer toggles are exactly what you want visible mid-flow. */}
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <div className="flex gap-1">
+        {/* The header stays put in every mode — the round and the score are
+            exactly what you want visible mid-flow. The private toggles sit
+            below the table instead, next to the other private controls. */}
+        <div className="mb-3 flex items-center gap-2">
+          <Link
+            href="/games"
+            aria-label="退出这局，回到对局列表"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
+          >
+            <span aria-hidden className="text-[18px] leading-none">‹</span>
+          </Link>
+
+          <div className="flex flex-1 justify-center gap-1">
             {timeline.missions.map((mission) => (
               <span
                 key={mission.missionNumber}
@@ -474,25 +483,14 @@ export default function GamePage() {
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-1">
-            <LayerToggle
-              label="视野"
-              on={visionVisible}
-              onClick={() => setVisionVisible((v) => !v)}
-            />
-            <LayerToggle
-              label="推测"
-              on={guessVisible}
-              onClick={() => setGuessVisible((v) => !v)}
-            />
-            <Link
-              href={`/game/${game.id}/settings`}
-              aria-label="对局设置"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
-            >
-              <span aria-hidden>⋯</span>
-            </Link>
-          </div>
+
+          <Link
+            href={`/game/${game.id}/settings`}
+            aria-label="对局设置"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
+          >
+            <span aria-hidden>⋯</span>
+          </Link>
         </div>
 
         {assassinationDue && idle && (
@@ -526,7 +524,23 @@ export default function GamePage() {
                 </span>
               )}
             </p>
-            <Scratchpad visible={visionVisible || guessVisible} />
+
+            {/* All the private controls in one place, right under the table
+                they affect. Each hides independently. */}
+            <div className="flex items-center justify-center gap-1.5">
+              <LayerToggle
+                label="视野"
+                on={visionVisible}
+                onClick={() => setVisionVisible((v) => !v)}
+              />
+              <LayerToggle
+                label="推测"
+                on={guessVisible}
+                onClick={() => setGuessVisible((v) => !v)}
+              />
+            </div>
+
+            <Scratchpad key={game.id} />
           </div>
         )}
       </main>

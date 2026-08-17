@@ -241,6 +241,14 @@ export default function GameSettingsPage() {
           </ListGroup>
         )}
 
+        <ListGroup footer="退出只是离开这局，记录都留着，随时能再点进来。">
+          <ListRow
+            label="退出这局"
+            href="/games"
+            accessory="chevron"
+          />
+        </ListGroup>
+
         <ListGroup>
           <ListAction
             label="删除这局记录"

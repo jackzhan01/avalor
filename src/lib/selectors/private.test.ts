@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  derivePrivate,
   getAllRoleMarks,
   getKnownSeats,
   getRoleMark,
@@ -172,12 +171,46 @@ describe("visionFor — the rulebook, not inference", () => {
     expect(vision.mark).toEqual({ kind: "merlin_or_morgana" });
   });
 
-  it("gives Percival a single certain seat when Morgana is absent", () => {
+  it("assumes Morgana when the role set was never configured", () => {
+    // Percival only exists in a setup so that Morgana can muddy his read, so
+    // an unconfigured game must still show him two indistinguishable seats.
+    // Defaulting every optional role to absent gave him one, which is a
+    // rules bug, not a display quirk.
+    const vision = visionFor("percival", 9)!;
+    expect(vision.count).toBe(2);
+    expect(vision.mark).toEqual({ kind: "merlin_or_morgana" });
+  });
+
+  it("still respects an explicit role set that leaves Morgana out", () => {
     const vision = visionFor("percival", 9, {
       rolesIncluded: ["merlin", "percival"],
     })!;
     expect(vision.count).toBe(1);
     expect(vision.mark).toEqual({ kind: "role", role: "merlin" });
+  });
+
+  it("keeps Mordred and Oberon absent by default", () => {
+    // The opposite default from Morgana, and deliberately so: a plain game
+    // has neither, so Merlin sees every evil and evils see each other.
+    expect(visionFor("merlin", 10)!.count).toBe(4);
+    expect(visionFor("assassin", 10)!.count).toBe(3);
+  });
+
+  it("never asks for more seats than there are other players", () => {
+    for (const count of [5, 6, 7, 8, 9, 10] as const) {
+      for (const role of [
+        "merlin",
+        "percival",
+        "assassin",
+        "morgana",
+        "minion",
+      ] as const) {
+        const vision = visionFor(role, count);
+        if (!vision) continue;
+        expect(vision.count).toBeGreaterThan(0);
+        expect(vision.count).toBeLessThanOrEqual(count - 1);
+      }
+    }
   });
 
   it("gives a loyal servant nothing", () => {

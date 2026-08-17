@@ -123,14 +123,32 @@ const EVIL_ROLE_SET: readonly RoleType[] = [
   "minion",
 ];
 
+/**
+ * What to assume about an optional role when the game's role set was never
+ * configured — which is the common case, since configuring it is optional.
+ *
+ * These defaults are per-role on purpose. Treating every unconfigured role as
+ * absent looks tidy and is wrong: Mordred and Oberon really are absent from a
+ * plain game, but MORGANA IS NOT OPTIONAL ALONGSIDE PERCIVAL. Percival exists
+ * in a setup precisely so that Morgana can muddy his read; a Percival with no
+ * Morgana would simply be handed Merlin, which nobody plays.
+ */
+const ASSUMED_WHEN_UNCONFIGURED: Partial<Record<RoleType, boolean>> = {
+  mordred: false,
+  oberon: false,
+  morgana: true,
+};
+
 export function visionFor(
   role: RoleType,
   playerCount: PlayerCount,
   roleSet?: RoleSetConfig,
 ): Vision | null {
+  // An explicit role set is always trusted; the assumption only fills a gap.
   const inPlay = (r: RoleType) =>
-    // With no role set configured, assume the plain game: no Mordred, no Oberon.
-    roleSet ? roleSet.rolesIncluded.includes(r) : false;
+    roleSet
+      ? roleSet.rolesIncluded.includes(r)
+      : (ASSUMED_WHEN_UNCONFIGURED[r] ?? false);
   const evils = evilCount(playerCount);
 
   if (role === "loyal") return null;
