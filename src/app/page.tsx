@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 /**
  * The cover.
  *
- * A cover is a fixed object: it keeps its own colours regardless of the
- * viewer's theme, the way a printed one does. Tap anywhere to begin.
+ * The artwork carries the wordmark, so the page adds nothing but the one line
+ * telling you what to do — and that arrives a beat late, so the picture gets
+ * a moment on its own before the interface asks anything of you.
  *
- * The wordmark is set in Papyrus at the user's request. It is a system font on
- * macOS, iOS and Windows; Android has no equivalent and falls back through the
- * stack, which is the one place this cover will not look identical.
+ * Fitted with `contain` rather than `cover`: the logo sits along the bottom
+ * edge, and covering a shorter viewport would crop exactly that. The blurred
+ * copy behind it fills whatever letterbox is left, so the fit is invisible
+ * instead of being a black band.
  */
 export default function CoverPage() {
   const router = useRouter();
@@ -19,90 +21,44 @@ export default function CoverPage() {
     <button
       onClick={() => router.push("/menu")}
       aria-label="开始"
-      className="fixed inset-0 flex w-full flex-col items-center justify-center overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(125% 80% at 50% 12%, var(--cover-ground-2) 0%, var(--cover-ground) 62%)",
-      }}
+      className="fixed inset-0 flex w-full items-center justify-center overflow-hidden bg-[#07090e]"
     >
-      {/* Hairline frame, the way an inscription sits inside a cut border. */}
+      {/* An empty alt already hides this from assistive tech — the decorative
+          copy exists only to fill whatever letterbox the fit leaves. */}
+      <picture>
+        <source srcSet="/cover.avif" type="image/avif" />
+        <source srcSet="/cover.webp" type="image/webp" />
+        <img
+          src="/cover.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl"
+        />
+      </picture>
+
+      <picture>
+        <source srcSet="/cover.avif" type="image/avif" />
+        <source srcSet="/cover.webp" type="image/webp" />
+        <img
+          src="/cover.webp"
+          alt="Avalor"
+          fetchPriority="high"
+          className="relative h-full w-full object-contain"
+        />
+      </picture>
+
       <span
-        aria-hidden
-        className="pointer-events-none absolute inset-[5vmin] border"
-        style={{ borderColor: "rgba(236,230,216,0.14)" }}
-      />
-
-      <TableMark />
-
-      <h1
-        className="mt-[7vmin] text-[clamp(2.6rem,15vw,4.5rem)] leading-none"
+        className="absolute bottom-[6vmin] text-[11px]"
         style={{
-          fontFamily: "var(--font-display)",
-          color: "var(--cover-ink)",
-          letterSpacing: "0.12em",
-          textIndent: "0.12em",
+          color: "rgba(226,232,240,0.72)",
+          letterSpacing: "0.22em",
+          textIndent: "0.22em",
+          textShadow: "0 1px 12px rgba(0,0,0,0.9)",
+          animation: "cover-hint 1s ease-out 1.4s backwards",
         }}
-      >
-        AVALOR
-      </h1>
-
-      <p
-        className="mt-[4vmin] text-[clamp(0.75rem,3.4vw,0.95rem)]"
-        style={{
-          color: "var(--cover-ink-dim)",
-          letterSpacing: "0.4em",
-          textIndent: "0.4em",
-        }}
-      >
-        阿瓦隆记录本
-      </p>
-
-      <p
-        className="absolute bottom-[9vmin] text-[11px]"
-        style={{ color: "rgba(139,150,164,0.75)", letterSpacing: "0.18em" }}
       >
         轻触任意位置开始
-      </p>
+      </span>
     </button>
-  );
-}
-
-/** Ten seats round a table, one of them the leader. The app's whole subject. */
-function TableMark() {
-  const seats = Array.from({ length: 10 }, (_, i) => {
-    const angle = ((-90 + i * 36) * Math.PI) / 180;
-    return {
-      cx: 100 + 68 * Math.cos(angle),
-      cy: 100 + 68 * Math.sin(angle),
-      leader: i === 0,
-    };
-  });
-
-  return (
-    <svg
-      viewBox="0 0 200 200"
-      className="w-[26vmin] max-w-[132px]"
-      role="img"
-      aria-label="十个座位围成的圆桌"
-    >
-      <circle
-        cx="100"
-        cy="100"
-        r="38"
-        fill="none"
-        stroke="var(--cover-ink)"
-        strokeOpacity="0.22"
-        strokeWidth="2"
-      />
-      {seats.map((seat, i) => (
-        <circle
-          key={i}
-          cx={seat.cx}
-          cy={seat.cy}
-          r={seat.leader ? 10 : 7.5}
-          fill={seat.leader ? "var(--cover-gold)" : "var(--cover-ink)"}
-        />
-      ))}
-    </svg>
   );
 }

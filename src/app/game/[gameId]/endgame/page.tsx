@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { InlineWarning } from "@/components/ui/feedback";
 import { Sheet } from "@/components/ui/sheet";
-import { evilCount } from "@/lib/rules/avalon";
+import { evilCount, rolesInPlay } from "@/lib/rules/avalon";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import { getAllRoleMarks } from "@/lib/selectors";
-import { EVIL_ROLES, GOOD_ROLES, type RoleType } from "@/lib/types/game";
+import { EVIL_ROLES, type RoleType } from "@/lib/types/game";
 import {
   ROLE_LABELS,
   markColor,
@@ -49,6 +49,7 @@ export default function EndgamePage() {
   if (!game || !timeline) return null;
 
   const marks = getAllRoleMarks(events);
+  const available = rolesInPlay(game.playerCount, game.roleSet);
   const viewerIsEvil =
     game.viewerRole !== undefined && EVIL_ROLES.includes(game.viewerRole);
 
@@ -285,22 +286,13 @@ export default function EndgamePage() {
           title={`${playerLabel(game, editingSeat)} 是什么身份`}
           layerKey={editingSeat}
         >
+          {/* Only roles this table actually had. These are the labels the
+              whole record gets judged against, so offering an impossible one
+              is worse here than anywhere else. */}
           <ListGroup header="好人">
-            {GOOD_ROLES.map((role) => (
-              <ListRow
-                key={role}
-                label={ROLE_LABELS[role]}
-                accessory={roleFor(editingSeat) === role ? "check" : "none"}
-                onClick={() => {
-                  setRoles((prev) => ({ ...prev, [editingSeat]: role }));
-                  setEditingSeat(null);
-                }}
-              />
-            ))}
-          </ListGroup>
-          <div className="mt-6">
-            <ListGroup header="坏人">
-              {EVIL_ROLES.map((role) => (
+            {available
+              .filter((role) => !EVIL_ROLES.includes(role))
+              .map((role) => (
                 <ListRow
                   key={role}
                   label={ROLE_LABELS[role]}
@@ -311,6 +303,22 @@ export default function EndgamePage() {
                   }}
                 />
               ))}
+          </ListGroup>
+          <div className="mt-6">
+            <ListGroup header="坏人">
+              {available
+                .filter((role) => EVIL_ROLES.includes(role))
+                .map((role) => (
+                  <ListRow
+                    key={role}
+                    label={ROLE_LABELS[role]}
+                    accessory={roleFor(editingSeat) === role ? "check" : "none"}
+                    onClick={() => {
+                      setRoles((prev) => ({ ...prev, [editingSeat]: role }));
+                      setEditingSeat(null);
+                    }}
+                  />
+                ))}
             </ListGroup>
           </div>
         </Sheet>

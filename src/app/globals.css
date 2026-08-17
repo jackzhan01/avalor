@@ -189,6 +189,11 @@ textarea {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* The cover's one line, arriving after the artwork has had a beat alone. */
+@keyframes cover-hint {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .a-sheet { animation: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1); }
 .a-fade { animation: fade 0.2s ease-out; }
@@ -198,4 +203,6 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .a-sheet, .a-fade, .a-push, .a-pop, .a-rise { animation: none; }
+  /* Keep the delay so the pacing survives, just drop the movement. */
+  [style*="cover-hint"] { animation-name: fade !important; }
 }

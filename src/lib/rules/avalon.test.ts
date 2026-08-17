@@ -12,6 +12,7 @@ import {
   isPlayerCount,
   defaultRoleSet,
   describeComposition,
+  rolesInPlay,
 } from "./avalon";
 import type { PlayerCount } from "@/lib/types/game";
 
@@ -213,6 +214,52 @@ describe("describeComposition", () => {
       rolesIncluded: ["assassin", "morgana"],
     });
     expect(composition.problems.some((p) => p.includes("梅林"))).toBe(true);
+  });
+});
+
+describe("rolesInPlay", () => {
+  // This is what the composition is for: once the table is settled, nothing
+  // should offer a role that cannot be at it.
+  it("leaves Oberon out of a 9-player game", () => {
+    const roles = rolesInPlay(9, defaultRoleSet(9));
+    expect(roles).not.toContain("oberon");
+    expect(roles).toContain("mordred");
+  });
+
+  it("leaves Mordred out of a 7-player game and includes Oberon", () => {
+    const roles = rolesInPlay(7, defaultRoleSet(7));
+    expect(roles).not.toContain("mordred");
+    expect(roles).toContain("oberon");
+  });
+
+  it("only lists 爪牙 when an evil seat is left over for one", () => {
+    // 8 players: two named villains, so the third seat is a 爪牙.
+    expect(rolesInPlay(8, defaultRoleSet(8))).toContain("minion");
+    // 10 players: all four evil seats are named, so there is no 爪牙.
+    expect(rolesInPlay(10, defaultRoleSet(10))).not.toContain("minion");
+  });
+
+  it("follows an edited role set rather than the default", () => {
+    const roles = rolesInPlay(9, {
+      rolesIncluded: ["merlin", "loyal", "morgana", "assassin", "oberon"],
+    });
+    expect(roles).toContain("oberon");
+    expect(roles).not.toContain("mordred");
+    expect(roles).not.toContain("percival");
+  });
+
+  it("falls back to the standard line-up when no set was stored", () => {
+    expect(rolesInPlay(9)).toEqual(rolesInPlay(9, defaultRoleSet(9)));
+  });
+
+  it("never lists a role the composition gives zero seats", () => {
+    for (const count of PLAYER_COUNTS) {
+      const composition = describeComposition(count, defaultRoleSet(count));
+      const listed = rolesInPlay(count, defaultRoleSet(count));
+      const counts = [...composition.good, ...composition.evil];
+      expect(listed).toHaveLength(counts.length);
+      expect(counts.every((line) => line.count > 0)).toBe(true);
+    }
   });
 });
 

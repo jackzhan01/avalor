@@ -1,10 +1,10 @@
 "use client";
 
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { visionFor } from "@/lib/rules/avalon";
+import { rolesInPlay, visionFor } from "@/lib/rules/avalon";
 import { ROLE_LABELS } from "@/lib/format/labels";
 import type { PlayerCount, RoleSetConfig, RoleType } from "@/lib/types/game";
-import { EVIL_ROLES, GOOD_ROLES } from "@/lib/types/game";
+import { EVIL_ROLES } from "@/lib/types/game";
 
 /**
  * The role list, shared by the mandatory prompt at game start and the "change
@@ -31,10 +31,17 @@ export function RoleChooser({
     return `${vision.prompt} · ${vision.count} 个`;
   }
 
+  // Only what can be at this table. Listing a role the composition rules out
+  // invites the user to pick something that does not exist, which then hands
+  // them the wrong vision.
+  const available = rolesInPlay(playerCount, roleSet);
+  const good = available.filter((r) => !EVIL_ROLES.includes(r));
+  const evil = available.filter((r) => EVIL_ROLES.includes(r));
+
   return (
     <>
       <ListGroup header="好人">
-        {GOOD_ROLES.map((role) => (
+        {good.map((role) => (
           <ListRow
             key={role}
             label={ROLE_LABELS[role]}
@@ -45,8 +52,11 @@ export function RoleChooser({
         ))}
       </ListGroup>
       <div className="mt-6">
-        <ListGroup header="坏人">
-          {EVIL_ROLES.map((role) => (
+        <ListGroup
+          header="坏人"
+          footer={`只列出这局有的角色 —— ${playerCount} 人局就这些人。`}
+        >
+          {evil.map((role) => (
             <ListRow
               key={role}
               label={ROLE_LABELS[role]}

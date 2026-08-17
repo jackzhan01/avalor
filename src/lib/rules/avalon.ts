@@ -233,6 +233,30 @@ export function describeComposition(
 }
 
 /**
+ * Exactly the roles that exist in this game, in a stable order.
+ *
+ * Derived from the composition rather than from `rolesIncluded` directly, so
+ * 忠臣 and 爪牙 appear only when there are seats left over for them. This is
+ * what the composition is FOR: once the table is settled, every place that
+ * offers a role — picking your own, marking someone, filling in the reveal —
+ * should only offer roles that can actually be at this table. A 9-player game
+ * has no Oberon, so nothing should ever list one.
+ */
+export function rolesInPlay(
+  playerCount: PlayerCount,
+  roleSet?: RoleSetConfig,
+): RoleType[] {
+  const composition = describeComposition(
+    playerCount,
+    roleSet ?? defaultRoleSet(playerCount),
+  );
+  return [
+    ...composition.good.map((line) => line.role),
+    ...composition.evil.map((line) => line.role),
+  ];
+}
+
+/**
  * What to assume about an optional role when the game's role set was never
  * configured — which is the common case, since configuring it is optional.
  *

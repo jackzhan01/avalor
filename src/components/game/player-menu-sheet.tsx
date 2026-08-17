@@ -15,25 +15,36 @@ import {
   getRoleClaim,
   getRoleMark,
 } from "@/lib/selectors";
-import { visionFor } from "@/lib/rules/avalon";
+import { rolesInPlay, visionFor } from "@/lib/rules/avalon";
 import { ROLE_LABELS, markLabel, playerLabel, seatList } from "@/lib/format/labels";
 import type { RoleMark } from "@/lib/types/events";
-import type { RoleType } from "@/lib/types/game";
+import type { PlayerCount, RoleSetConfig, RoleType } from "@/lib/types/game";
 
 type Layer = "root" | "mark" | "myRole" | "rename";
 
-const MARK_CHOICES: { label: string; mark: RoleMark }[] = [
-  { label: "坏人", mark: { kind: "side", side: "evil" } },
-  { label: "好人", mark: { kind: "side", side: "good" } },
-  { label: "梅林", mark: { kind: "role", role: "merlin" } },
-  { label: "派西维尔", mark: { kind: "role", role: "percival" } },
-  { label: "忠臣", mark: { kind: "role", role: "loyal" } },
-  { label: "莫甘娜", mark: { kind: "role", role: "morgana" } },
-  { label: "莫德雷德", mark: { kind: "role", role: "mordred" } },
-  { label: "刺客", mark: { kind: "role", role: "assassin" } },
-  { label: "奥伯伦", mark: { kind: "role", role: "oberon" } },
-  { label: "爪牙", mark: { kind: "role", role: "minion" } },
-];
+/**
+ * Side marks always apply; role marks are limited to roles this table has.
+ * Offering "奥伯伦" in a 9-player game invites a read of someone who is not
+ * in the game.
+ */
+function markChoices(
+  playerCount: PlayerCount,
+  roleSet?: RoleSetConfig,
+): { label: string; mark: RoleMark }[] {
+  const available = rolesInPlay(playerCount, roleSet);
+  const choices: { label: string; mark: RoleMark }[] = [
+    { label: "坏人", mark: { kind: "side", side: "evil" } },
+    { label: "好人", mark: { kind: "side", side: "good" } },
+  ];
+  for (const role of available) {
+    choices.push({ label: ROLE_LABELS[role], mark: { kind: "role", role } });
+  }
+  // Percival's read is a pair, so it only means anything when both are in play.
+  if (available.includes("merlin") && available.includes("morgana")) {
+    choices.push({ label: "梅林或莫甘娜", mark: { kind: "merlin_or_morgana" } });
+  }
+  return choices;
+}
 
 export function PlayerMenuSheet({
   playerId,
@@ -145,8 +156,8 @@ export function PlayerMenuSheet({
         subtitle="只有你看得到，不会进公开记录"
         layerKey="mark"
       >
-        <ListGroup>
-          {MARK_CHOICES.map((choice) => (
+        <ListGroup footer={`只列出这局有的角色。`}>
+          {markChoices(game.playerCount, game.roleSet).map((choice) => (
             <ListRow
               key={choice.label}
               label={choice.label}
