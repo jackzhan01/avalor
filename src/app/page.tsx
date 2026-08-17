@@ -9,11 +9,30 @@ import { useRouter } from "next/navigation";
  * telling you what to do — and that arrives a beat late, so the picture gets
  * a moment on its own before the interface asks anything of you.
  *
- * Fitted with `contain` rather than `cover`: the logo sits along the bottom
- * edge, and covering a shorter viewport would crop exactly that. The blurred
- * copy behind it fills whatever letterbox is left, so the fit is invisible
- * instead of being a black band.
+ * Two pieces of artwork, one per orientation. The portrait painting letterboxed
+ * on a laptop looked like a phone screenshot someone had pasted onto a desktop;
+ * a landscape crop of it would have cut the wordmark off the bottom. So the
+ * landscape viewport gets a painting composed for that shape.
+ *
+ * The fit differs with them. Portrait is `contain`, because its wordmark runs
+ * along the bottom edge and covering a shorter viewport would crop exactly
+ * that — the blurred copy behind fills the letterbox so the fit reads as
+ * atmosphere rather than as a black band. Landscape is `cover`: its wordmark
+ * sits inboard of every edge, so it survives the crop and the picture can
+ * reach the corners.
  */
+/**
+ * Orientation, not a width breakpoint: a phone turned sideways wants the
+ * landscape painting for the same reason a laptop does, and a tall narrow
+ * window on a desktop wants the portrait one.
+ *
+ * Kept identical to the Tailwind `landscape:` variant below — the <source>
+ * decides which file loads, the class decides how it is fitted, and the two
+ * must switch on the same condition or a viewport lands on one image fitted
+ * for the other.
+ */
+const LANDSCAPE = "(orientation: landscape)";
+
 export default function CoverPage() {
   const router = useRouter();
 
@@ -26,6 +45,8 @@ export default function CoverPage() {
       {/* An empty alt already hides this from assistive tech — the decorative
           copy exists only to fill whatever letterbox the fit leaves. */}
       <picture>
+        <source media={LANDSCAPE} srcSet="/cover-wide.avif" type="image/avif" />
+        <source media={LANDSCAPE} srcSet="/cover-wide.webp" type="image/webp" />
         <source srcSet="/cover.avif" type="image/avif" />
         <source srcSet="/cover.webp" type="image/webp" />
         <img
@@ -37,13 +58,15 @@ export default function CoverPage() {
       </picture>
 
       <picture>
+        <source media={LANDSCAPE} srcSet="/cover-wide.avif" type="image/avif" />
+        <source media={LANDSCAPE} srcSet="/cover-wide.webp" type="image/webp" />
         <source srcSet="/cover.avif" type="image/avif" />
         <source srcSet="/cover.webp" type="image/webp" />
         <img
           src="/cover.webp"
           alt="Avalor"
           fetchPriority="high"
-          className="relative h-full w-full object-contain"
+          className="relative h-full w-full object-contain landscape:object-cover"
         />
       </picture>
 
