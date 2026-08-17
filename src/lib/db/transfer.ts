@@ -8,31 +8,56 @@
 
 import type { GameEvent } from "@/lib/types/events";
 import type { GameRecord } from "@/lib/types/game";
-import { bySequence } from "@/lib/types/events";
+import { bySequence, isPrivateEvent } from "@/lib/types/events";
 
 export const SCHEMA_VERSION = 1 as const;
 
 export interface GameExport {
   schemaVersion: typeof SCHEMA_VERSION;
   exportedAt: string;
+  /** Whether the private layer is present. Explicit so a reader never guesses. */
+  containsPrivate: boolean;
   game: GameRecord;
   events: GameEvent[];
+}
+
+export interface ExportOptions {
+  /**
+   * Whether to include the private layer (the user's own role and their
+   * knowledge/reads about other seats).
+   *
+   * Excluding it yields a log of purely PUBLIC information, which is the form
+   * any honest analysis or shared dataset needs: with the private layer in,
+   * a model trained on the file would be reading the answers.
+   */
+  includePrivate?: boolean;
 }
 
 export function buildExport(
   game: GameRecord,
   events: GameEvent[],
+  { includePrivate = true }: ExportOptions = {},
 ): GameExport {
+  const kept = includePrivate ? events : events.filter((e) => !isPrivateEvent(e));
+  const exportedGame = includePrivate
+    ? game
+    : // The user's own role is private information too.
+      { ...game, viewerRole: undefined };
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    game,
-    events: [...events].sort(bySequence),
+    containsPrivate: includePrivate,
+    game: exportedGame,
+    events: [...kept].sort(bySequence),
   };
 }
 
-export function serializeExport(game: GameRecord, events: GameEvent[]): string {
-  return JSON.stringify(buildExport(game, events), null, 2);
+export function serializeExport(
+  game: GameRecord,
+  events: GameEvent[],
+  options?: ExportOptions,
+): string {
+  return JSON.stringify(buildExport(game, events, options), null, 2);
 }
 
 export class ImportError extends Error {}
@@ -66,12 +91,16 @@ export function parseImport(json: string): GameExport {
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: candidate.exportedAt ?? new Date().toISOString(),
+    containsPrivate: candidate.containsPrivate ?? true,
     game: candidate.game as GameRecord,
     events: [...(candidate.events as GameEvent[])].sort(bySequence),
   };
 }
 
-export function exportFileName(game: GameRecord): string {
+export function exportFileName(
+  game: GameRecord,
+  options?: ExportOptions,
+): string {
   const d = new Date(game.createdAt);
   const stamp = [
     d.getFullYear(),
@@ -79,18 +108,23 @@ export function exportFileName(game: GameRecord): string {
     String(d.getDate()).padStart(2, "0"),
     String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0"),
   ].join("");
-  return `avalor-${game.playerCount}p-${stamp}.json`;
+  const suffix = options?.includePrivate === false ? "-public" : "";
+  return `avalor-${game.playerCount}p-${stamp}${suffix}.json`;
 }
 
 /** Browser-only. Triggers a file download of the serialized game. */
-export function downloadExport(game: GameRecord, events: GameEvent[]): void {
-  const blob = new Blob([serializeExport(game, events)], {
+export function downloadExport(
+  game: GameRecord,
+  events: GameEvent[],
+  options?: ExportOptions,
+): void {
+  const blob = new Blob([serializeExport(game, events, options)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = exportFileName(game);
+  link.download = exportFileName(game, options);
   document.body.appendChild(link);
   link.click();
   link.remove();

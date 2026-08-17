@@ -11,8 +11,19 @@ import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import { downloadExport } from "@/lib/db/transfer";
 import * as repo from "@/lib/db/repository";
-import { getIntegrityWarnings } from "@/lib/selectors";
-import type { WinningSide } from "@/lib/types/game";
+import { getIntegrityWarnings, validateRoleSet } from "@/lib/selectors";
+import type { RoleType, WinningSide } from "@/lib/types/game";
+
+const ROLES: { value: RoleType; label: string; side: "good" | "evil" }[] = [
+  { value: "merlin", label: "梅林", side: "good" },
+  { value: "percival", label: "派西维尔", side: "good" },
+  { value: "loyal", label: "忠臣", side: "good" },
+  { value: "morgana", label: "莫甘娜", side: "evil" },
+  { value: "mordred", label: "莫德雷德", side: "evil" },
+  { value: "assassin", label: "刺客", side: "evil" },
+  { value: "oberon", label: "奥伯伦", side: "evil" },
+  { value: "minion", label: "爪牙", side: "evil" },
+];
 
 export default function GameSettingsPage() {
   const router = useRouter();
@@ -23,6 +34,7 @@ export default function GameSettingsPage() {
   const endGame = useGameStore((s) => s.endGame);
   const reopenGame = useGameStore((s) => s.reopenGame);
   const updatePlayer = useGameStore((s) => s.updatePlayer);
+  const updateRoleSet = useGameStore((s) => s.updateRoleSet);
 
   const [winner, setWinner] = useState<WinningSide | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -31,6 +43,7 @@ export default function GameSettingsPage() {
 
   if (!game || !timeline) return null;
   const warnings = getIntegrityWarnings(events, game);
+  const roleWarning = validateRoleSet(game.roleSet, game.playerCount);
 
   return (
     <main className="mx-auto max-w-md px-4 pb-10">
@@ -87,15 +100,65 @@ export default function GameSettingsPage() {
           ))}
         </ListGroup>
 
-        <ListGroup footer="数据只存在这台设备上，浏览器会清理长期没打开的网站数据。打完一局导一份最稳妥。">
+        <ListGroup
+          header="本局有哪些角色"
+          footer="只记这局有哪些角色，不需要知道谁是谁。它只用来算你的视野该看到几个人，不参与任何推理。"
+        >
+          <div className="list-row flex flex-wrap gap-1.5 p-3">
+            {ROLES.map((role) => {
+              const on = game.roleSet?.rolesIncluded.includes(role.value) ?? false;
+              return (
+                <button
+                  key={role.value}
+                  onClick={() => {
+                    const current = game.roleSet?.rolesIncluded ?? [];
+                    const next = on
+                      ? current.filter((r) => r !== role.value)
+                      : [...current, role.value];
+                    void updateRoleSet(
+                      next.length > 0 ? { rolesIncluded: next } : undefined,
+                    );
+                  }}
+                  aria-pressed={on}
+                  className={`t-subhead min-h-[40px] rounded-[10px] px-3 font-medium active:opacity-70 ${
+                    on
+                      ? role.side === "evil"
+                        ? "bg-[color:var(--red)] text-white"
+                        : "bg-[color:var(--green)] text-white"
+                      : "bg-[color:var(--fill)] text-[color:var(--label)]"
+                  }`}
+                >
+                  {role.label}
+                </button>
+              );
+            })}
+          </div>
+          {roleWarning.severity === "warn" && (
+            <div className="list-row p-3">
+              <InlineWarning>{roleWarning.message}</InlineWarning>
+            </div>
+          )}
+        </ListGroup>
+
+        <ListGroup
+          header="导出"
+          footer="数据只存在这台设备上，浏览器会清理长期没打开的网站数据。打完一局导一份最稳妥。"
+        >
           <ListAction
-            label={exported ? "已导出，可以再导一次" : "导出 JSON"}
+            label={exported ? "已导出，可以再导一次" : "导出 JSON（完整）"}
             onClick={() => {
               downloadExport(game, events);
               setExported(true);
             }}
           />
+          <ListAction
+            label="导出 JSON（不含我的视野和标记）"
+            onClick={() => downloadExport(game, events, { includePrivate: false })}
+          />
         </ListGroup>
+        <p className="t-footnote -mt-5 px-4 text-[color:var(--label-tertiary)]">
+          第二个只含公开信息。要把记录分享出去、或者日后拿来做分析，用这个 —— 带上帝视角的数据训不出诚实的模型。
+        </p>
 
         {warnings.length > 0 && (
           <section>

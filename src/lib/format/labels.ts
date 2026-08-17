@@ -4,9 +4,70 @@
  * the table, and the app is read at a glance mid-conversation.
  */
 
-import type { GameEvent } from "@/lib/types/events";
-import type { GameRecord } from "@/lib/types/game";
+import type { GameEvent, RoleMark } from "@/lib/types/events";
+import type { GameRecord, RoleType } from "@/lib/types/game";
 import { RATING_LABELS } from "@/lib/selectors/opinions";
+
+export const ROLE_LABELS: Record<RoleType, string> = {
+  merlin: "梅林",
+  percival: "派西维尔",
+  loyal: "忠臣",
+  morgana: "莫甘娜",
+  mordred: "莫德雷德",
+  assassin: "刺客",
+  oberon: "奥伯伦",
+  minion: "爪牙",
+};
+
+/** Compact glyph for the seat badge — one or two characters, never more. */
+export const ROLE_SHORT: Record<RoleType, string> = {
+  merlin: "梅",
+  percival: "派",
+  loyal: "忠",
+  morgana: "莫",
+  mordred: "德",
+  assassin: "刺",
+  oberon: "奥",
+  minion: "爪",
+};
+
+export function markLabel(mark: RoleMark): string {
+  switch (mark.kind) {
+    case "side":
+      return mark.side === "evil" ? "坏人" : "好人";
+    case "role":
+      return ROLE_LABELS[mark.role];
+    case "merlin_or_morgana":
+      return "梅林或莫甘娜";
+  }
+}
+
+export function markShort(mark: RoleMark): string {
+  switch (mark.kind) {
+    case "side":
+      return mark.side === "evil" ? "坏" : "好";
+    case "role":
+      return ROLE_SHORT[mark.role];
+    case "merlin_or_morgana":
+      return "梅莫";
+  }
+}
+
+/** Red for evil, green for good, purple for the ambiguous Percival pair. */
+export function markColor(mark: RoleMark): string {
+  switch (mark.kind) {
+    case "side":
+      return mark.side === "evil" ? "var(--red)" : "var(--green)";
+    case "role":
+      return ["morgana", "mordred", "assassin", "oberon", "minion"].includes(
+        mark.role,
+      )
+        ? "var(--red)"
+        : "var(--green)";
+    case "merlin_or_morgana":
+      return "var(--orange)";
+  }
+}
 
 export function seatOf(game: GameRecord, playerId: string): number | null {
   return game.players.find((p) => p.id === playerId)?.seat ?? null;
@@ -52,6 +113,10 @@ export function describeEvent(event: GameEvent, game: GameRecord): string {
       return `${seatLabel(game, event.playerId)} 想带：${seatList(game, event.teamPlayerIds)}`;
     case "role_claim":
       return `${seatLabel(game, event.playerId)} ${event.claimed ? "跳派" : "收回跳派"}`;
+    case "role_mark":
+      return event.mark
+        ? `标记 ${seatLabel(game, event.targetId)} 为 ${markLabel(event.mark)}`
+        : `清除 ${seatLabel(game, event.targetId)} 的标记`;
     case "text":
       return event.playerId
         ? `${seatLabel(game, event.playerId)}：${event.text}`
@@ -66,6 +131,7 @@ export const EVENT_TYPE_LABELS: Record<GameEvent["type"], string> = {
   mission: "任务",
   intended_team: "意向车",
   role_claim: "跳派",
+  role_mark: "角色标记",
   text: "备注",
 };
 

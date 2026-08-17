@@ -182,6 +182,7 @@ function computeTimeline(
       case "opinion":
       case "intended_team":
       case "role_claim":
+      case "role_mark":
       case "text":
         // Statements: what someone SAID. A player talking cannot advance the
         // game, so these carry context and nothing else.

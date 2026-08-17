@@ -95,6 +95,11 @@ export interface GameRecord {
    * doesn't number its seats out loud, seat 1 is simply assumed to be the user.
    */
   viewerPlayerId?: string;
+  /**
+   * The user's own role this game. PRIVATE — it drives what vision they are
+   * offered and is never treated as information about anyone else.
+   */
+  viewerRole?: RoleType;
   status: GameStatus;
   winningSide?: WinningSide | null;
   /**

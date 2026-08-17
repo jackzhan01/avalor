@@ -5,68 +5,49 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as repo from "@/lib/db/repository";
 import { PLAYER_COUNTS, evilCount, goodCount, teamSize } from "@/lib/rules/avalon";
-import { validateRoleSet } from "@/lib/selectors";
 import { useHydrated } from "@/lib/store/hooks";
-import type { PlayerCount, RoleType } from "@/lib/types/game";
-import { Button } from "@/components/ui/button";
-import { ListGroup, ListRow } from "@/components/ui/list";
-import { InlineWarning } from "@/components/ui/feedback";
+import type { Player, PlayerCount } from "@/lib/types/game";
+import { RoundTable } from "@/components/table/round-table";
 import { cn } from "@/lib/utils/cn";
 
-const ROLES: { value: RoleType; label: string; side: "good" | "evil" }[] = [
-  { value: "merlin", label: "梅林", side: "good" },
-  { value: "percival", label: "派西维尔", side: "good" },
-  { value: "loyal", label: "忠臣", side: "good" },
-  { value: "morgana", label: "莫甘娜", side: "evil" },
-  { value: "mordred", label: "莫德雷德", side: "evil" },
-  { value: "assassin", label: "刺客", side: "evil" },
-  { value: "oberon", label: "奥伯伦", side: "evil" },
-  { value: "minion", label: "爪牙", side: "evil" },
-];
+type Step = "count" | "me" | "leader";
 
+/**
+ * Setup, one question per screen.
+ *
+ * Steps two and three are answered by tapping the round table itself, which
+ * does double duty: picking your seat rotates the circle so you land at six
+ * o'clock, and that rotation teaches what the circle means before the game
+ * even starts. Names and role configuration are optional and live in game
+ * settings — nothing that can be skipped belongs in the way of starting.
+ */
 export default function NewGamePage() {
   const router = useRouter();
   const hydrated = useHydrated();
+  const [step, setStep] = useState<Step>("count");
   const [playerCount, setPlayerCount] = useState<PlayerCount>(10);
-  const [viewerSeat, setViewerSeat] = useState(1);
-  const [firstLeaderSeat, setFirstLeaderSeat] = useState(1);
-  const [names, setNames] = useState<Record<number, string>>({});
-  const [roles, setRoles] = useState<RoleType[]>([]);
-  const [showNames, setShowNames] = useState(false);
-  const [showRoles, setShowRoles] = useState(false);
+  const [viewerSeat, setViewerSeat] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
 
-  const seats = useMemo(
-    () => Array.from({ length: playerCount }, (_, i) => i + 1),
+  useEffect(() => {
+    if (!hydrated) return;
+    void repo.listRecentGames(1).then((g) => setHasHistory(g.length > 0));
+  }, [hydrated]);
+
+  /** Stand-in seats: the real game record does not exist yet. */
+  const seats: Player[] = useMemo(
+    () => Array.from({ length: playerCount }, (_, i) => ({ id: `s${i + 1}`, seat: i + 1 })),
     [playerCount],
   );
 
-  useEffect(() => {
-    if (!hydrated) return;
-    void repo.listRecentGames(1).then((games) => setHasHistory(games.length > 0));
-  }, [hydrated]);
-
-  function changeCount(next: PlayerCount) {
-    setPlayerCount(next);
-    if (viewerSeat > next) setViewerSeat(1);
-    if (firstLeaderSeat > next) setFirstLeaderSeat(1);
-  }
-
-  const roleWarning = validateRoleSet(
-    roles.length > 0 ? { rolesIncluded: roles } : undefined,
-    playerCount,
-  );
-
-  async function start() {
+  async function create(firstLeaderSeat: number) {
     setCreating(true);
     try {
       const created = await repo.createGame({
         playerCount,
-        names,
-        viewerSeat,
+        viewerSeat: viewerSeat ?? 1,
         firstLeaderSeat,
-        ...(roles.length > 0 ? { roleSet: { rolesIncluded: roles } } : {}),
       });
       router.replace(`/game/${created.id}`);
     } catch {
@@ -75,16 +56,20 @@ export default function NewGamePage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md px-4 pb-32">
-      <header className="pt-safe flex items-center justify-between pb-1 pt-3">
-        <Link
-          href="/"
-          aria-label="返回封面"
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-8">
+      <header className="pt-safe flex items-center justify-between pb-2 pt-3">
+        <button
+          onClick={() => {
+            if (step === "count") router.push("/");
+            else if (step === "me") setStep("count");
+            else setStep("me");
+          }}
+          aria-label="返回"
           className="t-body -ml-2 flex min-h-[44px] items-center px-2 text-[color:var(--blue)]"
         >
-          <span aria-hidden className="mr-0.5 text-[20px] leading-none">‹</span>
-        </Link>
-        {hasHistory && (
+          <span aria-hidden className="text-[20px] leading-none">‹</span>
+        </button>
+        {step === "count" && hasHistory && (
           <Link
             href="/games"
             className="t-body min-h-[44px] px-1 leading-[44px] text-[color:var(--blue)]"
@@ -94,173 +79,90 @@ export default function NewGamePage() {
         )}
       </header>
 
-      <h1 className="t-large-title mb-6">开一局</h1>
+      {step === "count" && (
+        <section className="a-push flex flex-1 flex-col">
+          <h1 className="t-large-title">几个人</h1>
+          <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
+            {goodCount(playerCount)} 好 {evilCount(playerCount)} 坏 · 每轮上车{" "}
+            {[1, 2, 3, 4, 5].map((m) => teamSize(playerCount, m)).join(" / ")}
+          </p>
 
-      <div className="flex flex-col gap-6">
-        <ListGroup
-          header="几个人"
-          footer={`${goodCount(playerCount)} 好 ${evilCount(playerCount)} 坏 · 每轮上车 ${[1, 2, 3, 4, 5].map((m) => teamSize(playerCount, m)).join(" / ")}`}
-        >
-          <div className="grid grid-cols-6 gap-1.5 p-3">
+          <div className="mt-8 grid grid-cols-3 gap-2.5">
             {PLAYER_COUNTS.map((count) => (
-              <NumberKey
+              <button
                 key={count}
-                value={count}
-                active={playerCount === count}
-                onClick={() => changeCount(count)}
-              />
+                onClick={() => {
+                  setPlayerCount(count);
+                  setViewerSeat(null);
+                  setStep("me");
+                }}
+                onFocus={() => setPlayerCount(count)}
+                onMouseEnter={() => setPlayerCount(count)}
+                className={cn(
+                  "flex min-h-[86px] items-center justify-center rounded-[14px] text-[30px] font-semibold",
+                  "bg-[color:var(--bg-elevated)] text-[color:var(--label)] active:opacity-70",
+                )}
+              >
+                {count}
+              </button>
             ))}
           </div>
-        </ListGroup>
-
-        {/* The view anchor: it pins the user to six o'clock so the on-screen
-            table matches where everyone actually sits. */}
-        <ListGroup
-          header="我坐几号"
-          footer="牌桌上你会固定在最下方，其他人按顺时针排开。如果这局大家不按号叫人，留着 1 号就行。"
-        >
-          <div className="grid grid-cols-5 gap-1.5 p-3">
-            {seats.map((seat) => (
-              <NumberKey
-                key={seat}
-                value={seat}
-                active={viewerSeat === seat}
-                onClick={() => setViewerSeat(seat)}
-              />
-            ))}
-          </div>
-        </ListGroup>
-
-        <ListGroup
-          header="第一个队长"
-          footer="之后每轮自动往下顺，点车时随时能改。"
-        >
-          <div className="grid grid-cols-5 gap-1.5 p-3">
-            {seats.map((seat) => (
-              <NumberKey
-                key={seat}
-                value={seat}
-                active={firstLeaderSeat === seat}
-                onClick={() => setFirstLeaderSeat(seat)}
-              />
-            ))}
-          </div>
-        </ListGroup>
-
-        <ListGroup>
-          <ListRow
-            label="填名字"
-            value={
-              Object.values(names).filter((n) => n?.trim()).length > 0
-                ? `${Object.values(names).filter((n) => n?.trim()).length} 个`
-                : "可跳过"
-            }
-            accessory="chevron"
-            onClick={() => setShowNames((v) => !v)}
-          />
-          {showNames &&
-            seats.map((seat) => (
-              <div key={seat} className="list-row flex items-center gap-3 px-4 py-1.5">
-                <span className="t-subhead w-11 shrink-0 text-[color:var(--label-secondary)]">
-                  {seat}号
-                </span>
-                <input
-                  value={names[seat] ?? ""}
-                  onChange={(e) =>
-                    setNames((prev) => ({ ...prev, [seat]: e.target.value }))
-                  }
-                  placeholder="可留空"
-                  className="t-body min-h-[40px] w-full bg-transparent outline-none placeholder:text-[color:var(--label-tertiary)]"
-                />
-              </div>
-            ))}
-        </ListGroup>
-
-        <ListGroup
-          footer={
-            showRoles
-              ? "只记这局有哪些角色，不需要知道谁是谁。这条信息现在不参与任何推理。"
-              : undefined
-          }
-        >
-          <ListRow
-            label="本局有哪些角色"
-            value={roles.length > 0 ? `${roles.length} 个` : "可跳过"}
-            accessory="chevron"
-            onClick={() => setShowRoles((v) => !v)}
-          />
-          {showRoles && (
-            <div className="list-row p-3">
-              <div className="flex flex-wrap gap-1.5">
-                {ROLES.map((role) => {
-                  const on = roles.includes(role.value);
-                  return (
-                    <button
-                      key={role.value}
-                      onClick={() =>
-                        setRoles((prev) =>
-                          prev.includes(role.value)
-                            ? prev.filter((r) => r !== role.value)
-                            : [...prev, role.value],
-                        )
-                      }
-                      aria-pressed={on}
-                      className={cn(
-                        "t-subhead min-h-[40px] rounded-[10px] px-3 font-medium active:opacity-70",
-                        on
-                          ? role.side === "evil"
-                            ? "bg-[color:var(--red)] text-white"
-                            : "bg-[color:var(--green)] text-white"
-                          : "bg-[color:var(--fill)] text-[color:var(--label)]",
-                      )}
-                    >
-                      {role.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {roleWarning.severity === "warn" && (
-                <InlineWarning className="mt-3">
-                  {roleWarning.message}
-                </InlineWarning>
-              )}
-            </div>
-          )}
-        </ListGroup>
-      </div>
-
-      <div className="pb-safe fixed inset-x-0 bottom-0 border-t border-[color:var(--separator)] bg-[color:var(--bg)]/92 px-4 py-3 backdrop-blur-xl">
-        <div className="mx-auto max-w-md">
-          <Button size="lg" fullWidth onClick={start} disabled={creating}>
-            {creating ? "正在开局…" : "开始记录"}
-          </Button>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function NumberKey({
-  value,
-  active,
-  onClick,
-}: {
-  value: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "min-h-[48px] rounded-[10px] text-[17px] font-semibold active:opacity-70",
-        active
-          ? "bg-[color:var(--blue)] text-white"
-          : "bg-[color:var(--fill)] text-[color:var(--label)]",
+        </section>
       )}
-    >
-      {value}
-    </button>
+
+      {step === "me" && (
+        <section className="a-push flex flex-1 flex-col">
+          <h1 className="t-large-title">你坐哪</h1>
+          <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
+            点一下你自己的位置，牌桌会转过来，把你放到最下方。
+          </p>
+          <div className="mt-8">
+            <RoundTable
+              players={seats}
+              viewerPlayerId={viewerSeat ? `s${viewerSeat}` : "s1"}
+              seatVisual={(p) => ({ selected: p.id === `s${viewerSeat}` })}
+              onSelect={(id) => {
+                const seat = Number(id.slice(1));
+                setViewerSeat(seat);
+                // Let the rotation land before moving on.
+                setTimeout(() => setStep("leader"), 260);
+              }}
+              center={
+                <p className="t-footnote pointer-events-none text-[color:var(--label-secondary)]">
+                  点你自己
+                </p>
+              }
+              label="选择你的座位"
+            />
+          </div>
+        </section>
+      )}
+
+      {step === "leader" && (
+        <section className="a-push flex flex-1 flex-col">
+          <h1 className="t-large-title">谁先点车</h1>
+          <p className="t-subhead mt-1 text-[color:var(--label-secondary)]">
+            之后每轮自动往下顺，随时能改。
+          </p>
+          <div className="mt-8">
+            <RoundTable
+              players={seats}
+              viewerPlayerId={`s${viewerSeat ?? 1}`}
+              seatVisual={() => ({})}
+              onSelect={(id) => {
+                if (creating) return;
+                void create(Number(id.slice(1)));
+              }}
+              center={
+                <p className="t-footnote pointer-events-none text-[color:var(--label-secondary)]">
+                  {creating ? "开局中…" : "点第一个队长"}
+                </p>
+              }
+              label="选择第一个队长"
+            />
+          </div>
+        </section>
+      )}
+    </main>
   );
 }

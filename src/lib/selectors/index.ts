@@ -38,6 +38,15 @@ export {
 } from "./statements";
 export type { RoleClaimState } from "./statements";
 export {
+  derivePrivate,
+  getRoleMark,
+  getRoleMarkHistory,
+  getAllRoleMarks,
+  getKnownSeats,
+  getMarkedCount,
+} from "./private";
+export type { RoleMarkState } from "./private";
+export {
   getIntegrityWarnings,
   getWarningsForEvent,
   validateRoleSet,

@@ -10,7 +10,7 @@
  * sorts by it is a bug.
  */
 
-import type { MissionResult, VoteChoice } from "./game";
+import type { MissionResult, RoleType, VoteChoice } from "./game";
 
 export interface BaseGameEvent {
   id: string;
@@ -127,6 +127,41 @@ export interface TextEvent extends BaseGameEvent {
   text: string;
 }
 
+/**
+ * What the user privately knows or believes about a seat.
+ *
+ * `side` is the common case: an evil player knows their teammates are evil but
+ * not which evil role; Merlin sees evils, not their roles. `merlin_or_morgana`
+ * exists because Percival's knowledge is genuinely a pair constraint — two
+ * people, one of each, and he cannot tell which is which.
+ */
+export type RoleMark =
+  | { kind: "side"; side: "good" | "evil" }
+  | { kind: "role"; role: RoleType }
+  | { kind: "merlin_or_morgana" };
+
+/**
+ * PRIVATE INFORMATION — the user's own knowledge and reads.
+ *
+ * This is the third category of event, and it must never be confused with the
+ * other two. Actions are what the game did; statements are what people said
+ * out loud; this is what the person holding the phone knows or suspects.
+ *
+ * Why the separation is load-bearing: everything else in this log is public,
+ * which is what lets a future analysis layer be honest. If "5号说3号是坏人"
+ * and "我知道3号是坏人" sat in the same undifferentiated stream, any model
+ * trained on the export would look brilliant while actually reading the
+ * answers. `isPrivateEvent` and the export filter exist to prevent that.
+ */
+export interface RoleMarkEvent extends BaseGameEvent {
+  type: "role_mark";
+  targetId: string;
+  /** null clears any mark on this seat. */
+  mark: RoleMark | null;
+  /** `known` came from the user's own role vision; `guess` is a read. */
+  certainty: "known" | "guess";
+}
+
 export type GameEvent =
   | OpinionEvent
   | ProposalEvent
@@ -134,9 +169,22 @@ export type GameEvent =
   | MissionEvent
   | IntendedTeamEvent
   | RoleClaimEvent
+  | RoleMarkEvent
   | TextEvent;
 
 export type GameEventType = GameEvent["type"];
+
+/**
+ * Events carrying information the user is not supposed to share.
+ *
+ * Kept as an explicit list so the export can strip the whole layer and any
+ * future analysis can prove it never saw them.
+ */
+export const PRIVATE_TYPES = ["role_mark"] as const;
+
+export function isPrivateEvent(e: GameEvent): e is RoleMarkEvent {
+  return (PRIVATE_TYPES as readonly string[]).includes(e.type);
+}
 
 /**
  * Events that record what somebody SAID, as opposed to what the game DID.
@@ -168,6 +216,8 @@ export const isIntendedTeamEvent = (e: GameEvent): e is IntendedTeamEvent =>
   e.type === "intended_team";
 export const isRoleClaimEvent = (e: GameEvent): e is RoleClaimEvent =>
   e.type === "role_claim";
+export const isRoleMarkEvent = (e: GameEvent): e is RoleMarkEvent =>
+  e.type === "role_mark";
 
 /* ── Drafts (what the UI hands to the store) ───────────────────────────── */
 
@@ -182,6 +232,7 @@ export type EventDraft =
   | Omit<MissionEvent, keyof BaseGameEvent>
   | Omit<IntendedTeamEvent, keyof BaseGameEvent>
   | Omit<RoleClaimEvent, keyof BaseGameEvent>
+  | Omit<RoleMarkEvent, keyof BaseGameEvent>
   | Omit<TextEvent, keyof BaseGameEvent>;
 
 /**

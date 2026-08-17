@@ -13,7 +13,13 @@
 
 import { create } from "zustand";
 import type { GameEvent, EventDraft, EventPatch } from "@/lib/types/events";
-import type { GameRecord, Player, WinningSide } from "@/lib/types/game";
+import type {
+  GameRecord,
+  Player,
+  RoleSetConfig,
+  RoleType,
+  WinningSide,
+} from "@/lib/types/game";
 import * as repo from "@/lib/db/repository";
 import { createEvent } from "@/lib/events/factory";
 import { assignContext } from "@/lib/events/context";
@@ -57,6 +63,9 @@ interface GameStore {
   endGame: (winningSide?: WinningSide | null) => Promise<void>;
   reopenGame: () => Promise<void>;
   updatePlayer: (playerId: string, patch: Partial<Player>) => Promise<void>;
+  /** The user's own role. Private — never used as information about others. */
+  setViewerRole: (role: RoleType | undefined) => Promise<void>;
+  updateRoleSet: (roleSet: RoleSetConfig | undefined) => Promise<void>;
   showSnackbar: (message: string, undoable?: boolean) => void;
   dismissSnackbar: () => void;
 }
@@ -318,6 +327,24 @@ export const useGameStore = create<GameStore>((set, get) => {
       );
       set({ game: { ...game, players } });
       write(game.id, () => repo.updateGame(game.id, { players }), "保存失败");
+    },
+
+    async setViewerRole(role) {
+      const { game } = get();
+      if (!game) return;
+      set({ game: { ...game, viewerRole: role } });
+      write(
+        game.id,
+        () => repo.updateGame(game.id, { viewerRole: role }),
+        "保存失败",
+      );
+    },
+
+    async updateRoleSet(roleSet) {
+      const { game } = get();
+      if (!game) return;
+      set({ game: { ...game, roleSet } });
+      write(game.id, () => repo.updateGame(game.id, { roleSet }), "保存失败");
     },
 
     showSnackbar(message, undoable = false) {

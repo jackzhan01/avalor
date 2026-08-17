@@ -205,6 +205,22 @@ export class GameBuilder {
     return this;
   }
 
+  /** Private layer: what the user knows or suspects about a seat. */
+  mark(
+    targetSeat: number,
+    mark: import("@/lib/types/events").RoleMark | null,
+    certainty: "known" | "guess" = "guess",
+  ): this {
+    this.events.push({
+      ...this.base(),
+      type: "role_mark",
+      targetId: this.id(targetSeat),
+      mark,
+      certainty,
+    });
+    return this;
+  }
+
   note(playerSeat: number | null, text: string): this {
     const event: TextEvent = {
       ...this.base(),

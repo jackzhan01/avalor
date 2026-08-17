@@ -3,13 +3,26 @@
 import type { Player } from "@/lib/types/game";
 import { cn } from "@/lib/utils/cn";
 
+export interface SeatBadge {
+  text: string;
+  color?: string;
+  title?: string;
+}
+
 export interface SeatVisual {
   /** Filled — currently chosen (a team member, the target being rated…). */
   selected?: boolean;
-  /** Outlined — a standing role rather than a selection. */
-  ring?: "leader" | "speaker" | null;
-  /** Small chip on the seat: a rating, a vote mark, a claim marker. */
-  badge?: { text: string; color?: string; title?: string } | null;
+  /** Transient emphasis: whose turn it is to be recorded. */
+  ring?: "speaker" | null;
+  /** Top-right chip: a rating, a vote mark, a 跳派 marker. */
+  badge?: SeatBadge | null;
+  /** Top-left chip: reserved for 车 (the current leader). */
+  badgeLeft?: SeatBadge | null;
+  /**
+   * The private layer. Drawn as an outline plus a glyph so it never competes
+   * with the public badges, and dashed when it is a read rather than knowledge.
+   */
+  mark?: { text: string; color: string; certain: boolean } | null;
   dimmed?: boolean;
   disabled?: boolean;
 }
@@ -109,11 +122,7 @@ export function RoundTable({
                 ? "bg-[color:var(--blue)] text-white"
                 : "bg-[color:var(--bg-elevated)] text-[color:var(--label)]",
               !visual.selected && "shadow-[0_1px_3px_rgba(0,0,0,0.12)]",
-              visual.ring === "leader" &&
-                !visual.selected &&
-                "ring-2 ring-[color:var(--yellow)]",
-              visual.ring === "speaker" &&
-                "ring-[3px] ring-[color:var(--blue)]",
+              visual.ring === "speaker" && "ring-[3px] ring-[color:var(--blue)]",
               visual.dimmed && "opacity-35",
               visual.disabled && "pointer-events-none",
               Tag === "button" && "active:scale-95",
@@ -124,12 +133,27 @@ export function RoundTable({
               width: `${seatPct}%`,
               height: `${seatPct}%`,
               transform: "translate(-50%, -50%)",
+              // Dashed outline reads as "this is my read", solid as "I know".
+              ...(visual.mark && !visual.ring
+                ? {
+                    outline: `2.5px ${visual.mark.certain ? "solid" : "dashed"} ${visual.mark.color}`,
+                    outlineOffset: "1px",
+                  }
+                : {}),
             }}
           >
             <span className="text-[clamp(15px,4.4vw,19px)] font-semibold leading-none">
               {player.seat}
             </span>
-            {isViewer ? (
+
+            {visual.mark ? (
+              <span
+                className="mt-0.5 text-[9px] font-semibold leading-none"
+                style={{ color: visual.selected ? "#fff" : visual.mark.color }}
+              >
+                {visual.mark.text}
+              </span>
+            ) : isViewer ? (
               <span
                 className={cn(
                   "mt-0.5 text-[9px] leading-none",
@@ -153,6 +177,18 @@ export function RoundTable({
                   {player.name}
                 </span>
               )
+            )}
+
+            {visual.badgeLeft && (
+              <span
+                title={visual.badgeLeft.title}
+                className="absolute -left-1 -top-1 flex h-[19px] min-w-[19px] items-center justify-center rounded-full px-1 text-[11px] font-semibold text-white ring-2 ring-[color:var(--bg)]"
+                style={{
+                  backgroundColor: visual.badgeLeft.color ?? "var(--gray)",
+                }}
+              >
+                {visual.badgeLeft.text}
+              </span>
             )}
 
             {visual.badge && (

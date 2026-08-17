@@ -16,21 +16,19 @@ import { TextNoteComposer } from "@/components/game/text-note-composer";
 import { LeaderPickerSheet } from "@/components/game/leader-picker-sheet";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
-import { getClaimants, getCurrentOpinion } from "@/lib/selectors";
-import { getTeamSizeWarning } from "@/lib/rules/avalon";
-import { seatLabel, seatList } from "@/lib/format/labels";
+import { getAllRoleMarks, getClaimants, getCurrentOpinion } from "@/lib/selectors";
+import { getTeamSizeWarning, visionFor, type Vision } from "@/lib/rules/avalon";
+import { markColor, markShort, seatLabel, seatList } from "@/lib/format/labels";
 import type { Rating } from "@/lib/types/events";
-import type { VoteChoice } from "@/lib/types/game";
+import type { RoleType, VoteChoice } from "@/lib/types/game";
 import type { SeatVisual } from "@/components/table/round-table";
 
 /**
  * The table is the screen.
  *
- * Everything that happens in a round — choosing who spoke, what they said,
- * who is on the bus, how the vote split — happens on one circle that mirrors
- * the real seating. Modes change what a tap means; the banner always says
- * which mode you are in, because that is the one thing this design can get
- * confusing about.
+ * Everything in a round happens on one circle that mirrors the real seating.
+ * Modes change what a tap means; the banner always names the current mode,
+ * because that is the one thing this design can genuinely confuse.
  */
 type Mode =
   | { kind: "idle" }
@@ -38,7 +36,8 @@ type Mode =
   | { kind: "opinionRate"; speakerId: string; targetId: string }
   | { kind: "intended"; playerId: string; team: string[] }
   | { kind: "proposal"; leaderId: string; team: string[] }
-  | { kind: "vote"; proposalId: string; votes: Record<string, VoteChoice> };
+  | { kind: "vote"; proposalId: string; votes: Record<string, VoteChoice> }
+  | { kind: "vision"; role: RoleType; vision: Vision; picked: string[] };
 
 const VOTE_CYCLE: (VoteChoice | null)[] = ["approve", "reject", "unknown", null];
 
@@ -60,20 +59,34 @@ export default function GamePage() {
   const [menuPlayerId, setMenuPlayerId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"mission" | "note" | "leader" | null>(null);
   const [notePlayerId, setNotePlayerId] = useState<string | null>(null);
+  /**
+   * The private layer starts hidden on every load and every navigation back
+   * here. Someone glancing over your shoulder mid-game sees nothing, and this
+   * state is deliberately not persisted so it can never be left on.
+   */
+  const [privateVisible, setPrivateVisible] = useState(false);
 
   if (!game || !timeline) return null;
 
   const claimants = new Set(getClaimants(events));
+  const marks = getAllRoleMarks(events);
   const activeProposal = timeline.activeProposalId
     ? timeline.proposalsById.get(timeline.activeProposalId)
     : null;
   const missionNumber = Math.min(timeline.missionNumber, 5);
-  // Hoisted so the closures below don't lose the null-narrowing above.
   const currentLeaderId = timeline.currentLeaderId;
 
-  /* ── What a seat looks like right now ─────────────────────────────── */
-
   function seatVisual(playerId: string): SeatVisual {
+    const markState = marks.get(playerId);
+    const privateMark =
+      privateVisible && markState
+        ? {
+            text: markShort(markState.mark),
+            color: markColor(markState.mark),
+            certain: markState.certainty === "known",
+          }
+        : null;
+
     switch (mode.kind) {
       case "opinionTarget":
       case "opinionRate": {
@@ -83,6 +96,7 @@ export default function GamePage() {
         const cell = getCurrentOpinion(events, mode.speakerId, playerId);
         return {
           selected: mode.kind === "opinionRate" && playerId === mode.targetId,
+          mark: privateMark,
           badge: cell
             ? {
                 text: String(cell.rating),
@@ -96,31 +110,45 @@ export default function GamePage() {
         return {
           selected: mode.team.includes(playerId),
           ring: playerId === mode.playerId ? "speaker" : null,
+          mark: privateMark,
         };
       case "proposal":
         return {
           selected: mode.team.includes(playerId),
-          ring: playerId === mode.leaderId ? "leader" : null,
+          mark: privateMark,
+          badgeLeft:
+            playerId === mode.leaderId
+              ? { text: "车", color: "var(--yellow)", title: "这辆车的队长" }
+              : null,
         };
       case "vote": {
         const choice = mode.votes[playerId];
         return {
           selected: activeProposal?.event.teamPlayerIds.includes(playerId),
+          mark: privateMark,
           badge: choice ? VOTE_BADGE[choice] : null,
         };
       }
+      case "vision":
+        return {
+          selected: mode.picked.includes(playerId),
+          disabled: playerId === game!.viewerPlayerId,
+          dimmed: playerId === game!.viewerPlayerId,
+        };
       default:
         return {
           selected: activeProposal?.event.teamPlayerIds.includes(playerId),
-          ring: currentLeaderId === playerId ? "leader" : null,
+          mark: privateMark,
+          badgeLeft:
+            currentLeaderId === playerId
+              ? { text: "车", color: "var(--yellow)", title: "当前队长" }
+              : null,
           badge: claimants.has(playerId)
             ? { text: "派", color: "var(--blue)", title: "跳了派" }
             : null,
         };
     }
   }
-
-  /* ── What a tap means right now ───────────────────────────────────── */
 
   function onSeat(playerId: string) {
     switch (mode.kind) {
@@ -133,7 +161,11 @@ export default function GamePage() {
         break;
       case "opinionRate":
         if (playerId === mode.speakerId) return;
-        setMode({ kind: "opinionRate", speakerId: mode.speakerId, targetId: playerId });
+        setMode({
+          kind: "opinionRate",
+          speakerId: mode.speakerId,
+          targetId: playerId,
+        });
         break;
       case "intended":
       case "proposal": {
@@ -143,9 +175,18 @@ export default function GamePage() {
         setMode({ ...mode, team });
         break;
       }
+      case "vision": {
+        if (playerId === game!.viewerPlayerId) return;
+        const picked = mode.picked.includes(playerId)
+          ? mode.picked.filter((id) => id !== playerId)
+          : [...mode.picked, playerId];
+        setMode({ ...mode, picked });
+        break;
+      }
       case "vote": {
         const current = mode.votes[playerId] ?? null;
-        const next = VOTE_CYCLE[(VOTE_CYCLE.indexOf(current) + 1) % VOTE_CYCLE.length];
+        const next =
+          VOTE_CYCLE[(VOTE_CYCLE.indexOf(current) + 1) % VOTE_CYCLE.length];
         const votes = { ...mode.votes };
         if (next === null) delete votes[playerId];
         else votes[playerId] = next;
@@ -162,8 +203,6 @@ export default function GamePage() {
         (game!.players.find((p) => p.id === b)?.seat ?? 0),
     );
   }
-
-  /* ── Center of the table ──────────────────────────────────────────── */
 
   const center =
     mode.kind === "idle" ? (
@@ -186,10 +225,9 @@ export default function GamePage() {
         {mode.kind === "opinionRate" && "换个人或打分"}
         {(mode.kind === "intended" || mode.kind === "proposal") && "点座位选人"}
         {mode.kind === "vote" && "点座位切换票型"}
+        {mode.kind === "vision" && `还差 ${mode.vision.count - mode.picked.length} 个`}
       </p>
     );
-
-  /* ── Docked controls ──────────────────────────────────────────────── */
 
   const teamWarning =
     mode.kind === "proposal"
@@ -204,7 +242,6 @@ export default function GamePage() {
         targetLabel={seatLabel(game, mode.targetId)}
         current={cell?.rating ?? null}
         onPick={(rating: Rating) => {
-          // Re-tapping the same value would add an event that changes nothing.
           if (cell?.rating !== rating) {
             void addEvent({
               type: "opinion",
@@ -213,8 +250,6 @@ export default function GamePage() {
               rating,
             });
           }
-          // Straight back to picking a target, so a player running through
-          // their whole read costs two taps per person.
           setMode({ kind: "opinionTarget", speakerId: mode.speakerId });
         }}
         onClear={
@@ -248,7 +283,9 @@ export default function GamePage() {
       <TeamDock
         selected={mode.team.length}
         expected={teamWarning?.expected ?? 0}
-        warning={teamWarning?.severity === "warn" ? "人数不对，仍可记录" : undefined}
+        warning={
+          teamWarning?.severity === "warn" ? "人数不对，仍可记录" : undefined
+        }
         confirmLabel="记下这辆车"
         onConfirm={() => {
           void addEvent({
@@ -256,6 +293,28 @@ export default function GamePage() {
             leaderId: mode.leaderId,
             teamPlayerIds: sortBySeat(mode.team),
           });
+          setMode({ kind: "idle" });
+        }}
+      />
+    );
+  } else if (mode.kind === "vision") {
+    dock = (
+      <TeamDock
+        selected={mode.picked.length}
+        expected={mode.vision.count}
+        warning={mode.vision.hint}
+        confirmLabel="记下我的视野"
+        onConfirm={() => {
+          // Marked as `known`, not a guess: this came from the reveal.
+          for (const targetId of mode.picked) {
+            void addEvent({
+              type: "role_mark",
+              targetId,
+              mark: mode.vision.mark,
+              certainty: "known",
+            });
+          }
+          setPrivateVisible(true);
           setMode({ kind: "idle" });
         }}
       />
@@ -300,11 +359,15 @@ export default function GamePage() {
           if (timeline.phase === "discussion") {
             setMode({
               kind: "proposal",
-              leaderId: timeline.currentLeaderId ?? players[0].id,
+              leaderId: currentLeaderId ?? players[0].id,
               team: [],
             });
           } else if (timeline.phase === "voting" && activeProposal) {
-            setMode({ kind: "vote", proposalId: activeProposal.event.id, votes: {} });
+            setMode({
+              kind: "vote",
+              proposalId: activeProposal.event.id,
+              votes: {},
+            });
           } else {
             setSheet("mission");
           }
@@ -316,8 +379,6 @@ export default function GamePage() {
       />
     );
   }
-
-  /* ── Banner ───────────────────────────────────────────────────────── */
 
   let banner: React.ReactNode = null;
   if (mode.kind === "opinionTarget" || mode.kind === "opinionRate") {
@@ -356,6 +417,15 @@ export default function GamePage() {
         cancelLabel="取消"
       />
     );
+  } else if (mode.kind === "vision") {
+    banner = (
+      <ModeBanner
+        title={mode.vision.prompt}
+        hint="只有你看得到"
+        onCancel={() => setMode({ kind: "idle" })}
+        cancelLabel="取消"
+      />
+    );
   }
 
   return (
@@ -388,13 +458,28 @@ export default function GamePage() {
                 </span>
               ))}
             </div>
-            <Link
-              href={`/game/${game.id}/settings`}
-              aria-label="对局设置"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
-            >
-              <span aria-hidden>⋯</span>
-            </Link>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setPrivateVisible((v) => !v)}
+                aria-pressed={privateVisible}
+                aria-label={privateVisible ? "隐藏视野" : "显示视野"}
+                className={`t-caption flex h-9 items-center gap-1 rounded-full px-2.5 font-medium active:opacity-70 ${
+                  privateVisible
+                    ? "bg-[color:var(--blue)] text-white"
+                    : "bg-[color:var(--fill)] text-[color:var(--label-secondary)]"
+                }`}
+              >
+                <span aria-hidden>{privateVisible ? "◉" : "◌"}</span>
+                视野
+              </button>
+              <Link
+                href={`/game/${game.id}/settings`}
+                aria-label="对局设置"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--fill)] text-[color:var(--label-secondary)] active:opacity-70"
+              >
+                <span aria-hidden>⋯</span>
+              </Link>
+            </div>
           </div>
         )}
 
@@ -434,6 +519,8 @@ export default function GamePage() {
 
       <PlayerMenuSheet
         playerId={menuPlayerId}
+        privateVisible={privateVisible}
+        onRevealPrivate={() => setPrivateVisible(true)}
         onClose={() => setMenuPlayerId(null)}
         onPickOpinion={() => {
           const speakerId = menuPlayerId!;
@@ -450,6 +537,11 @@ export default function GamePage() {
           setMenuPlayerId(null);
           setSheet("note");
         }}
+        onStartVision={(role) => {
+          const vision = visionFor(role, game.playerCount, game.roleSet);
+          setMenuPlayerId(null);
+          if (vision) setMode({ kind: "vision", role, vision, picked: [] });
+        }}
       />
 
       <LeaderPickerSheet
@@ -462,10 +554,7 @@ export default function GamePage() {
         }}
       />
 
-      <MissionRecorder
-        open={sheet === "mission"}
-        onClose={() => setSheet(null)}
-      />
+      <MissionRecorder open={sheet === "mission"} onClose={() => setSheet(null)} />
 
       <TextNoteComposer
         open={sheet === "note"}

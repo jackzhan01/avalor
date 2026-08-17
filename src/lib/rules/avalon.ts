@@ -6,7 +6,8 @@
  * recorded, but never blocks a save. Users play house rules, and users mistype.
  */
 
-import type { PlayerCount } from "@/lib/types/game";
+import type { PlayerCount, RoleSetConfig, RoleType } from "@/lib/types/game";
+import type { RoleMark } from "@/lib/types/events";
 
 /** Team size per mission (index 0 = mission 1). */
 export const TEAM_SIZES: Record<
@@ -97,6 +98,81 @@ export function getTeamSizeWarning(
     selected: selectedCount,
     message: `第 ${missionNumber} 轮通常是 ${expected} 个人上车，你选了 ${selectedCount} 个。`,
   };
+}
+
+/**
+ * What a role lets its holder see at the start of the game.
+ *
+ * This is not inference — it is the rulebook. It only tells the app HOW MANY
+ * seats the user should be able to point at and what the resulting mark means;
+ * the user does the pointing, because only they saw the reveal.
+ */
+export interface Vision {
+  /** How many seats they should be pointing at. */
+  count: number;
+  mark: RoleMark;
+  prompt: string;
+  hint?: string;
+}
+
+const EVIL_ROLE_SET: readonly RoleType[] = [
+  "morgana",
+  "mordred",
+  "assassin",
+  "oberon",
+  "minion",
+];
+
+export function visionFor(
+  role: RoleType,
+  playerCount: PlayerCount,
+  roleSet?: RoleSetConfig,
+): Vision | null {
+  const inPlay = (r: RoleType) =>
+    // With no role set configured, assume the plain game: no Mordred, no Oberon.
+    roleSet ? roleSet.rolesIncluded.includes(r) : false;
+  const evils = evilCount(playerCount);
+
+  if (role === "loyal") return null;
+
+  // Oberon is hidden from his own side and sees nobody.
+  if (role === "oberon") return null;
+
+  if (EVIL_ROLE_SET.includes(role)) {
+    const others = evils - 1 - (inPlay("oberon") ? 1 : 0);
+    if (others <= 0) return null;
+    return {
+      count: others,
+      mark: { kind: "side", side: "evil" },
+      prompt: "点出你的队友",
+      hint: inPlay("oberon")
+        ? "奥伯伦不参与互认，不用点他。"
+        : undefined,
+    };
+  }
+
+  if (role === "merlin") {
+    const seen = evils - (inPlay("mordred") ? 1 : 0);
+    if (seen <= 0) return null;
+    return {
+      count: seen,
+      mark: { kind: "side", side: "evil" },
+      prompt: "点出你看到的坏人",
+      hint: inPlay("mordred") ? "莫德雷德在梅林视野之外。" : undefined,
+    };
+  }
+
+  if (role === "percival") {
+    const morgana = inPlay("morgana");
+    return {
+      count: morgana ? 2 : 1,
+      mark: morgana ? { kind: "merlin_or_morgana" } : { kind: "role", role: "merlin" },
+      prompt: morgana ? "点出你看到的两个人" : "点出你看到的梅林",
+      hint: morgana ? "你分不清谁是梅林、谁是莫甘娜。" : undefined,
+    };
+  }
+
+  return null;
 }
 
 const VALID_PLAYER_COUNTS: readonly PlayerCount[] = [5, 6, 7, 8, 9, 10];
