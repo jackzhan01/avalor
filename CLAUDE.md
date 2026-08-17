@@ -34,6 +34,19 @@ README 的「几条不肯妥协的数据语义」是地基，`src/lib/selectors/
 - **水合门闸。** `"use client"` ≠ 不在服务端渲染。首次渲染必须是骨架屏且不能碰 Dexie，用 `useHydrated()`。
 - **`crypto.randomUUID` 需要安全上下文**，手机走局域网 http 时没有 —— `lib/utils/id.ts` 的回退不能删。
 
+## 花钱的接口
+
+`/api/ai` 用**我们自己付费**的 key 调模型，而且挂在公网。它必须、且第一件事就是：
+
+```ts
+const access = await checkAccess();      // @/lib/auth/gate
+if (!access.ok) return fail(access.error, access.status);
+```
+
+**任何情况下都不要把这两行删掉或挪到后面。** 没有它，任何人拿到 URL 就能无限刷账单——公网上有专门扫这种开放 LLM 代理的爬虫。四道闸依次是：全局熔断 `AI_ENABLED` → 已登录 → `profiles.ai_enabled` 白名单 → 每日次数与月度金额配额。
+
+调用成功后必须 `recordUsage(access.userId, task, data.usage)`，否则配额永远算不出来。前端要展示按钮状态就打 `/api/ai/status`，别自己另写一套判断——两套逻辑迟早对不上。
+
 ## 别重复造的东西
 
 动手写新组件前先看这里有没有现成的：
