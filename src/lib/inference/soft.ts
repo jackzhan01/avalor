@@ -112,6 +112,13 @@ export interface BehaviourParams {
    * the two can be compared on the same held-out games.
    */
   failModel?: "constant" | "table";
+  /**
+   * Which evidence the likelihood reads. For ablation: turning a term off
+   * isolates the MODEL, where deleting the events would also change what the
+   * hard layer sees and what the timeline derives.
+   */
+  useVotes?: boolean;
+  useMissions?: boolean;
 }
 
 /** Measured on 12,882 AvalonLogs games. See the note above before editing. */
@@ -125,6 +132,8 @@ export const DEFAULT_PARAMS: BehaviourParams = {
   evilPlaysFail: 0.58,
   damping: 1.0,
   failModel: "table",
+  useVotes: true,
+  useMissions: true,
 };
 
 /**
@@ -337,6 +346,36 @@ export function roleVotingEvidence(
   return out;
 }
 
+/* ── Votes are not independent ────────────────────────────────────────────
+ *
+ * Everyone at the table heard the same discussion, so the good players' votes
+ * on one proposal move together. Measured against a binomial of the same
+ * marginal rate, the spread of "how many good players off the car approved" is
+ * twice what independence predicts — round 1, four good players off the car,
+ * the counts run 0.23 / 0.20 / 0.16 / 0.19 / 0.22, nearly uniform, where a
+ * binomial says 0.06 / 0.25 / 0.37 / 0.25 / 0.06. All-approve and all-reject
+ * are both ordinary; independent coin flips would make them rare.
+ *
+ * Scoring each vote separately therefore counts one shared signal several
+ * times over, which is exactly the overconfidence the round-wise ablation
+ * showed: with votes on, the RANKING improved at round 1 while the
+ * CALIBRATION got worse.
+ *
+ * The correction is the standard quasi-likelihood one — divide the vote term
+ * by the dispersion φ, so n correlated votes contribute like n/φ independent
+ * ones. φ is measured per round because the correlation fades as the game goes
+ * on and players accumulate their own reads:
+ */
+const VOTE_DISPERSION: Record<number, number> = {
+  1: 2.03,
+  2: 1.83,
+  3: 1.78,
+  4: 1.52,
+  5: 1.41,
+};
+const voteDispersion = (missionNumber: number) =>
+  VOTE_DISPERSION[missionNumber] ?? 1.78;
+
 /* ── Fail cards, measured as a distribution ───────────────────────────────
  *
  * Not a per-player rate fed through a binomial. The binomial assumes each evil
@@ -443,7 +482,8 @@ export function scoreHypothesis(
 
   /* ── Votes ───────────────────────────────────────────────────────────── */
 
-  for (const proposalId of timeline.proposalOrder) {
+  const proposals = params.useVotes === false ? [] : timeline.proposalOrder;
+  for (const proposalId of proposals) {
     const proposal = timeline.proposalsById.get(proposalId);
     if (!proposal?.vote) continue;
 
@@ -483,9 +523,11 @@ export function scoreHypothesis(
             : rates.evilApprovesOffClean;
       }
 
-      logLikelihood += Math.log(
-        choice === "approve" ? pApprove : 1 - pApprove,
-      );
+      // Divided by the dispersion: these votes are correlated, so n of them
+      // carry the weight of n/φ independent observations, not n.
+      logLikelihood +=
+        Math.log(choice === "approve" ? pApprove : 1 - pApprove) /
+        voteDispersion(proposal.missionNumber);
     }
   }
 
@@ -504,6 +546,11 @@ export function scoreHypothesis(
     const team = mission.teamPlayerIds;
     // No count recorded means no observation — not zero fails.
     if (!team || mission.failCount == null) {
+      advance(mission.result);
+      continue;
+    }
+
+    if (params.useMissions === false) {
       advance(mission.result);
       continue;
     }
