@@ -142,7 +142,40 @@ describe("fail cards", () => {
     );
   });
 
-  it("reads a single fail card from a big team as evidence of few evils", () => {
+  it("reads a single fail card as evidence of few evils — once it is late enough", () => {
+    // Two quests already through, so this is the third: at 2-0 an evil aboard
+    // plays the card 84% of the time when alone, and two of them produce
+    // exactly one card only 49% of the time.
+    const { game: g, events } = game(9)
+      .proposal(1, [1, 2, 3])
+      .vote({}, "passed")
+      .mission("success")
+      .proposal(2, [4, 5, 6, 7])
+      .vote({}, "passed")
+      .mission("success")
+      .proposal(3, [1, 2, 3])
+      .vote({}, "passed")
+      .mission("fail", 1)
+      .build();
+    const hypotheses = deriveSideInference(events, g).surviving;
+
+    const aboard = (h: (typeof hypotheses)[number]) =>
+      h.evil.filter((id) => ["p1", "p2", "p3"].includes(id)).length;
+    const oneAboard = hypotheses.find((h) => aboard(h) === 1)!;
+    const twoAboard = hypotheses.find((h) => aboard(h) === 2)!;
+
+    expect(scoreHypothesis(oneAboard, events, g)).toBeGreaterThan(
+      scoreHypothesis(twoAboard, events, g),
+    );
+  });
+
+  /**
+   * The same card on the OPENING quest says almost nothing, and the measured
+   * rates say why: at 0-0 a lone evil plays it only 29% of the time, so "one
+   * of them held" is the norm rather than something needing explanation.
+   * Asserting the intuition here would be encoding a belief the data refutes.
+   */
+  it("treats an opening-quest fail card as nearly uninformative about how many were aboard", () => {
     const { game: g, events } = game(9)
       .proposal(1, [1, 2, 3])
       .vote({}, "passed")
@@ -150,18 +183,21 @@ describe("fail cards", () => {
       .build();
     const hypotheses = deriveSideInference(events, g).surviving;
 
-    const oneAboard = hypotheses.find(
-      (h) => h.evil.filter((id) => ["p1", "p2", "p3"].includes(id)).length === 1,
-    )!;
-    const twoAboard = hypotheses.find(
-      (h) => h.evil.filter((id) => ["p1", "p2", "p3"].includes(id)).length === 2,
-    )!;
-
-    // Two evils aboard producing only one fail card requires someone to have
-    // hidden — possible, but less likely than one evil playing the one card.
-    expect(scoreHypothesis(oneAboard, events, g)).toBeGreaterThan(
-      scoreHypothesis(twoAboard, events, g),
+    const aboard = (h: (typeof hypotheses)[number]) =>
+      h.evil.filter((id) => ["p1", "p2", "p3"].includes(id)).length;
+    const one = scoreHypothesis(
+      hypotheses.find((h) => aboard(h) === 1)!,
+      events,
+      g,
     );
+    const two = scoreHypothesis(
+      hypotheses.find((h) => aboard(h) === 2)!,
+      events,
+      g,
+    );
+
+    // Within a factor of e^0.5 either way — no usable discrimination.
+    expect(Math.abs(one - two)).toBeLessThan(0.5);
   });
 });
 
