@@ -25,6 +25,24 @@ export interface SeatVisual {
    * with the public badges, and dashed when it is a read rather than knowledge.
    */
   mark?: { text: string; color: string; certain: boolean } | null;
+  /**
+   * Background wash, for the inference layer.
+   *
+   * A fill rather than another badge or outline, because every other channel is
+   * already spoken for — outline is the private mark, ring is the speaker,
+   * three corners are 车/派/女 — and because a wash is the only one of them that
+   * reads SPATIALLY. Seeing the suspicion cluster on one side of the table is
+   * exactly the thing a vertical list cannot show.
+   */
+  tint?: string | null;
+  /**
+   * Second line, yielding to `mark` when both are present.
+   *
+   * Deliberately lower priority: what the game told you outranks what was
+   * computed from it, and the tint still carries the computed part when the
+   * text slot is taken.
+   */
+  note?: { text: string; color: string } | null;
   dimmed?: boolean;
   disabled?: boolean;
 }
@@ -161,6 +179,11 @@ export function RoundTable({
               width: `${seatPct}%`,
               height: `${seatPct}%`,
               transform: "translate(-50%, -50%)",
+              // Never over `selected`: a filled blue seat means "on this car",
+              // and that is a fact about the game, which outranks a derivation.
+              ...(visual.tint && !visual.selected
+                ? { backgroundColor: visual.tint }
+                : {}),
               // Dashed outline reads as "this is my read", solid as "I know".
               ...(visual.mark && !visual.ring
                 ? {
@@ -181,6 +204,13 @@ export function RoundTable({
                 style={{ color: visual.selected ? "#fff" : visual.mark.color }}
               >
                 {visual.mark.text}
+              </span>
+            ) : visual.note ? (
+              <span
+                className={cn(SEAT_TEXT, "mt-px font-semibold tabular-nums")}
+                style={{ color: visual.selected ? "#fff" : visual.note.color }}
+              >
+                {visual.note.text}
               </span>
             ) : player.name ? (
               <span

@@ -28,6 +28,11 @@ import {
 } from "@/lib/selectors";
 import { describeComposition, defaultRoleSet, evilCount } from "@/lib/rules/avalon";
 import { ROLE_LABELS, markLabel, seatOf } from "@/lib/format/labels";
+import {
+  deriveRoleInference,
+  deriveSideInference,
+  isConfidentAbout,
+} from "@/lib/inference";
 
 export interface BriefingOptions {
   /**
@@ -323,6 +328,86 @@ function renderNotes(game: GameRecord, events: GameEvent[]): string[] {
   );
 }
 
+/**
+ * What pure logic has already settled, handed to the model as fact.
+ *
+ * This is the highest-leverage section in the briefing. Without it the model
+ * reasons from scratch over 84 possible worlds and invents things; with it,
+ * whole branches are closed off before it starts — and closed off by
+ * arithmetic it cannot argue with. CSP4SDG reports the same effect: a
+ * constraint solver supplied as an auxiliary tool measurably improves an LLM.
+ *
+ * The wording matters as much as the content. Everything here is labelled as
+ * DERIVED AND CERTAIN, with an explicit instruction not to contradict it,
+ * because the failure mode being prevented is the model politely agreeing with
+ * the section and then reasoning as though it had never read it.
+ */
+function renderInference(game: GameRecord, events: GameEvent[]): string[] {
+  const side = deriveSideInference(events, game);
+  if (side.contradictory) {
+    return [
+      "我记的东西自相矛盾 —— 没有任何一种身份分配能同时满足全部记录。",
+      "可能有一处记错了（票型、坏票数、或者我的视野）。分析时请指出最可能记错的是哪一条。",
+    ];
+  }
+
+  const out: string[] = [
+    `把规则套在我记下的事实上做排除法：${game.playerCount} 人局共 ${side.total} 种坏人组合，现在只剩 ${side.surviving.length} 种。`,
+  ];
+
+  for (const elimination of side.eliminations) {
+    out.push(`  · 排除 ${elimination.eliminated} 种 —— ${elimination.reason}`);
+  }
+
+  if (side.provenEvil.length) {
+    out.push(`**确定是坏人**：${seats(game, side.provenEvil)}（这是推出来的，不是猜的）`);
+  }
+  if (side.provenGood.length) {
+    out.push(`**确定是好人**：${seats(game, side.provenGood)}（这是推出来的，不是猜的）`);
+  }
+
+  // Only worth listing when the space is small enough to actually read; past
+  // a dozen it is noise that crowds out the rest of the briefing.
+  if (side.surviving.length > 1 && side.surviving.length <= 12) {
+    const worlds = side.surviving
+      .map((h) => seats(game, h.evil))
+      .join("　/　");
+    out.push(`剩下的可能组合，全部列在这里：${worlds}`);
+  }
+
+  const ranked = [...side.evilProbability.entries()]
+    .filter(([id]) => !side.provenEvil.includes(id) && !side.provenGood.includes(id))
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, p]) => `${seat(game, id)} ${Math.round(p * 100)}%`);
+  if (ranked.length) {
+    out.push(`其余座位是坏人的概率（已按票型和坏票数加权）：${ranked.join("，")}`);
+  }
+
+  // Role marginals, but only where they have actually converged — a flat
+  // distribution dressed up as a finding is exactly what this app refuses to
+  // do elsewhere.
+  const roles = deriveRoleInference(events, game);
+  const roleLines: string[] = [];
+  for (const [role, row] of roles.byRole) {
+    if (role === "loyal" || role === "minion") continue;
+    if (!isConfidentAbout(roles, role)) continue;
+    const top = [...row.entries()]
+      .filter(([, p]) => p > 0.01)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([id, p]) => `${seat(game, id)} ${Math.round(p * 100)}%`);
+    if (top.length) roleLines.push(`${ROLE_LABELS[role]}：${top.join("，")}`);
+  }
+  if (roleLines.length) {
+    out.push(`身份也已经收窄到可以说的程度 —— ${roleLines.join("；")}`);
+  }
+
+  out.push(
+    "以上全部由规则推演得出，**是确定的**。你的分析必须与它一致：不要把「确定是好人」的人说成坏人，也不要提出已经被排除掉的组合。你的价值在于解释那些还没被排除的可能里哪个更像真的，以及从发言和态度里读出排除法读不到的东西。",
+  );
+  return out;
+}
+
 /* ── Assembly ──────────────────────────────────────────────────────────── */
 
 function section(title: string, lines: string[]): string {
@@ -347,6 +432,11 @@ export function buildBriefing(
   const blocks = [
     section("牌局", renderSetup(game, events)),
     includePrivate ? section("我自己（私密信息，别人不知道）", renderViewer(game, events)) : "",
+    // Placed straight after the private layer, before the raw log: the model
+    // should know what is already settled before it starts reading events.
+    includePrivate
+      ? section("排除法已经确定的（纯逻辑推演，不是推测）", renderInference(game, events))
+      : "",
     section("五轮任务", renderMissions(game, events)),
     section("每一辆车和票型", renderProposals(game, events)),
     section("公开保踩（1 强踩 / 2 踩 / 3 中立 / 4 保 / 5 强保）", renderOpinions(game, events)),

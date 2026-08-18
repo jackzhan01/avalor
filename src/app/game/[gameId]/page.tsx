@@ -21,6 +21,18 @@ import { Scratchpad } from "@/components/game/scratchpad";
 import { AiSheet } from "@/components/game/ai-sheet";
 import { hasEnoughToAnalyze } from "@/lib/ai/client";
 import type { AiTask } from "@/lib/ai/types";
+import {
+  availableTargets,
+  defaultTarget,
+  deriveRoleInference,
+  deriveSideInference,
+  roleSignal,
+  seatSignal,
+  summarise,
+  explainFlatRole,
+  flatReasonText,
+  type InferenceTarget,
+} from "@/lib/inference";
 import { useGameStore } from "@/lib/store/game-store";
 import { useEvents, useGame, usePlayers, useTimeline } from "@/lib/store/hooks";
 import {
@@ -30,7 +42,13 @@ import {
   getCurrentOpinion,
 } from "@/lib/selectors";
 import { getTeamSizeWarning, visionFor, type Vision } from "@/lib/rules/avalon";
-import { markColor, markShort, seatLabel, seatList } from "@/lib/format/labels";
+import {
+  markColor,
+  markShort,
+  seatLabel,
+  seatList,
+  ROLE_LABELS,
+} from "@/lib/format/labels";
 import type { Rating } from "@/lib/types/events";
 import type { RoleType, VoteChoice } from "@/lib/types/game";
 import type { SeatVisual } from "@/components/table/round-table";
@@ -91,6 +109,20 @@ export default function GamePage() {
    */
   const [visionVisible, setVisionVisible] = useState(false);
   const [guessVisible, setGuessVisible] = useState(false);
+  /**
+   * The inference layer. A third kind of private information, and it hides on
+   * the same terms as the other two: a 100% painted on a seat is exactly the
+   * sort of thing you do not want read over your shoulder.
+   */
+  const [inferenceVisible, setInferenceVisible] = useState(false);
+  /**
+   * What the layer is solving for. null = follow the default for this role,
+   * so that filling in your identity re-points it without a second tap; once
+   * the user picks something explicitly, that choice sticks.
+   */
+  const [inferTarget, setInferTarget] = useState<InferenceTarget | null>(null);
+  /** Whether the eliminations behind the numbers are expanded. */
+  const [whyOpen, setWhyOpen] = useState(false);
   /** Set only when the user actively defers the role prompt. */
   const [roleDeferred, setRoleDeferred] = useState(false);
   /**
@@ -118,6 +150,12 @@ export default function GamePage() {
 
   const claimants = new Set(getClaimants(events));
   const marks = getAllRoleMarks(events);
+  // Pure, memoised and offline — cheap enough to derive every render, so the
+  // table stays live with the log instead of waiting to be asked.
+  const inference = deriveSideInference(events, game);
+  const roleInference = deriveRoleInference(events, game);
+  const targets = availableTargets(events, game);
+  const activeTarget = inferTarget ?? defaultTarget(events, game);
   const activeProposal = timeline.activeProposalId
     ? timeline.proposalsById.get(timeline.activeProposalId)
     : null;
@@ -206,10 +244,24 @@ export default function GamePage() {
               : null,
         };
       }
-      default:
+      default: {
+        // Only in idle: mid-flow the circle means "who is on this car" or
+        // "how did they vote", and a wash of probability over that would be
+        // answering a question the user did not just ask.
+        const cell = inferenceVisible
+          ? inferenceCell(
+              activeTarget,
+              inference,
+              roleInference,
+              game!,
+              playerId,
+            )
+          : null;
         return {
           selected: activeProposal?.event.teamPlayerIds.includes(playerId),
           mark: privateMark,
+          tint: cell?.tint ?? null,
+          note: cell ? { text: cell.text, color: cell.color } : null,
           badgeLeft:
             currentLeaderId === playerId
               ? { text: "车", color: "var(--yellow)", title: "当前车主" }
@@ -222,6 +274,7 @@ export default function GamePage() {
               ? { text: "女", color: "var(--blue)", title: "拿着湖中女神" }
               : null,
         };
+      }
     }
   }
 
@@ -767,7 +820,96 @@ export default function GamePage() {
                 on={guessVisible}
                 onClick={() => setGuessVisible((v) => !v)}
               />
+              <LayerToggle
+                label="推演"
+                on={inferenceVisible}
+                onClick={() => setInferenceVisible((v) => !v)}
+              />
             </div>
+
+            {inferenceVisible && (
+              <div className="flex flex-col items-center gap-1.5">
+                {/* What to solve for. Defaults by role, because an evil player
+                    already knows the sides and needs the question moved. */}
+                {targets.length > 1 && (
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    {targets.map((option) => {
+                      const on =
+                        option.target.kind === activeTarget.kind &&
+                        (option.target.kind === "sides" ||
+                          (activeTarget.kind === "role" &&
+                            option.target.role === activeTarget.role));
+                      return (
+                        <button
+                          key={option.label}
+                          onClick={() => setInferTarget(option.target)}
+                          aria-pressed={on}
+                          className={`t-caption flex h-7 items-center rounded-full px-2.5 font-medium active:opacity-70 ${
+                            on
+                              ? "bg-[color:var(--blue)] text-white"
+                              : "bg-[color:var(--fill)] text-[color:var(--label-secondary)]"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* A bare percentage has no meaning without saying what it
+                    counts and where the neutral point is. Tapping opens the
+                    reasoning — the one thing this layer has that the AI
+                    buttons never will, so it should not stay buried. */}
+                <button
+                  onClick={() => setWhyOpen((v) => !v)}
+                  disabled={inference.eliminations.length === 0}
+                  className={`t-caption text-center disabled:opacity-100 ${
+                    inference.contradictory
+                      ? "text-[color:var(--orange)]"
+                      : "text-[color:var(--label-tertiary)]"
+                  }`}
+                >
+                  {activeTarget.kind === "sides"
+                    ? summarise(inference, game)
+                    : (flatReasonText(
+                        explainFlatRole(
+                          roleInference,
+                          inference,
+                          events,
+                          game,
+                          activeTarget.role,
+                        ),
+                        activeTarget.role,
+                      ) ??
+                      `数字＝是${ROLE_LABELS[activeTarget.role]}的可能 · 还剩 ${inference.surviving.length} 种阵营组合`)}
+                  {inference.eliminations.length > 0 && (
+                    <span className="ml-1 text-[color:var(--blue)]">
+                      {whyOpen ? "收起" : "为什么"}
+                    </span>
+                  )}
+                </button>
+
+                {whyOpen && inference.eliminations.length > 0 && (
+                  <ul className="flex w-full flex-col gap-1 rounded-[10px] bg-[color:var(--fill)] px-3 py-2">
+                    {inference.eliminations.map((e, i) => (
+                      <li
+                        key={i}
+                        className="t-caption flex gap-2 text-[color:var(--label-secondary)]"
+                      >
+                        <span className="shrink-0 tabular-nums text-[color:var(--label-tertiary)]">
+                          −{e.eliminated}
+                        </span>
+                        <span>{e.reason}</span>
+                      </li>
+                    ))}
+                    <li className="t-caption mt-0.5 text-[color:var(--label-tertiary)]">
+                      每一条都是规则推出来的，不是猜的。
+                    </li>
+                  </ul>
+                )}
+              </div>
+            )}
 
             {/* The only two things here that leave the device. They sit with
                 the private controls because that is what they read from, and
@@ -876,6 +1018,71 @@ export default function GamePage() {
       />
     </>
   );
+}
+
+/**
+ * What one seat shows for the current target.
+ *
+ * The two targets read differently on purpose. Sides are bidirectional, so the
+ * number is CONFIDENCE and the colour says which way it points — green 100%
+ * means "certainly good", which used to render as a rather unhelpful "0%".
+ * A role is unidirectional: "probably not Merlin" is nearly worthless, so the
+ * number is simply the probability, tinted in that role's own colour.
+ */
+function inferenceCell(
+  target: InferenceTarget,
+  side: ReturnType<typeof deriveSideInference>,
+  roles: ReturnType<typeof deriveRoleInference>,
+  game: NonNullable<ReturnType<typeof useGame>>,
+  playerId: string,
+): { text: string; color: string; tint: string | null } | null {
+  if (target.kind === "sides") {
+    const signal = seatSignal(side, game, playerId);
+    const colour =
+      signal.direction === "evil"
+        ? "var(--red)"
+        : signal.direction === "good"
+          ? "var(--green)"
+          : "var(--label-tertiary)";
+    return {
+      text: signal.text,
+      color: signal.significant ? colour : "var(--label-tertiary)",
+      tint: signal.significant ? wash(colour, signal.confidence) : null,
+    };
+  }
+
+  const signal = roleSignal(roles, target.role, playerId);
+  if (!signal) return null;
+  const colour = EVIL_ROLE_SET.has(target.role)
+    ? "var(--red)"
+    : "var(--green)";
+  // A role's floor is 1/n, so anything at or below that is noise; only a seat
+  // standing out from the crowd earns paint.
+  const notable = signal.probability > 1 / game.playerCount + 0.02;
+  return {
+    text: signal.text,
+    color: notable ? colour : "var(--label-tertiary)",
+    tint: notable ? wash(colour, signal.probability) : null,
+  };
+}
+
+const EVIL_ROLE_SET = new Set<RoleType>([
+  "morgana",
+  "mordred",
+  "assassin",
+  "oberon",
+  "minion",
+]);
+
+/**
+ * Translucent fill, capped well short of opaque: the seat number has to stay
+ * readable, and the point of the wash is the RELATIVE pattern round the table
+ * rather than any one seat's exact shade.
+ */
+function wash(colour: string, strength: number): string | null {
+  const pct = Math.round(Math.min(Math.max(strength, 0), 1) * 42);
+  if (pct < 2) return null;
+  return `color-mix(in srgb, ${colour} ${pct}%, transparent)`;
 }
 
 /** One of the two AI entry points. Sized to be tapped without looking. */

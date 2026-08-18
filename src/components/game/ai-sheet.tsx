@@ -22,6 +22,7 @@ import {
   type SpeechResult,
 } from "@/lib/ai/types";
 import { boardSignature, readCachedRun, writeCachedRun } from "@/lib/ai/cache";
+import { verifyAnalysis, type Contradiction } from "@/lib/ai/verify";
 import { NEEDS_LOGIN } from "@/lib/auth/messages";
 import { ROLE_LABELS, seatOf } from "@/lib/format/labels";
 import { cn } from "@/lib/utils/cn";
@@ -355,7 +356,11 @@ export function AiSheet({
       )}
 
       {phase === "done" && isAnalysis && analysis && (
-        <AnalysisBody result={analysis} viewerSeat={viewerSeat} />
+        <AnalysisBody
+          result={analysis}
+          viewerSeat={viewerSeat}
+          contradictions={verifyAnalysis(analysis, game, events)}
+        />
       )}
       {phase === "done" && !isAnalysis && speech && (
         <>
@@ -459,13 +464,39 @@ function ConsentBody({
 function AnalysisBody({
   result,
   viewerSeat,
+  contradictions,
 }: {
   result: AnalysisResult;
   viewerSeat: number | null;
+  contradictions: Contradiction[];
 }) {
+  const flagged = new Set(
+    contradictions.map((c) => c.seat).filter((s): s is number => s != null),
+  );
   return (
     <div className="flex flex-col gap-5 py-1">
       <p className="t-callout font-semibold">{result.headline}</p>
+
+      {/* Shown ABOVE the analysis, not below: a reader who has already
+          absorbed a wrong claim is much harder to correct than one warned
+          before they start. */}
+      {contradictions.length > 0 && (
+        <section className="rounded-[10px] bg-[color:var(--fill)] p-3">
+          <p className="t-footnote mb-1.5 font-semibold text-[color:var(--orange)]">
+            这几条跟推演出来的事实对不上
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {contradictions.map((c, i) => (
+              <li key={i} className="t-footnote text-[color:var(--label-secondary)]">
+                {c.claim} —— {c.because}
+              </li>
+            ))}
+          </ul>
+          <p className="t-caption mt-2 text-[color:var(--label-tertiary)]">
+            推演是纯逻辑算出来的，这几条以推演为准。
+          </p>
+        </section>
+      )}
 
       {result.seats.length > 0 && (
         <section>
@@ -476,11 +507,14 @@ function AnalysisBody({
             {result.seats.map((row) => {
               const tone = readTone(row.read);
               const isMe = viewerSeat != null && row.seat === viewerSeat;
+              const disputed = flagged.has(row.seat);
               return (
                 <div
                   key={row.seat}
                   className={cn(
                     "flex items-start gap-2.5 rounded-[10px] px-3 py-2.5",
+                    disputed &&
+                      "outline outline-1 outline-[color:var(--orange)]",
                     isMe
                       ? "bg-[color:var(--fill-2)]"
                       : "bg-[color:var(--bg-elevated)]",
