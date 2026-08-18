@@ -73,7 +73,7 @@ if (!access.ok) return fail(access.error, access.status);
 ## 命令
 
 ```bash
-npm test          # 199 项 selector 单测，改 selector 必跑
+npm test          # 339 项单测，改 selector 或 inference 必跑
 npx tsc --noEmit
 npm run build
 npm run dev -- -H 0.0.0.0
