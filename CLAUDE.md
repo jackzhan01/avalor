@@ -103,6 +103,7 @@ git push origin dev
 这个仓库同时有多个 agent 在工作。
 
 - **提交只 `git add` 自己改过的路径，不要 `git add -A`。** 别人可能正好有个写到一半的文件在工作区。提交前 `git status` 扫一眼。
+- **提交后跑一次 `npm run check:imports`。** 只 add 自己的路径有个陷阱：你的文件可能 import 了别人**还没提交**的文件，于是仓库里留下悬空引用。这种错本地永远发现不了（文件都在磁盘上，`tsc` 和 `build` 全过），只有 CI 的干净 checkout 会炸，而且报错指向被 import 的模块，不指向漏提交的人。已经因此挂过一次部署。
 - **不要 `taskkill /F /IM node.exe`。** 会连带杀掉别人的 dev server 和测试进程。`.next` 被锁住就换个办法。
 - **不要在这个文件里维护「谁在做什么」。** 那种信息几分钟就过期，而且会让本该防冲突的文件自己变成冲突点。要并行改同一批文件就开 branch 或 worktree。
 - 高频冲突文件：`src/app/game/[gameId]/page.tsx`（牌桌页什么都往里挂）。动它之前先 `git pull`。
