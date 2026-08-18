@@ -18,6 +18,10 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Offline analysis scripts, not part of the app: plain Node with
+      // `require`, run by hand against a dataset that is not in the repo.
+      // Holding them to the app's browser-oriented rules buys nothing.
+      "research/**",
     ],
   },
 ];

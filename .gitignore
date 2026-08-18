@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# research 数据集：体积大，且 AvalonLogs 未声明许可证
+research/data/
