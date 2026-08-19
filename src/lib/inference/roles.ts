@@ -24,6 +24,7 @@ import { memoize2ByRef } from "@/lib/utils/memo";
 import { deriveSideInference } from "./side";
 import { roleVotingEvidence, weighHypotheses } from "./soft";
 import { merlinEvidence } from "./merlin";
+import { percivalEvidence } from "./percival";
 import type { Hypothesis, RoleInference } from "./types";
 
 /**
@@ -208,6 +209,7 @@ function* permutations(
  */
 export interface RoleOptions {
   merlinModel?: "info" | "class";
+  percivalModel?: "info" | "class";
 }
 
 function computeRoles(
@@ -226,6 +228,9 @@ function computeRoles(
   for (const player of game.players) counts.set(player.id, new Map());
   let totalAssignments = 0;
   const excluded = excludedRoles(events, game);
+  // Independent of which world we are in — how many of a pair rode a car is a
+  // fact about the car. Computed once here rather than inside every world.
+  const percivalByPair = percivalEvidence(events, game);
   // Each surviving world's share, from votes and fail cards. Without this the
   // side layer's conclusions would silently be thrown away here.
   const sideWeights = weighHypotheses(side.surviving, events, game);
@@ -244,6 +249,9 @@ function computeRoles(
     // assignment says which evil is Mordred — so it is looked up per casting
     // rather than computed once per world.
     const merlinBySeat = merlinEvidence(events, game, hypothesis);
+    // Percival is scored from the PAIR he was shown, which is not settled
+    // until the assignment names both Merlin and Morgana.
+
 
     for (const goodAssignment of permutations(
       goodSeats,
@@ -251,6 +259,17 @@ function computeRoles(
       forced,
       excluded,
     )) {
+      // Only depends on the good casting, so it is found once here rather
+      // than inside every evil casting paired with it.
+      let merlinSeat = "";
+      for (const [seatId, role] of goodAssignment) {
+        if (role === "merlin") {
+          merlinSeat = seatId;
+          break;
+        }
+      }
+      const percivalRow = merlinSeat ? percivalByPair.get(merlinSeat) : undefined;
+
       for (const evilAssignment of permutations(
         evilSeats,
         namedEvil,
@@ -260,14 +279,16 @@ function computeRoles(
         // How well this exact casting explains the votes. Only the roles with
         // special sight contribute; everyone else already had their side
         // scored by the layer below, and counting it twice would inflate it.
+        let morganaSeatFound = "";
         let mordredSeat = "";
         for (const [seatId, role] of evilAssignment) {
-          if (role === "mordred") {
-            mordredSeat = seatId;
-            break;
-          }
+          if (role === "mordred") mordredSeat = seatId;
+          else if (role === "morgana") morganaSeatFound = seatId;
         }
         const merlinHere = merlinBySeat.get(mordredSeat) ?? merlinBySeat.get("");
+
+        const morganaSeat = morganaSeatFound;
+        const percivalHere = morganaSeat ? percivalRow?.get(morganaSeat) : undefined;
 
         let logWeight = 0;
         for (const [seatId, role] of goodAssignment) {
@@ -278,7 +299,11 @@ function computeRoles(
                 : merlinHere?.get(seatId)) ?? 0;
           }
           else if (role === "percival") {
-            logWeight += evidence.get(seatId)?.percival ?? 0;
+            logWeight +=
+              (opts.percivalModel === "class"
+                ? evidence.get(seatId)?.percival
+                : (percivalHere?.get(seatId) ??
+                  evidence.get(seatId)?.percival)) ?? 0;
           }
         }
         for (const [seatId, role] of evilAssignment) {
