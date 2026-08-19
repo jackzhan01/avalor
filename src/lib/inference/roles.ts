@@ -271,6 +271,22 @@ export interface RoleOptions {
    * the training half.
    */
   roleTemperature?: number;
+  /**
+   * Read-only tap on the enumeration, called once per legal casting with its
+   * weight and a thunk that materialises the seat-to-role map.
+   *
+   * It exists so a sampler can draw from the joint distribution WITHOUT a
+   * second copy of this loop — a copy would drift from the belief engine the
+   * moment either changed, and the point of a frozen engine is that nothing
+   * quietly disagrees with it. The thunk is lazy because a ten-player game
+   * enumerates 151,200 castings and almost none of them are kept.
+   *
+   * Visiting changes nothing about what is computed.
+   */
+  onAssignment?: (
+    weight: number,
+    materialise: () => Map<string, RoleType>,
+  ) => void;
 }
 
 function computeRoles(
@@ -390,6 +406,20 @@ function computeRoles(
         const weight =
           sideWeight * Math.exp(logWeight * (opts.roleTemperature ?? ROLE_TEMPERATURE));
         totalAssignments += weight;
+
+        if (opts.onAssignment) {
+          opts.onAssignment(weight, () => {
+            const full = new Map<string, RoleType>(goodAssignment);
+            for (const [seatId, role] of evilAssignment) full.set(seatId, role);
+            for (const seatId of goodSeats) {
+              if (!full.has(seatId) && inPlay.has("loyal")) full.set(seatId, "loyal");
+            }
+            for (const seatId of evilSeats) {
+              if (!full.has(seatId) && inPlay.has("minion")) full.set(seatId, "minion");
+            }
+            return full;
+          });
+        }
         for (const [seatId, role] of goodAssignment) bump(counts, seatId, role, weight);
         for (const [seatId, role] of evilAssignment) bump(counts, seatId, role, weight);
         // Leftover seats hold the filler roles, and those are worth reporting

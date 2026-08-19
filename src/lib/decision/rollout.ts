@@ -1,0 +1,364 @@
+/**
+ * Vote Decision V0: what is this vote worth?
+ *
+ * Q(a) is estimated by drawing whole worlds from the frozen posterior, playing
+ * each of them out with the human-policy model, and counting how often the
+ * user's side wins. Both actions are scored on the SAME worlds with the SAME
+ * random stream, so their difference carries far less Monte Carlo noise than
+ * either level does — which matters when both sit near a half.
+ *
+ * NOT YET VALID. The base-rate check in research/rollout-calibration.test.ts
+ * plays opening positions and gets a good win rate of 0.17 to 0.28 where real
+ * games of those sizes run 0.40 to 0.43. Until that closes, no Q from here
+ * means anything and none should be shown to anyone.
+ *
+ * The cause is the first approximation below, and it is not the mild one it
+ * was written as. A real table narrows after a quest fails and later teams get
+ * cleaner; this one never updates, so every simulated round is as blind as the
+ * first, evil keeps riding, and good loses roughly half the games it should.
+ * Fixing it means an in-rollout belief update, cheap enough to run per
+ * simulated proposal — that is the next piece of work, and it comes before any
+ * decision number is reported.
+ *
+ * Three approximations, all V0, all recorded rather than buried:
+ *
+ *   The simulated table does not learn. Its public read is taken once from the
+ *   decision state and held fixed, because re-deriving the posterior inside
+ *   every simulated proposal would cost more than the whole rollout. Late
+ *   simulated rounds are therefore less discriminating than real ones, which
+ *   shrinks the gap between actions rather than inventing one.
+ *
+ *   Assassination is a terminal rate, not a model. Reaching three successes
+ *   converts to a win at the frequency real games of this shape did — by table
+ *   size and whether Percival was dealt, not one flat constant. It CANNOT see
+ *   any action that changes how exposed Merlin is, which is exactly what a
+ *   good player agonises over, so nothing resting on Merlin's exposure is
+ *   inside what this can value.
+ *
+ *   Simulated players never speak. Everything they do comes from the vote,
+ *   proposal and fail-card policies.
+ */
+
+import { failDistribution } from "@/lib/inference/soft";
+import { deriveSideInference } from "@/lib/inference";
+import { requiredFails, teamSize } from "@/lib/rules/avalon";
+import type { GameRecord, PlayerCount } from "@/lib/types/game";
+import {
+  approveProbability,
+  policyRoleOf,
+  LEADER_LOADING,
+  LEADER_RIDES,
+  type InfoSet,
+} from "./policy";
+import { publicView } from "./public-view";
+import { makeRng, sampleAssignments, type Assignment } from "./sampler";
+import type { Action, DecisionState } from "./state";
+
+type Mission = 1 | 2 | 3 | 4 | 5;
+
+/**
+ * P(good actually wins | good has completed three missions), measured on the
+ * corpus. Keyed by table size and whether Percival is dealt, which is as far
+ * as the sample supports.
+ */
+const TERMINAL_GOOD_WIN: Record<string, number> = {
+  "7|true": 0.64,
+  "7|false": 0.641,
+  "8|true": 0.65,
+  "8|false": 0.553,
+  "9|true": 0.711,
+  "9|false": 0.667,
+  "10|true": 0.611,
+  "10|false": 0.611,
+};
+const TERMINAL_FALLBACK = 0.648;
+
+function terminalGoodWin(game: GameRecord, assignment: Assignment): number {
+  const hasPercival = [...assignment.values()].includes("percival");
+  return TERMINAL_GOOD_WIN[game.playerCount + "|" + hasPercival] ?? TERMINAL_FALLBACK;
+}
+
+const EVIL_ROLE_NAMES = ["morgana", "mordred", "oberon", "assassin", "minion"];
+
+/** Each seat's own sight under this world. Nobody gets more than their role gives. */
+function informationSets(assignment: Assignment): Map<string, InfoSet> {
+  const evilSeats: string[] = [];
+  let merlinSeat = "";
+  let morganaSeat = "";
+  let mordredSeat = "";
+  for (const [seat, role] of assignment) {
+    if (role === "merlin") merlinSeat = seat;
+    else if (role === "morgana") morganaSeat = seat;
+    else if (role === "mordred") mordredSeat = seat;
+    if (EVIL_ROLE_NAMES.includes(role)) evilSeats.push(seat);
+  }
+
+  const out = new Map<string, InfoSet>();
+  for (const [seat, role] of assignment) {
+    const side: "good" | "evil" = evilSeats.includes(seat) ? "evil" : "good";
+    // Evil sees its teammates, minus Oberon. Oberon sees nobody.
+    const knownEvil =
+      side === "evil" && role !== "oberon"
+        ? new Set(
+            evilSeats.filter(
+              (s) => s !== seat && assignment.get(s) !== "oberon",
+            ),
+          )
+        : new Set<string>();
+    // Merlin sees every evil but Mordred.
+    const visibleEvil =
+      role === "merlin"
+        ? new Set(evilSeats.filter((s) => s !== mordredSeat))
+        : new Set<string>();
+    const pair =
+      role === "percival" && merlinSeat && morganaSeat
+        ? [merlinSeat, morganaSeat]
+        : null;
+    out.set(seat, {
+      seat,
+      role: policyRoleOf(role),
+      side,
+      knownEvil,
+      visibleEvil,
+      pair,
+    });
+  }
+  return out;
+}
+
+/**
+ * How correlated one table's votes are, as a shift shared by everyone voting
+ * on the same proposal.
+ *
+ * Sampling each vote independently from its marginal rate was the first
+ * version and it broke the simulator outright. Nine players approving at about
+ * 0.45 each put the tally near four, the threshold is five, so almost every
+ * simulated proposal was rejected and the five-rejection rule handed evil the
+ * game — good won 14-25% of the time against a real 40-43%.
+ *
+ * The correlation is not a guess: the belief layer measured it as a dispersion
+ * of 2.03 at round one, falling to 1.41 by round five. Everyone heard the same
+ * discussion, so the table moves together. Here the same fact is generated
+ * rather than scored — one draw per proposal, shifting every player's log-odds
+ * by the same amount, which spreads the tally instead of concentrating it.
+ *
+ * SIGMA is fitted so the simulated first-proposal pass rate lands on the 0.657
+ * the corpus shows.
+ */
+const MOOD_SIGMA = 1.15;
+
+/** Standard normal from a uniform stream, Box-Muller, one value per call. */
+function normal(rng: () => number): number {
+  const u = Math.max(rng(), 1e-12);
+  const v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+const logit = (p: number) => Math.log(p / (1 - p));
+const logistic = (x: number) => 1 / (1 + Math.exp(-x));
+
+interface SimState {
+  successes: number;
+  fails: number;
+  missionNumber: number;
+  rejections: number;
+  leaderIndex: number;
+}
+
+/** The leader picks a team, avoiding whoever he can see or the table suspects. */
+function proposeTeam(
+  seats: readonly string[],
+  sim: SimState,
+  info: ReadonlyMap<string, InfoSet>,
+  publicRead: ReadonlyMap<string, number>,
+  count: PlayerCount,
+  rng: () => number,
+): string[] {
+  const leader = seats[sim.leaderIndex];
+  const who = info.get(leader);
+  if (!who) return seats.slice(0, teamSize(count, Math.min(sim.missionNumber, 5) as Mission));
+  const size = teamSize(count, Math.min(sim.missionNumber, 5) as Mission);
+
+  const team: string[] = [];
+  if (rng() < LEADER_RIDES[who.role]) team.push(leader);
+
+  // Weight is how much he wants that seat: public suspicion discounts it for
+  // everyone, and the evils this leader can actually see are discounted again.
+  const pool = seats.filter((s) => !team.includes(s));
+  const weights = pool.map((seat) => {
+    let w = 1 - Math.min(0.9, publicRead.get(seat) ?? 0);
+    if (who.visibleEvil.has(seat) || who.knownEvil.has(seat)) {
+      w *= LEADER_LOADING[who.role];
+    }
+    return Math.max(0.01, w);
+  });
+
+  while (team.length < size && pool.length > 0) {
+    let total = 0;
+    for (const w of weights) total += w;
+    let target = rng() * total;
+    let pick = 0;
+    for (let i = 0; i < pool.length; i += 1) {
+      target -= weights[i];
+      if (target <= 0) {
+        pick = i;
+        break;
+      }
+    }
+    team.push(pool[pick]);
+    pool.splice(pick, 1);
+    weights.splice(pick, 1);
+  }
+  return team;
+}
+
+/** Plays one sampled world out and reports whether the user's side won. */
+function playOut(
+  state: DecisionState,
+  assignment: Assignment,
+  firstAction: Action | null,
+  publicRead: ReadonlyMap<string, number>,
+  rng: () => number,
+): boolean {
+  const game = state.game;
+  const count = game.playerCount as PlayerCount;
+  const seats = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => p.id);
+  const info = informationSets(assignment);
+  const readOf = (team: readonly string[]) =>
+    team.reduce((sum, seat) => sum + (publicRead.get(seat) ?? 0), 0);
+
+  const sim: SimState = {
+    successes: state.successes,
+    fails: state.fails,
+    missionNumber: state.missionNumber,
+    rejections: state.rejectionStreak,
+    leaderIndex: Math.max(0, seats.indexOf(state.leaderId ?? seats[0])),
+  };
+
+  let pending: readonly string[] | null = state.proposedTeam;
+  let forced = firstAction;
+
+  const evilWins = state.viewerSide === "evil";
+  const goodWins = state.viewerSide === "good";
+
+  for (let guard = 0; guard < 200; guard += 1) {
+    if (sim.fails >= 3) return evilWins;
+    if (sim.successes >= 3) {
+      return rng() < terminalGoodWin(game, assignment) ? goodWins : evilWins;
+    }
+    if (sim.rejections >= 5) return evilWins;
+
+    if (!pending) {
+      pending = proposeTeam(seats, sim, info, publicRead, count, rng);
+    }
+
+    const read = readOf(pending);
+    // One shared mood for this proposal, then each seat votes its own rate
+    // shifted by it. This is what makes a tally that can actually reach the
+    // threshold; see MOOD_SIGMA.
+    const mood = normal(rng) * MOOD_SIGMA;
+    let approvals = 0;
+    for (const seat of seats) {
+      let approve: boolean;
+      if (forced && seat === state.viewerId) {
+        approve = forced.kind === "vote" && forced.choice === "approve";
+      } else {
+        const who = info.get(seat);
+        const base = who ? approveProbability(who, pending, read) : 0.5;
+        approve = rng() < logistic(logit(base) + mood);
+      }
+      if (approve) approvals += 1;
+    }
+    forced = null;
+
+    if (approvals * 2 <= seats.length) {
+      sim.rejections += 1;
+      sim.leaderIndex = (sim.leaderIndex + 1) % seats.length;
+      pending = null;
+      continue;
+    }
+
+    const evilsAboard = pending.filter((s) => info.get(s)?.side === "evil").length;
+    const need = requiredFails(count, Math.min(sim.missionNumber, 5) as Mission);
+    let failCards = 0;
+    if (evilsAboard > 0) {
+      const dist = failDistribution(evilsAboard, need, sim.successes, sim.fails);
+      if (dist.length > 0) {
+        const u = rng();
+        let acc = 0;
+        failCards = dist.length - 1;
+        for (let f = 0; f < dist.length; f += 1) {
+          acc += dist[f];
+          if (u < acc) {
+            failCards = f;
+            break;
+          }
+        }
+      }
+    }
+    if (failCards >= need) sim.fails += 1;
+    else sim.successes += 1;
+
+    sim.missionNumber = Math.min(sim.missionNumber + 1, 5);
+    sim.rejections = 0;
+    sim.leaderIndex = (sim.leaderIndex + 1) % seats.length;
+    pending = null;
+  }
+  // A game that will not end is a bug in the policy, not a draw.
+  return evilWins;
+}
+
+export interface ActionValue {
+  action: Action;
+  q: number;
+  /** Standard error of q over the sampled worlds. */
+  se: number;
+  worlds: number;
+}
+
+export interface RolloutOptions {
+  worlds?: number;
+  seed?: number;
+}
+
+/**
+ * Scores every candidate action over one shared set of worlds.
+ *
+ * Common random numbers: world i is played with a stream seeded from
+ * (seed, i) for EVERY action, so two playthroughs diverge only where the
+ * decision actually changes the game. Without that, the difference between two
+ * numbers near a half would be buried in sampling noise.
+ */
+export function evaluateActions(
+  state: DecisionState,
+  actions: readonly Action[],
+  options: RolloutOptions = {},
+): ActionValue[] {
+  const worlds = options.worlds ?? 400;
+  const seed = options.seed ?? 1;
+  if (!state.viewerSide || actions.length === 0) return [];
+
+  // Simulated players reason from the PUBLIC posterior. The user's own sight
+  // must not leak into what the rest of the table appears to know.
+  const view = publicView(state.events, state.game);
+  const publicSide = deriveSideInference(view.events, view.game);
+  const publicRead = new Map<string, number>();
+  for (const player of state.game.players) {
+    publicRead.set(player.id, publicSide.evilProbability.get(player.id) ?? 0);
+  }
+
+  // Worlds come from the USER-conditioned posterior: the user does know their
+  // own role, and the value of their decision is the value under what they know.
+  const drawn = sampleAssignments(state.events, state.game, worlds, makeRng(seed));
+
+  return actions.map((action) => {
+    let wins = 0;
+    for (let i = 0; i < drawn.length; i += 1) {
+      const rng = makeRng(seed * 1_000_003 + i * 7919 + 13);
+      if (playOut(state, drawn[i], action, publicRead, rng)) wins += 1;
+    }
+    const n = drawn.length || 1;
+    const q = wins / n;
+    return { action, q, se: Math.sqrt(Math.max(q * (1 - q), 1e-9) / n), worlds: n };
+  });
+}
