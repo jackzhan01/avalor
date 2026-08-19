@@ -1,5 +1,11 @@
 import type { GameEvent } from "@/lib/types/events";
-import type { GameRecord, PlayerCount, RoleType, VoteChoice } from "@/lib/types/game";
+import type {
+  GameRecord,
+  PlayerCount,
+  RoleSetConfig,
+  RoleType,
+  VoteChoice,
+} from "@/lib/types/game";
 import { evilCount } from "@/lib/rules/avalon";
 import { readFileSync } from "node:fs";
 
@@ -66,6 +72,27 @@ interface Converted {
 }
 
 /** AvalonLogs → our event log. Returns null for games we cannot represent. */
+/**
+ * The line-up this game was actually dealt, so the model is not asked to infer
+ * roles it has been told do not exist.
+ *
+ * Without this the loader silently handed every game the app's DEFAULT line-up
+ * for its size, and 2,315 of the 6,002 seven-to-ten-player games really
+ * contain a Mordred that default does not — the model then assigns him
+ * probability zero everywhere and the log loss on that row measures the
+ * mismatch rather than the model.
+ */
+function roleSetOf(raw: Raw): RoleSetConfig {
+  const included = new Set<RoleType>();
+  for (const entry of raw.outcome?.roles ?? []) {
+    const mapped = ROLE_MAP[entry.role];
+    if (mapped) included.add(mapped);
+    // The assassin is a flag on an evil role in this corpus, not a role name.
+    if (entry.assassin) included.add("assassin");
+  }
+  return { rolesIncluded: [...included] };
+}
+
 function convert(raw: Raw, index: number): Converted | null {
   const n = raw.players.length;
   if (n < 5 || n > 10) return null;
@@ -84,10 +111,13 @@ function convert(raw: Raw, index: number): Converted | null {
   // against it would be testing the wrong thing.
   if (evil.length !== evilCount(playerCount)) return null;
 
+  const roleSet = roleSetOf(raw);
+
   const game: GameRecord = {
     id: `corpus-${index}`,
     schemaVersion: 1,
     playerCount,
+    roleSet,
     players: raw.players.map((p, i) => ({ id: `p${i + 1}`, seat: i + 1 })),
     firstLeaderId: "p1",
     status: "completed",
