@@ -2,20 +2,26 @@ import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 
 /**
- * Research harnesses, kept out of `npm test` on purpose.
+ * Separate config so the research suite never runs in CI.
  *
- * They read the corpus and re-enumerate hundreds of games, so they run in
- * minutes, not milliseconds. Run one with:
- *   npx vitest run --config research/vitest.config.ts <file>
+ * These tests need a dataset that is not in the repo (see README), take
+ * minutes rather than seconds, and validate the model rather than the code.
+ * Mixing them into `npm test` would make the fast suite slow and make CI
+ * depend on a third-party download.
+ *
+ *   npx vitest run --config research/vitest.config.ts
  */
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("../src", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("../src", import.meta.url)),
+    },
   },
   test: {
     environment: "node",
     globals: true,
     include: ["research/**/*.test.ts"],
+    root: fileURLToPath(new URL("..", import.meta.url)),
     testTimeout: 3_600_000,
     hookTimeout: 3_600_000,
   },
