@@ -38,27 +38,55 @@ import type { Hypothesis, RoleInference } from "./types";
  * the variable; information is. Merlin has a sharp Mordred read on turn one,
  * and a loyal servant may still have nothing at mission four.
  */
+/**
+ * The entropy below which a role read is called confident.
+ *
+ * Left at 1.6, and under the tempered posterior that is effectively never
+ * reached from behaviour alone — only a private sighting gets there, which is
+ * the honest outcome and not a bug to tune away.
+ *
+ * Two measurements say why it must not simply be loosened.
+ *
+ * Raising it to 2.6, where validation showed the read still carried lift,
+ * makes the model claim confidence about the ASSASSIN in a nine-player game
+ * with no evidence at all: he can only sit in one of three evil seats, so a
+ * uniform guess is log2(3) = 1.58 bits already. A threshold in raw bits
+ * conflates "few candidates" with "we learned something".
+ *
+ * And the calibration behind 2.6 was confounded by the same thing — it pooled
+ * Merlin and Percival, who range over about six good seats, with Morgana over
+ * three evil ones. Their uninformed baselines differ by a full bit, so a
+ * single cut across them measures the line-up as much as the reading.
+ *
+ * What the validation numbers do say, and it is worth stating plainly: under
+ * tempering the sharpest 2.6% of role readings are right 28% of the time,
+ * against 21.3% across the board. Real lift, nowhere near certainty. The fix
+ * is a measure relative to each role's own uninformed entropy, calibrated per
+ * role, and it has not been built.
+ */
 export const ROLE_CERTAIN_BITS = 1.6;
 
 /**
  * How much of the role-specific likelihood to believe.
  *
- * Chosen on the TRAINING half, by the largest value keeping the faction Brier
- * within 1.5% of the faction-only model. The sweep there:
+ * Chosen on VALIDATION, with the corrected line-ups. The earlier selection is
+ * void: it ran against a loader that told the model the wrong roles were in
+ * play, so it was fitting to a harness bug.
  *
- *   lambda   faction Brier R5   Merlin top-1 R5   worst faction gap
- *   0        0.0949             0.2800            0.0000
- *   0.15     0.0954             0.4000            0.0287
- *   0.3      0.0959             0.4200            0.0566
- *   0.5      0.0966             0.4200            0.0921
- *   1        0.0986             0.4000            0.1734
+ *   lambda   faction Brier R5   Merlin top-1   Percival top-1   worst gap
+ *   0        0.1095             0.2625         0.1791           0.0000
+ *   0.15     0.1097             0.3125         0.1940           0.0261
+ *   0.3      0.1098             0.3375         0.1642           0.0509
+ *   0.4      0.1099             0.3375         0.1940           0.0664
+ *   0.5      0.1100             0.3250         0.1940           0.0809
+ *   1        0.1105             0.3125         0.2537           0.1511
  *
- * Most of the role gain arrives by 0.15 and Merlin peaks at 0.3-0.5, then
- * DECLINES toward 1 — evidence taken at face value there is over-weighted,
- * not merely aggressive. 0.3 closes about three quarters of the faction gap
- * and gives the best Merlin reading of any setting.
+ * Faction degrades by 0.9% across the whole range, gently enough that it does
+ * not bind. The rule declared before looking: among values holding faction
+ * Brier within 0.5% of taking no role evidence at all, take the one best on
+ * both role readings. 0.4 dominates 0.3 on Percival and 0.5 on Merlin.
  */
-export const ROLE_TEMPERATURE = 0.3;
+export const ROLE_TEMPERATURE = 0.4;
 
 /** Roles that exist at most once. 忠臣/爪牙 fill whatever is left. */
 const NAMED_GOOD: readonly RoleType[] = ["merlin", "percival"];
