@@ -158,6 +158,80 @@ function normal(rng: () => number): number {
 const logit = (p: number) => Math.log(p / (1 - p));
 const logistic = (x: number) => 1 / (1 + Math.exp(-x));
 
+/**
+ * The channel the structured log never recorded: table talk.
+ *
+ * Real good leaders take evils at 0.896 of chance on the FIRST round, when the
+ * public posterior is still flat. No transform of that posterior can produce
+ * it — a monotonic function of a uniform read is still uniform. The avoidance
+ * has to come from information the logs do not contain: how people spoke, who
+ * pushed to ride, what the table felt.
+ *
+ * So the simulator gets a reduced-form stand-in rather than a language model.
+ * Each world draws one PUBLIC cue per seat, generated from the hidden roles and
+ * corrupted by noise:
+ *
+ *     cue_i = SOCIAL_DELTA * [i is evil] + N(0, 1)
+ *
+ * Every simulated player sees the same cue and none can invert it — the noise
+ * is a whole standard deviation against a signal well under one, so a seat
+ * reading badly is usually just a seat reading badly. That is the point: it is
+ * an observation channel, not a peek at the answer. No actor ever reads a role
+ * from it, and nothing here reaches the user's own decision.
+ *
+ * SOCIAL_DELTA is fitted so the simulated round-one Evil loading of good
+ * leaders lands on the 0.896 the corpus shows — 0.6 puts it at 0.88 to 0.91
+ * across table sizes. It is NOT fitted to the win rate or the mission failure
+ * rate, which are left to fall where they may and reported as the check.
+ *
+ * It works and it is not enough. A single static cue can set the level at
+ * round one; it cannot reproduce the DEEPENING. Real good leaders go from
+ * 0.896 of chance at round one to 0.405 by round five, while the simulator
+ * barely moves — 0.88 down to 0.79. The remainder is the belief filter not
+ * sharpening the way a real table does, not the cue being too weak.
+ */
+const SOCIAL_DELTA = 0.6;
+
+/** One public cue per seat, drawn once per world. */
+function socialCue(
+  assignment: Assignment,
+  rng: () => number,
+  delta = SOCIAL_DELTA,
+): Map<string, number> {
+  const cue = new Map<string, number>();
+  for (const [seat, role] of assignment) {
+    const isEvil = EVIL_ROLE_NAMES.includes(role);
+    cue.set(seat, (isEvil ? delta : 0) + normal(rng));
+  }
+  return cue;
+}
+
+/**
+ * The read every simulated player shares: the log-derived posterior tilted by
+ * the public cue, renormalised to the number of evils the rules put here.
+ */
+function blendCue(
+  read: Map<string, number>,
+  cue: ReadonlyMap<string, number>,
+  evilTotal: number,
+): Map<string, number> {
+  const out = new Map<string, number>();
+  let sum = 0;
+  for (const [seat, q] of read) {
+    const odds = (q / (1 - q)) * Math.exp(cue.get(seat) ?? 0);
+    const p = odds / (1 + odds);
+    out.set(seat, p);
+    sum += p;
+  }
+  if (sum > 0) {
+    const scale = evilTotal / sum;
+    for (const [seat, p] of out) {
+      out.set(seat, Math.min(0.98, Math.max(0.02, p * scale)));
+    }
+  }
+  return out;
+}
+
 interface SimState {
   successes: number;
   fails: number;
@@ -221,6 +295,7 @@ function playOut(
   publicRead: ReadonlyMap<string, number>,
   rng: () => number,
   trace?: SimTrace,
+  delta?: number,
 ): boolean {
   const game = state.game;
   const count = game.playerCount as PlayerCount;
@@ -230,8 +305,14 @@ function playOut(
   // freezing it was what made this simulator lose half of good's games.
   const read = new Map(publicRead);
   const evilTotal = evilCount(count);
+  // One draw per world: this table talked the way it talked.
+  const cue = socialCue(assignment, rng, delta);
+  let shared = blendCue(read, cue, evilTotal);
+  const refresh = () => {
+    shared = blendCue(read, cue, evilTotal);
+  };
   const readOf = (team: readonly string[]) =>
-    team.reduce((sum, seat) => sum + (read.get(seat) ?? 0), 0);
+    team.reduce((sum, seat) => sum + (shared.get(seat) ?? 0), 0);
 
   const sim: SimState = {
     successes: state.successes,
@@ -263,7 +344,7 @@ function playOut(
     }
 
     if (!pending) {
-      pending = proposeTeam(seats, sim, info, read, count, rng);
+      pending = proposeTeam(seats, sim, info, shared, count, rng);
     }
 
     const teamRisk = readOf(pending);
@@ -288,9 +369,33 @@ function playOut(
     if (trace) {
       trace.proposals += 1;
       if (approvals * 2 > seats.length) trace.approvals += 1;
+      // Matched to how the corpus measures it: the leader is not a random
+      // draw, so only the seats he ADDED are compared against chance, and
+      // against the pool that excludes him.
+      const leaderSeat = seats[sim.leaderIndex];
+      const leaderAboard = pending.includes(leaderSeat);
+      const leaderEvil = info.get(leaderSeat)?.side === "evil";
+      const added = pending.filter((s2) => s2 !== leaderSeat);
+      const aboard = added.filter((s2) => info.get(s2)?.side === "evil").length;
+      const restEvil = evilTotal - (leaderEvil ? 1 : 0);
+      const expected =
+        seats.length > 1 ? (added.length * restEvil) / (seats.length - 1) : 0;
+      void leaderAboard;
+      trace.loadingObserved += aboard;
+      trace.loadingExpected += expected;
+      if (!leaderEvil) {
+        const r = Math.min(sim.missionNumber, 5) - 1;
+        trace.byRoundObserved[r] += aboard;
+        trace.byRoundExpected[r] += expected;
+        if (sim.missionNumber === 1) {
+          trace.r1GoodObserved += aboard;
+          trace.r1GoodExpected += expected;
+        }
+      }
     }
     forced = null;
     applyVotes(read, pending, cast, Math.min(sim.missionNumber, 5), evilTotal);
+    refresh();
 
     if (approvals * 2 <= seats.length) {
       sim.rejections += 1;
@@ -333,6 +438,8 @@ function playOut(
       trace.failCards.push(failCards);
     }
 
+    refresh();
+
     if (failCards >= need) sim.fails += 1;
     else sim.successes += 1;
 
@@ -356,6 +463,15 @@ export interface SimTrace {
   hitRejectionLimit: boolean;
   /** Fail cards played, per quest that ran. */
   failCards: number[];
+  /** Evils actually on each proposed team, and what chance would have given. */
+  loadingObserved: number;
+  loadingExpected: number;
+  /** The same, restricted to round one with a good leader. */
+  r1GoodObserved: number;
+  r1GoodExpected: number;
+  /** Good-leader loading per round, which is where the real gap shows. */
+  byRoundObserved: number[];
+  byRoundExpected: number[];
 }
 
 export interface ActionValue {
@@ -424,6 +540,7 @@ export function traceOne(
   assignment: Assignment,
   publicRead: ReadonlyMap<string, number>,
   rng: () => number,
+  delta?: number,
 ): SimTrace {
   const trace: SimTrace = {
     goodWon: false,
@@ -434,8 +551,14 @@ export function traceOne(
     fails: 0,
     hitRejectionLimit: false,
     failCards: [],
+    loadingObserved: 0,
+    loadingExpected: 0,
+    r1GoodObserved: 0,
+    r1GoodExpected: 0,
+    byRoundObserved: [0, 0, 0, 0, 0],
+    byRoundExpected: [0, 0, 0, 0, 0],
   };
-  playOut(state, assignment, null, publicRead, rng, trace);
+  playOut(state, assignment, null, publicRead, rng, trace, delta);
   return trace;
 }
 
