@@ -32,17 +32,14 @@ it("profiles the simulator with the social cue", () => {
     const state = buildDecisionState(built.events, asLoyal);
     const view = publicView(state.events, state.game);
     const side = deriveSideInference(view.events, view.game);
-    const read = new Map<string, number>();
-    for (const p of state.game.players) {
-      read.set(p.id, side.evilProbability.get(p.id) ?? 0);
-    }
+    const publicWorlds = sampleAssignments(view.events, view.game, 120, makeRng(77));
 
     const worlds = sampleAssignments(state.events, state.game, 1200, makeRng(99));
     let wins = 0, proposals = 0, approvals = 0, quests = 0, failed = 0, hit = 0;
     let lo = 0, le = 0, r1o = 0, r1e = 0;
     const bro = [0,0,0,0,0], bre = [0,0,0,0,0];
     for (let i = 0; i < worlds.length; i += 1) {
-      const t = traceOne(state, worlds[i], read, makeRng(1000 + i), delta);
+      const t = traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i), delta);
       if (t.goodWon) wins += 1;
       proposals += t.proposals;
       approvals += t.approvals;

@@ -50,7 +50,12 @@ import {
   LEADER_RIDES,
   type InfoSet,
 } from "./policy";
-import { applyMissionResult, applyVotes } from "./belief-filter";
+import {
+  createFilter,
+  marginals,
+  updateOnMission,
+  updateOnVotes,
+} from "./particle-filter";
 import { publicView } from "./public-view";
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
 import type { Action, DecisionState } from "./state";
@@ -217,7 +222,12 @@ function blendCue(
 ): Map<string, number> {
   const out = new Map<string, number>();
   let sum = 0;
-  for (const [seat, q] of read) {
+  for (const [seat, raw] of read) {
+    // Particle marginals really do hit 0 and 1 — every world agreeing is a
+    // proof, not a rounding artefact — and the odds form divides by zero
+    // there. Clamped just inside, which keeps a proof looking like a proof
+    // while leaving the arithmetic finite.
+    const q = Math.min(0.995, Math.max(0.005, raw));
     const odds = (q / (1 - q)) * Math.exp(cue.get(seat) ?? 0);
     const p = odds / (1 + odds);
     out.set(seat, p);
@@ -292,7 +302,7 @@ function playOut(
   state: DecisionState,
   assignment: Assignment,
   firstAction: Action | null,
-  publicRead: ReadonlyMap<string, number>,
+  publicWorlds: readonly Assignment[],
   rng: () => number,
   trace?: SimTrace,
   delta?: number,
@@ -301,15 +311,15 @@ function playOut(
   const count = game.playerCount as PlayerCount;
   const seats = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => p.id);
   const info = informationSets(assignment);
-  // The table's read is LIVE here: a real one narrows as quests come back, and
-  // freezing it was what made this simulator lose half of good's games.
-  const read = new Map(publicRead);
   const evilTotal = evilCount(count);
+  // The table believes in WORLDS, not per-seat numbers. A failed quest is a
+  // statement about a team, and marginals cannot hold one.
+  const filter = createFilter(publicWorlds, seats);
   // One draw per world: this table talked the way it talked.
   const cue = socialCue(assignment, rng, delta);
-  let shared = blendCue(read, cue, evilTotal);
+  let shared = blendCue(marginals(filter), cue, evilTotal);
   const refresh = () => {
-    shared = blendCue(read, cue, evilTotal);
+    shared = blendCue(marginals(filter), cue, evilTotal);
   };
   const readOf = (team: readonly string[]) =>
     team.reduce((sum, seat) => sum + (shared.get(seat) ?? 0), 0);
@@ -394,7 +404,7 @@ function playOut(
       }
     }
     forced = null;
-    applyVotes(read, pending, cast, Math.min(sim.missionNumber, 5), evilTotal);
+    updateOnVotes(filter, pending, cast, Math.min(sim.missionNumber, 5), rng);
     refresh();
 
     if (approvals * 2 <= seats.length) {
@@ -403,6 +413,16 @@ function playOut(
       sim.leaderIndex = (sim.leaderIndex + 1) % seats.length;
       pending = null;
       continue;
+    }
+
+    if (trace) {
+      const raw = marginals(filter);
+      trace.readByRound[Math.min(sim.missionNumber, 5) - 1] = seats.map(
+        (s2) => shared.get(s2) ?? 0,
+      );
+      trace.rawByRound[Math.min(sim.missionNumber, 5) - 1] = seats.map(
+        (s2) => raw.get(s2) ?? 0,
+      );
     }
 
     const evilsAboard = pending.filter((s) => info.get(s)?.side === "evil").length;
@@ -423,14 +443,14 @@ function playOut(
         }
       }
     }
-    applyMissionResult(
-      read,
+    updateOnMission(
+      filter,
       pending,
       failCards,
       need,
       sim.successes,
       sim.fails,
-      evilTotal,
+      rng,
     );
 
     if (trace) {
@@ -472,6 +492,13 @@ export interface SimTrace {
   /** Good-leader loading per round, which is where the real gap shows. */
   byRoundObserved: number[];
   byRoundExpected: number[];
+  /**
+   * The shared read as each quest began, so its sharpening can be compared
+   * against what the frozen engine does on real games.
+   */
+  readByRound: number[][];
+  /** The particle marginals alone, before the social cue is mixed in. */
+  rawByRound: number[][];
 }
 
 export interface ActionValue {
@@ -481,6 +508,14 @@ export interface ActionValue {
   se: number;
   worlds: number;
 }
+
+/**
+ * How many worlds the simulated table carries as its belief.
+ *
+ * Enough to keep a spread after several reweightings, small enough that a
+ * rollout does hundreds of games without the filter dominating the cost.
+ */
+const PARTICLES = 120;
 
 export interface RolloutOptions {
   worlds?: number;
@@ -506,12 +541,16 @@ export function evaluateActions(
 
   // Simulated players reason from the PUBLIC posterior. The user's own sight
   // must not leak into what the rest of the table appears to know.
+  // Two draws, and they are not the same thing. The table's BELIEF comes from
+  // the public posterior; the hidden truth each rollout plays out comes from
+  // the user-conditioned one, because the user does know their own role.
   const view = publicView(state.events, state.game);
-  const publicSide = deriveSideInference(view.events, view.game);
-  const publicRead = new Map<string, number>();
-  for (const player of state.game.players) {
-    publicRead.set(player.id, publicSide.evilProbability.get(player.id) ?? 0);
-  }
+  const publicWorlds = sampleAssignments(
+    view.events,
+    view.game,
+    PARTICLES,
+    makeRng(seed ^ 0x5eed),
+  );
 
   // Worlds come from the USER-conditioned posterior: the user does know their
   // own role, and the value of their decision is the value under what they know.
@@ -521,7 +560,7 @@ export function evaluateActions(
     let wins = 0;
     for (let i = 0; i < drawn.length; i += 1) {
       const rng = makeRng(seed * 1_000_003 + i * 7919 + 13);
-      if (playOut(state, drawn[i], action, publicRead, rng)) wins += 1;
+      if (playOut(state, drawn[i], action, publicWorlds, rng)) wins += 1;
     }
     const n = drawn.length || 1;
     const q = wins / n;
@@ -538,7 +577,7 @@ export function evaluateActions(
 export function traceOne(
   state: DecisionState,
   assignment: Assignment,
-  publicRead: ReadonlyMap<string, number>,
+  publicWorlds: readonly Assignment[],
   rng: () => number,
   delta?: number,
 ): SimTrace {
@@ -557,8 +596,10 @@ export function traceOne(
     r1GoodExpected: 0,
     byRoundObserved: [0, 0, 0, 0, 0],
     byRoundExpected: [0, 0, 0, 0, 0],
+    readByRound: [],
+    rawByRound: [],
   };
-  playOut(state, assignment, null, publicRead, rng, trace, delta);
+  playOut(state, assignment, null, publicWorlds, rng, trace, delta);
   return trace;
 }
 
