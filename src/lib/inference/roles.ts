@@ -25,6 +25,7 @@ import { deriveSideInference } from "./side";
 import { roleVotingEvidence, weighHypotheses } from "./soft";
 import { merlinEvidence } from "./merlin";
 import { percivalEvidence } from "./percival";
+import { oberonEvidence } from "./oberon";
 import type { Hypothesis, RoleInference } from "./types";
 
 /**
@@ -210,6 +211,7 @@ function* permutations(
 export interface RoleOptions {
   merlinModel?: "info" | "class";
   percivalModel?: "info" | "class";
+  oberonModel?: "info" | "class";
 }
 
 function computeRoles(
@@ -230,7 +232,11 @@ function computeRoles(
   const excluded = excludedRoles(events, game);
   // Independent of which world we are in — how many of a pair rode a car is a
   // fact about the car. Computed once here rather than inside every world.
-  const percivalByPair = percivalEvidence(events, game);
+  // Skipped outright when the role is not in the line-up: a 7-player game
+  // without Percival should not pay for 21 pairs of evidence about him.
+  const percivalByPair = inPlay.has("percival")
+    ? percivalEvidence(events, game)
+    : null;
   // Each surviving world's share, from votes and fail cards. Without this the
   // side layer's conclusions would silently be thrown away here.
   const sideWeights = weighHypotheses(side.surviving, events, game);
@@ -248,7 +254,14 @@ function computeRoles(
     // Merlin is scored from what he could SEE, which is not settled until the
     // assignment says which evil is Mordred — so it is looked up per casting
     // rather than computed once per world.
-    const merlinBySeat = merlinEvidence(events, game, hypothesis);
+    const merlinBySeat = inPlay.has("merlin")
+      ? merlinEvidence(events, game, hypothesis)
+      : null;
+    // Which evil seat is Oberon does not change what any other seat could
+    // see, so unlike Merlin this needs no per-casting lookup.
+    const oberonBySeat = inPlay.has("oberon")
+      ? oberonEvidence(events, game, hypothesis)
+      : null;
     // Percival is scored from the PAIR he was shown, which is not settled
     // until the assignment names both Merlin and Morgana.
 
@@ -268,7 +281,7 @@ function computeRoles(
           break;
         }
       }
-      const percivalRow = merlinSeat ? percivalByPair.get(merlinSeat) : undefined;
+      const percivalRow = merlinSeat ? percivalByPair?.get(merlinSeat) : undefined;
 
       for (const evilAssignment of permutations(
         evilSeats,
@@ -285,7 +298,8 @@ function computeRoles(
           if (role === "mordred") mordredSeat = seatId;
           else if (role === "morgana") morganaSeatFound = seatId;
         }
-        const merlinHere = merlinBySeat.get(mordredSeat) ?? merlinBySeat.get("");
+        const merlinHere =
+          merlinBySeat?.get(mordredSeat) ?? merlinBySeat?.get("");
 
         const morganaSeat = morganaSeatFound;
         const percivalHere = morganaSeat ? percivalRow?.get(morganaSeat) : undefined;
@@ -308,7 +322,10 @@ function computeRoles(
         }
         for (const [seatId, role] of evilAssignment) {
           if (role !== "oberon") continue;
-          logWeight += evidence.get(seatId)?.oberon ?? 0;
+          logWeight +=
+            (opts.oberonModel === "class"
+              ? evidence.get(seatId)?.oberon
+              : oberonBySeat?.get(seatId)) ?? 0;
         }
 
         const weight = sideWeight * Math.exp(logWeight);
@@ -334,6 +351,29 @@ function computeRoles(
   const byPlayer = new Map<string, Map<RoleType, number>>();
   const byRole = new Map<RoleType, Map<string, number>>();
 
+  /*
+   * Reported as computed, NOT projected onto the side layer.
+   *
+   * The two layers disagree about how likely a seat is to be evil — measured
+   * on held-out games, 1.8 to 2.5 points on average and up to 20 in the worst
+   * case. The role layer has seen more: role evidence reweights the worlds it
+   * is scored in.
+   *
+   * Rescaling each seat to match the side layer was tried and is wrong. It
+   * fixes the rows and breaks the columns: "Merlin sits in exactly one seat"
+   * stops holding, which is a harder fact than the agreement it buys.
+   *
+   * And the drift is not an improvement to adopt either way. Scored against
+   * the truth the side layer reads faction BETTER at every round (Brier 0.0989
+   * against 0.1003 at round 5, same ordering on log loss) — the behaviour
+   * ratios that sharpen a role reading are not calibrated to carry the faction
+   * question.
+   *
+   * So the app shows the side layer for "is he evil" and this layer for "which
+   * role", and the two do not compose. That is a known gap, measured rather
+   * than hidden, and closing it means making the role evidence good enough to
+   * feed back — not rescaling the output.
+   */
   for (const [seatId, roleCounts] of counts) {
     const probabilities = new Map<RoleType, number>();
     for (const [role, count] of roleCounts) {
