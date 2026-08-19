@@ -120,6 +120,10 @@ function generate(seed: number): Generated {
 }
 
 describe("the truth is never eliminated", () => {
+  // 400 games scored after every event, so it is inherently slow — and it got
+  // slower when the proposal term was added to the likelihood. The 5s default
+  // is a limit on the harness, not on this property; the check itself is
+  // deterministic and must never be weakened to fit inside it.
   it("survives 400 generated games, checked after every event", () => {
     for (let seed = 1; seed <= 400; seed++) {
       const { builder, evilSeats } = generate(seed);
@@ -139,7 +143,7 @@ describe("the truth is never eliminated", () => {
         ).toBe(true);
       }
     }
-  });
+  }, 30_000);
 
   it("survives games where the user's own vision is recorded", () => {
     // Vision is the strongest constraint and therefore the easiest to get
