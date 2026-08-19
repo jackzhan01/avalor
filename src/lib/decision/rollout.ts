@@ -41,7 +41,7 @@
 
 import { failDistribution } from "@/lib/inference/soft";
 import { deriveSideInference } from "@/lib/inference";
-import { requiredFails, teamSize } from "@/lib/rules/avalon";
+import { evilCount, requiredFails, teamSize } from "@/lib/rules/avalon";
 import type { GameRecord, PlayerCount } from "@/lib/types/game";
 import {
   approveProbability,
@@ -50,6 +50,7 @@ import {
   LEADER_RIDES,
   type InfoSet,
 } from "./policy";
+import { applyMissionResult, applyVotes } from "./belief-filter";
 import { publicView } from "./public-view";
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
 import type { Action, DecisionState } from "./state";
@@ -219,13 +220,18 @@ function playOut(
   firstAction: Action | null,
   publicRead: ReadonlyMap<string, number>,
   rng: () => number,
+  trace?: SimTrace,
 ): boolean {
   const game = state.game;
   const count = game.playerCount as PlayerCount;
   const seats = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => p.id);
   const info = informationSets(assignment);
+  // The table's read is LIVE here: a real one narrows as quests come back, and
+  // freezing it was what made this simulator lose half of good's games.
+  const read = new Map(publicRead);
+  const evilTotal = evilCount(count);
   const readOf = (team: readonly string[]) =>
-    team.reduce((sum, seat) => sum + (publicRead.get(seat) ?? 0), 0);
+    team.reduce((sum, seat) => sum + (read.get(seat) ?? 0), 0);
 
   const sim: SimState = {
     successes: state.successes,
@@ -242,37 +248,53 @@ function playOut(
   const goodWins = state.viewerSide === "good";
 
   for (let guard = 0; guard < 200; guard += 1) {
-    if (sim.fails >= 3) return evilWins;
-    if (sim.successes >= 3) {
-      return rng() < terminalGoodWin(game, assignment) ? goodWins : evilWins;
+    if (sim.fails >= 3) {
+      if (trace) trace.goodWon = false;
+      return evilWins;
     }
-    if (sim.rejections >= 5) return evilWins;
+    if (sim.successes >= 3) {
+      const held = rng() < terminalGoodWin(game, assignment);
+      if (trace) trace.goodWon = held;
+      return held ? goodWins : evilWins;
+    }
+    if (sim.rejections >= 5) {
+      if (trace) trace.goodWon = false;
+      return evilWins;
+    }
 
     if (!pending) {
-      pending = proposeTeam(seats, sim, info, publicRead, count, rng);
+      pending = proposeTeam(seats, sim, info, read, count, rng);
     }
 
-    const read = readOf(pending);
+    const teamRisk = readOf(pending);
     // One shared mood for this proposal, then each seat votes its own rate
     // shifted by it. This is what makes a tally that can actually reach the
     // threshold; see MOOD_SIGMA.
     const mood = normal(rng) * MOOD_SIGMA;
     let approvals = 0;
+    const cast = new Map<string, boolean>();
     for (const seat of seats) {
       let approve: boolean;
       if (forced && seat === state.viewerId) {
         approve = forced.kind === "vote" && forced.choice === "approve";
       } else {
         const who = info.get(seat);
-        const base = who ? approveProbability(who, pending, read) : 0.5;
+        const base = who ? approveProbability(who, pending, teamRisk) : 0.5;
         approve = rng() < logistic(logit(base) + mood);
       }
+      cast.set(seat, approve);
       if (approve) approvals += 1;
     }
+    if (trace) {
+      trace.proposals += 1;
+      if (approvals * 2 > seats.length) trace.approvals += 1;
+    }
     forced = null;
+    applyVotes(read, pending, cast, Math.min(sim.missionNumber, 5), evilTotal);
 
     if (approvals * 2 <= seats.length) {
       sim.rejections += 1;
+      if (trace && sim.rejections >= 5) trace.hitRejectionLimit = true;
       sim.leaderIndex = (sim.leaderIndex + 1) % seats.length;
       pending = null;
       continue;
@@ -296,6 +318,21 @@ function playOut(
         }
       }
     }
+    applyMissionResult(
+      read,
+      pending,
+      failCards,
+      need,
+      sim.successes,
+      sim.fails,
+      evilTotal,
+    );
+
+    if (trace) {
+      trace.missionsPlayed += 1;
+      trace.failCards.push(failCards);
+    }
+
     if (failCards >= need) sim.fails += 1;
     else sim.successes += 1;
 
@@ -306,6 +343,19 @@ function playOut(
   }
   // A game that will not end is a bug in the policy, not a draw.
   return evilWins;
+}
+
+/** Research-only: what one playthrough actually did. */
+export interface SimTrace {
+  goodWon: boolean;
+  proposals: number;
+  approvals: number;
+  missionsPlayed: number;
+  successes: number;
+  fails: number;
+  hitRejectionLimit: boolean;
+  /** Fail cards played, per quest that ran. */
+  failCards: number[];
 }
 
 export interface ActionValue {
@@ -362,3 +412,31 @@ export function evaluateActions(
     return { action, q, se: Math.sqrt(Math.max(q * (1 - q), 1e-9) / n), worlds: n };
   });
 }
+
+/**
+ * Research-only: play one world out and report what happened.
+ *
+ * The calibration harness needs the shape of the simulated games, not their
+ * value, and reaching into playOut is better than a second copy of it.
+ */
+export function traceOne(
+  state: DecisionState,
+  assignment: Assignment,
+  publicRead: ReadonlyMap<string, number>,
+  rng: () => number,
+): SimTrace {
+  const trace: SimTrace = {
+    goodWon: false,
+    proposals: 0,
+    approvals: 0,
+    missionsPlayed: 0,
+    successes: 0,
+    fails: 0,
+    hitRejectionLimit: false,
+    failCards: [],
+  };
+  playOut(state, assignment, null, publicRead, rng, trace);
+  return trace;
+}
+
+export { sampleAssignments as _sampleAssignments };
