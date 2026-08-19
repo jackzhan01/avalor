@@ -63,7 +63,22 @@ describe("why the role read is still flat", () => {
     expect(flatReasonText(r, "merlin")).toContain("干净车");
   });
 
-  it("says nothing once the read has actually converged", () => {
+  /*
+   * This used to expect "confident" here, and it no longer converges that far.
+   *
+   * That is the tempering doing its job rather than a regression. Measured on
+   * the training half, with the role likelihood tempered the Merlin entropy
+   * drops below 2.2 bits in only 1.6% of positions — and even in those, the
+   * top candidate is right 46% of the time. The old threshold of 1.6 bits was
+   * reachable only because the untempered evidence was over-weighted; it was
+   * promising a confidence the data does not support.
+   *
+   * So the honest state here is "the votes have not separated anyone yet".
+   * ROLE_CERTAIN_BITS still needs recalibrating against the tempered
+   * posterior — the number to pick is the entropy at which the read is
+   * actually reliable, and that measurement says it is not 1.6.
+   */
+  it("keeps saying the votes have not separated anyone, because they have not", () => {
     const r = reason(
       base()
         .proposal(2, [2, 3, 4])
@@ -73,8 +88,8 @@ describe("why the role read is still flat", () => {
         .vote({ 2: "approve", 3: "approve", 4: "reject", 7: "approve", 8: "approve", 9: "reject" }, "passed")
         .mission("success", 0),
     );
-    expect(r.kind).toBe("confident");
-    expect(flatReasonText(r, "merlin")).toBeNull();
+    expect(r.kind).toBe("votes_uninformative");
+    expect(flatReasonText(r, "merlin")).not.toBeNull();
   });
 
   it("stays quiet for roles that are not read from behaviour", () => {

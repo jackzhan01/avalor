@@ -40,6 +40,26 @@ import type { Hypothesis, RoleInference } from "./types";
  */
 export const ROLE_CERTAIN_BITS = 1.6;
 
+/**
+ * How much of the role-specific likelihood to believe.
+ *
+ * Chosen on the TRAINING half, by the largest value keeping the faction Brier
+ * within 1.5% of the faction-only model. The sweep there:
+ *
+ *   lambda   faction Brier R5   Merlin top-1 R5   worst faction gap
+ *   0        0.0949             0.2800            0.0000
+ *   0.15     0.0954             0.4000            0.0287
+ *   0.3      0.0959             0.4200            0.0566
+ *   0.5      0.0966             0.4200            0.0921
+ *   1        0.0986             0.4000            0.1734
+ *
+ * Most of the role gain arrives by 0.15 and Merlin peaks at 0.3-0.5, then
+ * DECLINES toward 1 — evidence taken at face value there is over-weighted,
+ * not merely aggressive. 0.3 closes about three quarters of the faction gap
+ * and gives the best Merlin reading of any setting.
+ */
+export const ROLE_TEMPERATURE = 0.3;
+
 /** Roles that exist at most once. 忠臣/爪牙 fill whatever is left. */
 const NAMED_GOOD: readonly RoleType[] = ["merlin", "percival"];
 const NAMED_EVIL: readonly RoleType[] = [
@@ -212,6 +232,17 @@ export interface RoleOptions {
   merlinModel?: "info" | "class";
   percivalModel?: "info" | "class";
   oberonModel?: "info" | "class";
+  /**
+   * Tempering on the role-specific likelihood, the lambda in
+   * L_faction * L_role^lambda.
+   *
+   * At 0 the role evidence drops out entirely and this layer's Evil marginal
+   * becomes EXACTLY the side layer's — coherence is free, and so is knowing
+   * nothing about roles. At 1 the role evidence is taken at face value and the
+   * two layers drift apart. The useful value is in between and is chosen on
+   * the training half.
+   */
+  roleTemperature?: number;
 }
 
 function computeRoles(
@@ -328,7 +359,8 @@ function computeRoles(
               : oberonBySeat?.get(seatId)) ?? 0;
         }
 
-        const weight = sideWeight * Math.exp(logWeight);
+        const weight =
+          sideWeight * Math.exp(logWeight * (opts.roleTemperature ?? ROLE_TEMPERATURE));
         totalAssignments += weight;
         for (const [seatId, role] of goodAssignment) bump(counts, seatId, role, weight);
         for (const [seatId, role] of evilAssignment) bump(counts, seatId, role, weight);
