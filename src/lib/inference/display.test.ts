@@ -30,18 +30,27 @@ describe("every seat always gets a number", () => {
     }
   });
 
-  it("leaves a seat grey while it still sits on the baseline", () => {
-    // A car proposed but never voted on and never run: nothing for either
-    // layer to work with, so every seat stays exactly where it started.
+  it("already separates seats from a proposal alone, before any vote", () => {
+    // A car proposed and nothing else. This USED to be nothing for either
+    // layer to read; it is not, once the proposal itself is modelled. Teams
+    // carry fewer evils than a blind pick would give — 0.896 of chance at
+    // round 1 — so riding a car is already mild evidence of being good, and
+    // the seats separate.
     const { game: g, events } = game(9).proposal(1, [1, 2, 3]).build();
     const side = deriveSideInference(events, g);
+    const at = (id: string) => side.evilProbability.get(id)!;
 
+    expect(at("p2")).toBeLessThan(at("p4"));
+    expect(at("p3")).toBeLessThan(at("p4"));
+
+    // Still nothing PROVEN either way — a proposal cannot rule anything out.
+    expect(side.provenEvil).toHaveLength(0);
+    expect(side.provenGood).toHaveLength(0);
     for (const player of g.players) {
-      const signal = seatSignal(side, g, player.id);
-      expect(signal.text).toMatch(/^\d+%$/);
-      expect(signal.significant).toBe(false);
+      expect(seatSignal(side, g, player.id).text.endsWith("%")).toBe(true);
     }
   });
+
 });
 
 describe("speaking when there is something to say", () => {

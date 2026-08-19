@@ -17,11 +17,13 @@ import { loadCorpus } from "./corpus-load";
  * timeline derives, so it measures the data rather than the model.
  */
 
+const OFF = { useVotes: false, useMissions: false, useProposals: false };
 const VARIANTS: { label: string; params: BehaviourParams | null }[] = [
   { label: "只有硬约束", params: null },
-  { label: "+ 任务", params: { ...DEFAULT_PARAMS, useVotes: false } },
-  { label: "+ 投票", params: { ...DEFAULT_PARAMS, useMissions: false } },
-  { label: "+ 两者", params: DEFAULT_PARAMS },
+  { label: "+ 任务", params: { ...DEFAULT_PARAMS, ...OFF, useMissions: true } },
+  { label: "+ 投票", params: { ...DEFAULT_PARAMS, ...OFF, useVotes: true } },
+  { label: "+ 提案", params: { ...DEFAULT_PARAMS, ...OFF, useProposals: true } },
+  { label: "全部", params: DEFAULT_PARAMS },
 ];
 
 function prefix(events: ReturnType<typeof loadCorpus>[number]["events"], n: number) {

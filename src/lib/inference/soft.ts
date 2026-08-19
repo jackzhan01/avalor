@@ -119,9 +119,32 @@ export interface BehaviourParams {
    */
   useVotes?: boolean;
   useMissions?: boolean;
+  useProposals?: boolean;
+  /** Divisor on the proposal term; see PROPOSAL_REDUNDANCY. */
+  proposalDispersion?: number;
 }
 
 /** Measured on 12,882 AvalonLogs games. See the note above before editing. */
+/**
+ * The proposal term is shrunk before it is added.
+ *
+ * At full weight it makes things worse: end-state Brier goes from 0.1021 with
+ * proposals off to 0.1058 with them on, while the RANKING improves — the same
+ * overconfidence signature the votes had. But the cause is different. Within a
+ * proposal the binomial is fine, even slightly too wide (dispersion 0.76–1.06).
+ * The redundancy is BETWEEN terms: "this team is cleaner than chance" and "the
+ * table approved a clean-looking car" are two readings of one fact, and scoring
+ * both counts it twice.
+ *
+ * Divided by three, chosen on the training half and applied to the held-out
+ * half, proposals are worth having: 0.0938 against 0.1021 with them off at
+ * round 5, 0.1986 against 0.2020 at round 3.
+ *
+ * A joint model of team choice and the reaction to it would be the principled
+ * fix. This is the honest interim: a fitted shrinkage, labelled as one.
+ */
+const PROPOSAL_REDUNDANCY = 3;
+
 export const DEFAULT_PARAMS: BehaviourParams = {
   goodApprovesAboard: 0.736,
   goodApprovesOffTainted: 0.396,
@@ -134,6 +157,8 @@ export const DEFAULT_PARAMS: BehaviourParams = {
   failModel: "table",
   useVotes: true,
   useMissions: true,
+  useProposals: true,
+  proposalDispersion: PROPOSAL_REDUNDANCY,
 };
 
 /**
@@ -346,6 +371,63 @@ export function roleVotingEvidence(
   return out;
 }
 
+/* ── Proposals: an active choice, and it shows ────────────────────────────
+ *
+ * A vote is a reaction; picking a team is a decision, and it is made on every
+ * proposal including the very first of the game — which is exactly where the
+ * mission and vote evidence has nothing to say.
+ *
+ * Two measurable things, both from what the leader could know:
+ *
+ *   Self-inclusion. A good leader puts himself on his own team more often
+ *   than an evil one does, at every round: 0.887 against 0.860 at round 1,
+ *   0.976 against 0.822 at round 5.
+ *
+ *   Loading. How many evils end up on the team, against the rate a random
+ *   pick would give. A GOOD leader avoids them without being able to see
+ *   them — the table read is real, the same effect that makes good votes
+ *   informative — and by round 5 he is down to 0.405 of chance. An EVIL
+ *   leader also avoids stacking, but less: 0.558. On round 1 he does not
+ *   avoid at all (1.003), because nothing is being hidden from anyone yet.
+ *
+ * Measured the way the model applies it, which means NOT excluding Oberon
+ * from an evil leader’s teammates. He truly does not know them, but the side
+ * layer cannot tell which evil he is, so a parameter that assumed the
+ * distinction would be estimated on information the model does not have.
+ */
+const PROPOSAL_SELF: Record<number, { good: number; evil: number }> = {
+  1: { good: 0.887, evil: 0.86 },
+  2: { good: 0.934, evil: 0.881 },
+  3: { good: 0.871, evil: 0.761 },
+  4: { good: 0.961, evil: 0.871 },
+  5: { good: 0.976, evil: 0.822 },
+};
+
+/** Multiplier on the chance rate at which evils land on the proposed team. */
+const PROPOSAL_LOADING: Record<number, { good: number; evil: number }> = {
+  1: { good: 0.896, evil: 1.003 },
+  2: { good: 0.773, evil: 0.778 },
+  3: { good: 0.63, evil: 0.676 },
+  4: { good: 0.622, evil: 0.767 },
+  5: { good: 0.405, evil: 0.558 },
+};
+
+/* ── Proposal index: audited, deliberately NOT modelled ───────────────────
+ *
+ * It changes the raw rates a great deal. On the fifth proposal of a round a
+ * rejection hands the game to evil, so nearly everyone approves — 81.3% of
+ * good players off the car and 82.3% of evil, against 22.1% and 29.4% on the
+ * fourth — and discrimination collapses from ~1.4 to 1.01. On paper those
+ * votes say nothing.
+ *
+ * Acting on it does not pay. Dropping them moves end-state Brier from 0.14465
+ * to 0.14479, slightly the wrong way and well inside noise at this sample. An
+ * uninformative term contributes nearly the same factor to every hypothesis
+ * and a normalised posterior cancels it, so the model was already ignoring it
+ * without being told to. Recorded here so the next person measures instead of
+ * assuming it is missing.
+ */
+
 /* ── Votes are not independent ────────────────────────────────────────────
  *
  * Everyone at the table heard the same discussion, so the good players' votes
@@ -479,6 +561,43 @@ export function scoreHypothesis(
 ): number {
   const timeline = deriveTimeline(events, game);
   let logLikelihood = 0;
+
+  /* ── Proposals ───────────────────────────────────────────────────────── */
+
+  if (params.useProposals !== false) {
+    const pool = game.players.length - 1;
+    for (const proposalId of timeline.proposalOrder) {
+      const proposal = timeline.proposalsById.get(proposalId);
+      if (!proposal) continue;
+      const leader = proposal.event.leaderId;
+      const team = proposal.event.teamPlayerIds;
+      const round = Math.min(Math.max(proposal.missionNumber, 1), 5);
+      const evilLeader = hypothesis.isEvil(leader);
+
+      const self = PROPOSAL_SELF[round];
+      const pSelf = evilLeader ? self.evil : self.good;
+      const rode = team.includes(leader);
+      const shrink = params.proposalDispersion ?? 1;
+      logLikelihood += Math.log(rode ? pSelf : 1 - pSelf) / shrink;
+
+      // How many OTHER evils he took, against what a blind pick would give.
+      const rest = hypothesis.evil.filter((id) => id !== leader);
+      const slots = team.length - (rode ? 1 : 0);
+      if (rest.length > 0 && slots > 0 && pool > 0) {
+        const load = PROPOSAL_LOADING[round];
+        const q = Math.min(
+          0.98,
+          (evilLeader ? load.evil : load.good) * (slots / pool),
+        );
+        const j = rest.filter((id) => team.includes(id)).length;
+        logLikelihood +=
+          (logChoose(rest.length, j) +
+            j * Math.log(q) +
+            (rest.length - j) * Math.log(1 - q)) /
+          shrink;
+      }
+    }
+  }
 
   /* ── Votes ───────────────────────────────────────────────────────────── */
 
