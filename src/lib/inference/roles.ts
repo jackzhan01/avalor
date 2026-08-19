@@ -23,6 +23,7 @@ import { EVIL_ROLES, type GameRecord, type RoleType } from "@/lib/types/game";
 import { memoize2ByRef } from "@/lib/utils/memo";
 import { deriveSideInference } from "./side";
 import { roleVotingEvidence, weighHypotheses } from "./soft";
+import { merlinEvidence } from "./merlin";
 import type { Hypothesis, RoleInference } from "./types";
 
 /**
@@ -199,7 +200,21 @@ function* permutations(
   yield* place(0);
 }
 
-function computeRoles(events: GameEvent[], game: GameRecord): RoleInference {
+/**
+ * Which Merlin model to score with. "info" derives his features from what he
+ * could see; "class" is the older treatment of him as a differently-behaving
+ * good player. Only the evaluation harness passes this — production always
+ * uses the default.
+ */
+export interface RoleOptions {
+  merlinModel?: "info" | "class";
+}
+
+function computeRoles(
+  events: GameEvent[],
+  game: GameRecord,
+  opts: RoleOptions = {},
+): RoleInference {
   const side = deriveSideInference(events, game);
   const inPlay = new Set(rolesInPlay(game.playerCount, game.roleSet));
 
@@ -225,6 +240,10 @@ function computeRoles(events: GameEvent[], game: GameRecord): RoleInference {
     // Per-seat log-evidence for the sighted roles, under THIS world's split —
     // which car counted as "dirty" depends on who the evils are.
     const evidence = roleVotingEvidence(events, game, hypothesis);
+    // Merlin is scored from what he could SEE, which is not settled until the
+    // assignment says which evil is Mordred — so it is looked up per casting
+    // rather than computed once per world.
+    const merlinBySeat = merlinEvidence(events, game, hypothesis);
 
     for (const goodAssignment of permutations(
       goodSeats,
@@ -241,12 +260,26 @@ function computeRoles(events: GameEvent[], game: GameRecord): RoleInference {
         // How well this exact casting explains the votes. Only the roles with
         // special sight contribute; everyone else already had their side
         // scored by the layer below, and counting it twice would inflate it.
+        let mordredSeat = "";
+        for (const [seatId, role] of evilAssignment) {
+          if (role === "mordred") {
+            mordredSeat = seatId;
+            break;
+          }
+        }
+        const merlinHere = merlinBySeat.get(mordredSeat) ?? merlinBySeat.get("");
+
         let logWeight = 0;
         for (const [seatId, role] of goodAssignment) {
-          const cell = evidence.get(seatId);
-          if (!cell) continue;
-          if (role === "merlin") logWeight += cell.merlin;
-          else if (role === "percival") logWeight += cell.percival;
+          if (role === "merlin") {
+            logWeight +=
+              (opts.merlinModel === "class"
+                ? evidence.get(seatId)?.merlin
+                : merlinHere?.get(seatId)) ?? 0;
+          }
+          else if (role === "percival") {
+            logWeight += evidence.get(seatId)?.percival ?? 0;
+          }
         }
         for (const [seatId, role] of evilAssignment) {
           if (role !== "oberon") continue;
@@ -316,6 +349,9 @@ function bump(
 }
 
 export const deriveRoleInference = memoize2ByRef(computeRoles);
+
+/** Unmemoised, for the evaluation harness to A/B the Merlin model. */
+export const computeRolesWith = computeRoles;
 
 /** Whether "where is this role" has narrowed enough to be worth saying out loud. */
 export function isConfidentAbout(
