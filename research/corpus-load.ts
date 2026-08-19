@@ -121,7 +121,9 @@ function convert(raw: Raw, index: number): Converted | null {
     players: raw.players.map((p, i) => ({ id: `p${i + 1}`, seat: i + 1 })),
     firstLeaderId: "p1",
     status: "completed",
-    winningSide: null,
+    // The recorded outcome, so harnesses can report a real win rate instead
+    // of re-deriving one from mission counts (which cannot see the assassin).
+    winningSide: raw.outcome?.state === "GOOD_WIN" ? "good" : raw.outcome?.state === "EVIL_WIN" ? "evil" : null,
     lastSequence: 0,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",

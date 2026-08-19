@@ -57,6 +57,8 @@ import {
   updateOnProposal,
   updateOnVotes,
 } from "./particle-filter";
+import { chooseTeam } from "./proposal";
+import type { ParticleFilter } from "./particle-filter";
 import { publicView } from "./public-view";
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
 import type { Action, DecisionState } from "./state";
@@ -88,7 +90,7 @@ function terminalGoodWin(game: GameRecord, assignment: Assignment): number {
 const EVIL_ROLE_NAMES = ["morgana", "mordred", "oberon", "assassin", "minion"];
 
 /** Each seat's own sight under this world. Nobody gets more than their role gives. */
-function informationSets(assignment: Assignment): Map<string, InfoSet> {
+export function informationSets(assignment: Assignment): Map<string, InfoSet> {
   const evilSeats: string[] = [];
   let merlinSeat = "";
   let morganaSeat = "";
@@ -251,51 +253,34 @@ interface SimState {
   leaderIndex: number;
 }
 
-/** The leader picks a team, avoiding whoever he can see or the table suspects. */
+/**
+ * The leader picks a car.
+ *
+ * The choice itself lives in proposal.ts, over whole teams rather than seat by
+ * seat; this only supplies the round, the size and the threshold that decides
+ * what "risky" means for this quest.
+ */
 function proposeTeam(
   seats: readonly string[],
   sim: SimState,
   info: ReadonlyMap<string, InfoSet>,
-  publicRead: ReadonlyMap<string, number>,
+  filter: ParticleFilter,
   count: PlayerCount,
   rng: () => number,
 ): string[] {
+  const round = Math.min(sim.missionNumber, 5) as Mission;
+  const size = teamSize(count, round);
   const leader = seats[sim.leaderIndex];
-  const who = info.get(leader);
-  if (!who) return seats.slice(0, teamSize(count, Math.min(sim.missionNumber, 5) as Mission));
-  const size = teamSize(count, Math.min(sim.missionNumber, 5) as Mission);
-
-  const team: string[] = [];
-  if (rng() < LEADER_RIDES[who.role]) team.push(leader);
-
-  // Weight is how much he wants that seat: public suspicion discounts it for
-  // everyone, and the evils this leader can actually see are discounted again.
-  const pool = seats.filter((s) => !team.includes(s));
-  const weights = pool.map((seat) => {
-    let w = 1 - Math.min(0.9, publicRead.get(seat) ?? 0);
-    if (who.visibleEvil.has(seat) || who.knownEvil.has(seat)) {
-      w *= LEADER_LOADING[who.role];
-    }
-    return Math.max(0.01, w);
-  });
-
-  while (team.length < size && pool.length > 0) {
-    let total = 0;
-    for (const w of weights) total += w;
-    let target = rng() * total;
-    let pick = 0;
-    for (let i = 0; i < pool.length; i += 1) {
-      target -= weights[i];
-      if (target <= 0) {
-        pick = i;
-        break;
-      }
-    }
-    team.push(pool[pick]);
-    pool.splice(pick, 1);
-    weights.splice(pick, 1);
-  }
-  return team;
+  return chooseTeam(
+    seats,
+    size,
+    1,
+    leader,
+    info.get(leader),
+    filter,
+    round,
+    rng,
+  );
 }
 
 /** Plays one sampled world out and reports whether the user's side won. */
@@ -358,7 +343,7 @@ function playOut(
     }
 
     if (!pending) {
-      pending = proposeTeam(seats, sim, info, shared, count, rng);
+      pending = proposeTeam(seats, sim, info, filter, count, rng);
     }
 
     // Who the leader picked is evidence before anyone votes on it — and on
