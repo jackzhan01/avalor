@@ -21,7 +21,7 @@ it("profiles the simulator with the social cue", () => {
   console.log("");
   console.log("δ      人数  R1好人载荷  全局载荷  过车率  连否5  任务失败率  好人胜率");
 
-  for (const delta of [0, 0.6])
+  for (const delta of [0, 0.15, 0.3, 0.45, 0.6])
   for (const count of [7, 8, 9, 10] as const) {
     const built = game(count).build();
     const asLoyal: GameRecord = {

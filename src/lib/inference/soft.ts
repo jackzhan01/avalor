@@ -553,6 +553,84 @@ function logChoose(n: number, k: number): number {
  * Unnormalised — only differences between hypotheses matter, and the caller
  * softmaxes them.
  */
+/**
+ * The proposal factor, extracted so the rollout filter can reuse it rather
+ * than growing a second copy that drifts.
+ *
+ * Exactly what scoreHypothesis charges: the leader riding his own car, and how
+ * many of the OTHER evils he took against a blind pick — both divided by the
+ * redundancy shrink, since the team choice and the reaction to it are two
+ * readings of one fact.
+ */
+export function proposalLogFactor(
+  evilSeats: readonly string[],
+  leader: string,
+  team: readonly string[],
+  missionNumber: number,
+  playerCount: number,
+  shrink = PROPOSAL_REDUNDANCY,
+): number {
+  const round = Math.min(Math.max(missionNumber, 1), 5);
+  const pool = playerCount - 1;
+  const evilLeader = evilSeats.includes(leader);
+
+  const self = PROPOSAL_SELF[round];
+  const pSelf = evilLeader ? self.evil : self.good;
+  const rode = team.includes(leader);
+  let total = Math.log(rode ? pSelf : 1 - pSelf) / shrink;
+
+  const rest = evilSeats.filter((id) => id !== leader);
+  const slots = team.length - (rode ? 1 : 0);
+  if (rest.length > 0 && slots > 0 && pool > 0) {
+    const load = PROPOSAL_LOADING[round];
+    const q = Math.min(0.98, (evilLeader ? load.evil : load.good) * (slots / pool));
+    const j = rest.filter((id) => team.includes(id)).length;
+    total +=
+      (logChoose(rest.length, j) +
+        j * Math.log(q) +
+        (rest.length - j) * Math.log(1 - q)) /
+      shrink;
+  }
+  return total;
+}
+
+/**
+ * The vote factor for one seat, extracted for the same reason.
+ *
+ * `evilAboard` is the number of evils on the team under the world being
+ * scored, counting the voter if they are on it — the caller has it already.
+ */
+export function voteLogFactor(
+  isEvil: boolean,
+  aboard: boolean,
+  evilAboard: number,
+  approved: boolean,
+  missionNumber: number,
+  params: BehaviourParams = DEFAULT_PARAMS,
+): number {
+  const rates = ratesForRound(params, missionNumber);
+  const evilOnBoard = isEvil
+    ? evilAboard - (aboard ? 1 : 0) > 0
+    : evilAboard > 0;
+
+  const pApprove = !isEvil
+    ? aboard
+      ? rates.goodApprovesAboard
+      : evilOnBoard
+        ? rates.goodApprovesOffTainted
+        : rates.goodApprovesOffClean
+    : aboard
+      ? rates.evilApprovesAboard
+      : evilOnBoard
+        ? rates.evilApprovesOffTeammate
+        : rates.evilApprovesOffClean;
+
+  return (
+    Math.log(approved ? pApprove : 1 - pApprove) /
+    voteDispersion(missionNumber)
+  );
+}
+
 export function scoreHypothesis(
   hypothesis: Hypothesis,
   events: GameEvent[],
@@ -565,37 +643,17 @@ export function scoreHypothesis(
   /* ── Proposals ───────────────────────────────────────────────────────── */
 
   if (params.useProposals !== false) {
-    const pool = game.players.length - 1;
     for (const proposalId of timeline.proposalOrder) {
       const proposal = timeline.proposalsById.get(proposalId);
       if (!proposal) continue;
-      const leader = proposal.event.leaderId;
-      const team = proposal.event.teamPlayerIds;
-      const round = Math.min(Math.max(proposal.missionNumber, 1), 5);
-      const evilLeader = hypothesis.isEvil(leader);
-
-      const self = PROPOSAL_SELF[round];
-      const pSelf = evilLeader ? self.evil : self.good;
-      const rode = team.includes(leader);
-      const shrink = params.proposalDispersion ?? 1;
-      logLikelihood += Math.log(rode ? pSelf : 1 - pSelf) / shrink;
-
-      // How many OTHER evils he took, against what a blind pick would give.
-      const rest = hypothesis.evil.filter((id) => id !== leader);
-      const slots = team.length - (rode ? 1 : 0);
-      if (rest.length > 0 && slots > 0 && pool > 0) {
-        const load = PROPOSAL_LOADING[round];
-        const q = Math.min(
-          0.98,
-          (evilLeader ? load.evil : load.good) * (slots / pool),
-        );
-        const j = rest.filter((id) => team.includes(id)).length;
-        logLikelihood +=
-          (logChoose(rest.length, j) +
-            j * Math.log(q) +
-            (rest.length - j) * Math.log(1 - q)) /
-          shrink;
-      }
+      logLikelihood += proposalLogFactor(
+        hypothesis.evil,
+        proposal.event.leaderId,
+        proposal.event.teamPlayerIds,
+        proposal.missionNumber,
+        game.players.length,
+        params.proposalDispersion ?? 1,
+      );
     }
   }
 

@@ -54,6 +54,7 @@ import {
   createFilter,
   marginals,
   updateOnMission,
+  updateOnProposal,
   updateOnVotes,
 } from "./particle-filter";
 import { publicView } from "./public-view";
@@ -333,6 +334,9 @@ function playOut(
   };
 
   let pending: readonly string[] | null = state.proposedTeam;
+  // The car already on the table is part of the log the public worlds were
+  // drawn from. Scoring it again here would count one proposal twice.
+  let alreadyScored = pending !== null;
   let forced = firstAction;
 
   const evilWins = state.viewerSide === "evil";
@@ -356,6 +360,22 @@ function playOut(
     if (!pending) {
       pending = proposeTeam(seats, sim, info, shared, count, rng);
     }
+
+    // Who the leader picked is evidence before anyone votes on it — and on
+    // held-out real games it is the factor that closes almost the whole
+    // sharpening gap. See research/particle-equivalence.test.ts.
+    if (!alreadyScored) {
+      updateOnProposal(
+        filter,
+        seats[sim.leaderIndex],
+        pending,
+        Math.min(sim.missionNumber, 5),
+        seats.length,
+        rng,
+      );
+      refresh();
+    }
+    alreadyScored = false;
 
     const teamRisk = readOf(pending);
     // One shared mood for this proposal, then each seat votes its own rate
