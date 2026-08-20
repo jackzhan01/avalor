@@ -40,14 +40,11 @@
  */
 
 import { failDistribution } from "@/lib/inference/soft";
-import { deriveSideInference } from "@/lib/inference";
 import { evilCount, requiredFails, teamSize } from "@/lib/rules/avalon";
 import type { GameRecord, PlayerCount } from "@/lib/types/game";
 import {
   approveProbability,
   policyRoleOf,
-  LEADER_LOADING,
-  LEADER_RIDES,
   type InfoSet,
 } from "./policy";
 import {
@@ -66,6 +63,22 @@ import {
 } from "./proposal";
 import type { ParticleFilter } from "./particle-filter";
 import { publicView } from "./public-view";
+import { applySocial } from "./social-update";
+import { EvilOdds, syntheticChannel, type SocialEvidence } from "@/lib/social";
+
+/**
+ * The room this simulation is running with, if any.
+ *
+ * `quality` is how well a good seat's stance tracks the truth, and it may be
+ * a per-round array; `deception` is how hard evil works to protect its own.
+ * They are separate dials because the study needs them separate: a table that
+ * talks badly is WORSE than a silent one, since the liars are then the only
+ * seats with signal, and pooling the two knobs would hide that entirely.
+ */
+export interface SocialConfig {
+  quality: number | readonly number[];
+  deception?: number;
+}
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
 import type { Action, DecisionState } from "./state";
 
@@ -172,85 +185,6 @@ function normal(rng: () => number): number {
 const logit = (p: number) => Math.log(p / (1 - p));
 const logistic = (x: number) => 1 / (1 + Math.exp(-x));
 
-/**
- * The channel the structured log never recorded: table talk.
- *
- * Real good leaders take evils at 0.896 of chance on the FIRST round, when the
- * public posterior is still flat. No transform of that posterior can produce
- * it — a monotonic function of a uniform read is still uniform. The avoidance
- * has to come from information the logs do not contain: how people spoke, who
- * pushed to ride, what the table felt.
- *
- * So the simulator gets a reduced-form stand-in rather than a language model.
- * Each world draws one PUBLIC cue per seat, generated from the hidden roles and
- * corrupted by noise:
- *
- *     cue_i = SOCIAL_DELTA * [i is evil] + N(0, 1)
- *
- * Every simulated player sees the same cue and none can invert it — the noise
- * is a whole standard deviation against a signal well under one, so a seat
- * reading badly is usually just a seat reading badly. That is the point: it is
- * an observation channel, not a peek at the answer. No actor ever reads a role
- * from it, and nothing here reaches the user's own decision.
- *
- * SOCIAL_DELTA is fitted so the simulated round-one Evil loading of good
- * leaders lands on the 0.896 the corpus shows — 0.6 puts it at 0.88 to 0.91
- * across table sizes. It is NOT fitted to the win rate or the mission failure
- * rate, which are left to fall where they may and reported as the check.
- *
- * It works and it is not enough. A single static cue can set the level at
- * round one; it cannot reproduce the DEEPENING. Real good leaders go from
- * 0.896 of chance at round one to 0.405 by round five, while the simulator
- * barely moves — 0.88 down to 0.79. The remainder is the belief filter not
- * sharpening the way a real table does, not the cue being too weak.
- */
-const SOCIAL_DELTA = 0.6;
-
-/** One public cue per seat, drawn once per world. */
-function socialCue(
-  assignment: Assignment,
-  rng: () => number,
-  delta = SOCIAL_DELTA,
-): Map<string, number> {
-  const cue = new Map<string, number>();
-  for (const [seat, role] of assignment) {
-    const isEvil = EVIL_ROLE_NAMES.includes(role);
-    cue.set(seat, (isEvil ? delta : 0) + normal(rng));
-  }
-  return cue;
-}
-
-/**
- * The read every simulated player shares: the log-derived posterior tilted by
- * the public cue, renormalised to the number of evils the rules put here.
- */
-function blendCue(
-  read: Map<string, number>,
-  cue: ReadonlyMap<string, number>,
-  evilTotal: number,
-): Map<string, number> {
-  const out = new Map<string, number>();
-  let sum = 0;
-  for (const [seat, raw] of read) {
-    // Particle marginals really do hit 0 and 1 — every world agreeing is a
-    // proof, not a rounding artefact — and the odds form divides by zero
-    // there. Clamped just inside, which keeps a proof looking like a proof
-    // while leaving the arithmetic finite.
-    const q = Math.min(0.995, Math.max(0.005, raw));
-    const odds = (q / (1 - q)) * Math.exp(cue.get(seat) ?? 0);
-    const p = odds / (1 + odds);
-    out.set(seat, p);
-    sum += p;
-  }
-  if (sum > 0) {
-    const scale = evilTotal / sum;
-    for (const [seat, p] of out) {
-      out.set(seat, Math.min(0.98, Math.max(0.02, p * scale)));
-    }
-  }
-  return out;
-}
-
 interface SimState {
   successes: number;
   fails: number;
@@ -300,21 +234,88 @@ function playOut(
   publicWorlds: readonly Assignment[],
   rng: () => number,
   trace?: SimTrace,
-  delta?: number,
+  social?: SocialConfig,
 ): boolean {
   const game = state.game;
   const count = game.playerCount as PlayerCount;
   const seats = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => p.id);
   const info = informationSets(assignment);
   const evilTotal = evilCount(count);
+  void evilTotal;
   // The table believes in WORLDS, not per-seat numbers. A failed quest is a
   // statement about a team, and marginals cannot hold one.
   const filter = createFilter(publicWorlds, seats);
-  // One draw per world: this table talked the way it talked.
-  const cue = socialCue(assignment, rng, delta);
-  let shared = blendCue(marginals(filter), cue, evilTotal);
+  /*
+   * The room, if this study is running with one.
+   *
+   * Talk enters as a likelihood over worlds through the filter, not as a tilt
+   * applied to the answer afterwards — see decision/social-update.ts. So the
+   * shared read is simply the posterior, and team choice, risk and votes all
+   * see the same thing, which the old blended cue could not manage.
+   */
+  const quality = social?.quality ?? 0;
+  const talkative = Array.isArray(quality)
+    ? quality.some((q) => q > 0)
+    : (quality as number) > 0;
+  const channel =
+    talkative
+      ? syntheticChannel({
+          seats,
+          evilSeats: new Set(
+            seats.filter((seat) => info.get(seat)?.side === "evil"),
+          ),
+          quality,
+          deception: social?.deception,
+          rng,
+        })
+      : null;
+  const talk = channel ? channel.evidence()[Symbol.iterator]() : null;
+  const odds = new EvilOdds();
+  const applied = new Map<string, number>();
+  let pendingTalk: SocialEvidence | null = null;
+  let talkedThrough = 0;
+
+  const hearRound = (round: number) => {
+    if (!talk) return;
+    while (talkedThrough < round) {
+      talkedThrough += 1;
+      const batch: SocialEvidence[] = [];
+      if (pendingTalk && pendingTalk.missionNumber <= talkedThrough) {
+        batch.push(pendingTalk);
+        pendingTalk = null;
+      }
+      for (;;) {
+        const next = talk.next();
+        if (next.done) break;
+        if (next.value.missionNumber > talkedThrough) {
+          pendingTalk = next.value;
+          break;
+        }
+        batch.push(next.value);
+      }
+      // Talk is not testimony: an accusation from a seat the table already
+      // distrusts is worth less. Credibility comes from the belief itself.
+      const read = marginals(filter);
+      const credibility = new Map<string, number>();
+      for (const seat of seats) {
+        credibility.set(seat, Math.max(0, 1 - (read.get(seat) ?? 0)));
+      }
+      odds.absorb(batch, talkedThrough, credibility);
+    }
+    // Only the change since last time — decay means old talk keeps moving.
+    const now = odds.snapshot();
+    const delta = new Map<string, number>();
+    for (const seat of seats) {
+      const d = (now.get(seat) ?? 0) - (applied.get(seat) ?? 0);
+      if (d !== 0) delta.set(seat, d);
+      applied.set(seat, now.get(seat) ?? 0);
+    }
+    applySocial(filter, delta);
+  };
+
+  let shared = marginals(filter);
   const refresh = () => {
-    shared = blendCue(marginals(filter), cue, evilTotal);
+    shared = marginals(filter);
   };
   const readOf = (team: readonly string[]) =>
     team.reduce((sum, seat) => sum + (shared.get(seat) ?? 0), 0);
@@ -361,6 +362,9 @@ function playOut(
       if (trace) trace.goodWon = false;
       return evilWins;
     }
+
+    hearRound(Math.min(sim.missionNumber, 5));
+    refresh();
 
     if (!pending) {
       pending = proposeTeam(seats, sim, info, filter, count, rng, history);
@@ -624,7 +628,7 @@ export function traceOne(
   assignment: Assignment,
   publicWorlds: readonly Assignment[],
   rng: () => number,
-  delta?: number,
+  social?: SocialConfig,
 ): SimTrace {
   const trace: SimTrace = {
     goodWon: false,
@@ -644,7 +648,7 @@ export function traceOne(
     readByRound: [],
     rawByRound: [],
   };
-  playOut(state, assignment, null, publicWorlds, rng, trace, delta);
+  playOut(state, assignment, null, publicWorlds, rng, trace, social);
   return trace;
 }
 

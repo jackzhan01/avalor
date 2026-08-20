@@ -27,6 +27,13 @@
  * Every input is either public or the leader's own legitimate sight. Oberon
  * knows no teammates and this file gives him none.
  *
+ * FROZEN, structurally. The public log has been shown to top out below what
+ * real leaders achieve — perfect play on it still loads round-five cars at
+ * 0.565 of chance where real leaders reach 0.450, see
+ * research/public-ceiling.test.ts — so no further proposal heuristic can close
+ * the gap and none should be added. The history and maximum-likelihood
+ * variants stay behind `goodModel` as ablations, not as candidates.
+ *
  * One thing fell out rather than being put in: a good leader knows he is good,
  * so restricting the cloud to his own information set drives his own seat to
  * zero risk, and the risk term alone already wants him aboard. γ came out near
