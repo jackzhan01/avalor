@@ -83,7 +83,38 @@ const SEES_PAIR_BOTH = 0.25 / 0.347; // Percival, both candidates aboard
 const SEES_PAIR_ONE = 0.451 / 0.415; // Percival, exactly one
 const KNOWS_TEAMMATE_ABOARD = 0.499 / 0.403; // evil, a teammate he can see
 
+/**
+ * How the attempt number moves a vote, as a logit shift.
+ *
+ * proposal_index carries almost nothing about WHO is evil, which is why the
+ * belief layer drops it. It carries a great deal about what people DO. Real
+ * tables get pickier as cars are rejected — off-team good approval falls 0.50,
+ * 0.24, 0.18, 0.23 — and then the hammer lands and everyone folds: the fifth
+ * car is approved by 0.81 of off-team good players and passes 97.7% of the
+ * time, because rejecting it hands evil the game outright.
+ *
+ * Measured on train+validation as the offset from the attempt-weighted pooled
+ * rate, so adding it redistributes BASE_APPROVE across attempts rather than
+ * moving its overall level. See research/vote-streak.test.ts.
+ */
+const ATTEMPT_SHIFT: Record<
+  "good" | "evil",
+  { readonly off: readonly number[]; readonly aboard: readonly number[] }
+> = {
+  good: {
+    off: [0.345, -0.818, -1.203, -0.869, 1.776],
+    aboard: [0.215, -0.459, -0.474, -0.238, 2.251],
+  },
+  evil: {
+    off: [0.398, -0.663, -0.98, -0.888, 1.23],
+    aboard: [0.198, -0.401, -0.439, -0.308, 1.264],
+  },
+};
+
 const clamp = (p: number) => Math.min(0.97, Math.max(0.03, p));
+
+const logit = (p: number) => Math.log(p / (1 - p));
+const logistic = (x: number) => 1 / (1 + Math.exp(-x));
 
 function bucket(publicRead: number): 0 | 1 | 2 {
   if (publicRead < READ_EDGES[0]) return 0;
@@ -102,8 +133,16 @@ export function approveProbability(
   info: InfoSet,
   team: readonly string[],
   publicRead: number,
+  attempt = 1,
 ): number {
-  if (team.includes(info.seat)) return APPROVE_ABOARD[info.role];
+  const a = Math.min(Math.max(Math.round(attempt), 1), 5) - 1;
+  const shift = ATTEMPT_SHIFT[info.side];
+
+  if (team.includes(info.seat)) {
+    return clamp(
+      logistic(logit(APPROVE_ABOARD[info.role]) + shift.aboard[a]),
+    );
+  }
 
   let p = BASE_APPROVE[info.role][bucket(publicRead)];
   const onTeam = new Set(team);
@@ -121,7 +160,7 @@ export function approveProbability(
   }
   // Oberon gets no overlay: he has no private sight to apply.
 
-  return clamp(p);
+  return clamp(logistic(logit(clamp(p)) + shift.off[a]));
 }
 
 /*

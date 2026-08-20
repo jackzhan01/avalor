@@ -375,7 +375,11 @@ function playOut(
         approve = forced.kind === "vote" && forced.choice === "approve";
       } else {
         const who = info.get(seat);
-        const base = who ? approveProbability(who, pending, teamRisk) : 0.5;
+        // The attempt number is not belief evidence, but it is the strongest
+        // single driver of a real vote: the hammer passes 98% of the time.
+        const base = who
+          ? approveProbability(who, pending, teamRisk, sim.rejections + 1)
+          : 0.5;
         approve = rng() < logistic(logit(base) + mood);
       }
       cast.set(seat, approve);
