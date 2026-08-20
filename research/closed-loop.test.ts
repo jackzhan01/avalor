@@ -82,7 +82,7 @@ function correlation(xs: readonly number[], ys: readonly number[]): number {
 
 interface Arm {
   label: string;
-  synthetic?: { quality: number; deception: number };
+  synthetic?: { quality: number; deception: number; consensus?: number };
   llm?: { mathMemory: boolean };
 }
 
@@ -134,6 +134,8 @@ const ARMS: Arm[] = [
   // stances go through the same measurement hook the language arms do. That
   // is what makes the speaker-correlation numbers comparable at all.
   { label: "2 合成信号，坐在 LLM 实测坐标上 q=.29 骗=.22", synthetic: { quality: 0.29, deception: 0.215 } },
+  { label: "2b 合成 + 共识=.3，坐在第4臂坐标", synthetic: { quality: 0.29, deception: 0.215, consensus: 0.3 } },
+  { label: "2c 合成 + 共识=.3，坐在第3臂坐标", synthetic: { quality: 0.265, deception: 0.385, consensus: 0.3 } },
   { label: "3 LLM 说话，无数学记忆", llm: { mathMemory: false } },
   { label: "4 LLM 说话 + 数学后验记忆", llm: { mathMemory: true } },
 ];
@@ -207,12 +209,15 @@ it("runs the closed loop and compares four arms", async () => {
         if (arm.synthetic) {
           const spec = arm.synthetic;
           const talkRng = makeRng(7000 + i);
+          const sharedNoise = new Map<string, number>();
           talk = async (input) => {
             const out = syntheticRound(input.round, {
               seats: input.seats,
               evilSeats: evilTruth,
               quality: spec.quality,
               deception: spec.deception,
+              consensus: spec.consensus,
+              sharedNoise,
               rng: talkRng,
             }).map((one, k) => ({ ...one, sequence: input.sequence + k + 1 }));
             record(out, input.round);

@@ -43,6 +43,27 @@ export interface SyntheticOptions {
    * table can be perceptive and its evils clumsy, or the reverse.
    */
   deception?: number;
+  /**
+   * How much of a good speaker's error is shared with the rest of the table,
+   * 0 to 1.
+   *
+   * At 0 every stance is drawn independently, which is what the generator did
+   * and what makes a synthetic table so forgiving: n speakers wrong in n
+   * different directions cancel, and the posterior barely moves. At 1 they are
+   * all wrong in the SAME direction about the same seat, which the aggregator
+   * cannot distinguish from n independent seats having spotted something.
+   *
+   * The shared part is drawn once per target per GAME and reused, so this one
+   * dial produces both consensus across speakers and persistence across
+   * rounds. Total noise variance is unchanged, so the realised correlation
+   * with truth stays exactly `quality`.
+   */
+  consensus?: number;
+  /**
+   * Per-target shared draws, created once per game by the caller and passed
+   * back in every round. Populated lazily.
+   */
+  sharedNoise?: Map<string, number>;
   /** Stances per speaker per round. Fewer than n-1 means they pick favourites. */
   perRound?: number;
   rng: () => number;
@@ -119,9 +140,19 @@ export function syntheticRound(
         );
         confidence = 0.5 + 0.2 * rng();
       } else {
-        valence = clamp(
-          coefficient(quality, GOOD_NOISE) * truth + GOOD_NOISE * normal(rng),
-        );
+        const consensus = Math.min(1, Math.max(0, options.consensus ?? 0));
+        let noise = normal(rng);
+        if (consensus > 0 && options.sharedNoise) {
+          let shared = options.sharedNoise.get(target);
+          if (shared === undefined) {
+            shared = normal(rng);
+            options.sharedNoise.set(target, shared);
+          }
+          // Variance-preserving mix, so `quality` keeps meaning what it says.
+          noise =
+            Math.sqrt(consensus) * shared + Math.sqrt(1 - consensus) * noise;
+        }
+        valence = clamp(coefficient(quality, GOOD_NOISE) * truth + GOOD_NOISE * noise);
         confidence = 0.4 + 0.3 * Math.abs(valence);
       }
 
