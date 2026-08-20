@@ -64,7 +64,8 @@ import {
 import type { ParticleFilter } from "./particle-filter";
 import { publicView } from "./public-view";
 import { applySocial } from "./social-update";
-import { EvilOdds, syntheticChannel, type SocialEvidence } from "@/lib/social";
+import { EvilOdds, syntheticRound, type SocialEvidence } from "@/lib/social";
+import type { GameEvent } from "@/lib/types/events";
 
 /**
  * The room this simulation is running with, if any.
@@ -79,6 +80,30 @@ export interface SocialConfig {
   quality: number | readonly number[];
   deception?: number;
 }
+
+/**
+ * What the table says in one round, however it is produced.
+ *
+ * The synthetic generator and a language model both arrive here, so a closed
+ * loop and a controlled sweep run down the same path and differ only in who is
+ * talking. `events` is a PUBLIC log of the simulated game so far, in exactly
+ * the shape seatBrief consumes — which is what lets a model see a simulated
+ * game the same way it saw a recorded one.
+ *
+ * `read` is the current posterior. An arm may hand it to its speakers as
+ * external belief memory or withhold it; that choice is the arm.
+ */
+export interface TalkInput {
+  round: number;
+  seats: readonly string[];
+  info: ReadonlyMap<string, InfoSet>;
+  game: GameRecord;
+  events: readonly GameEvent[];
+  read: ReadonlyMap<string, number>;
+  sequence: number;
+}
+
+export type TalkSource = (input: TalkInput) => Promise<SocialEvidence[]>;
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
 import type { Action, DecisionState } from "./state";
 
@@ -227,7 +252,7 @@ function proposeTeam(
 }
 
 /** Plays one sampled world out and reports whether the user's side won. */
-function playOut(
+async function playOut(
   state: DecisionState,
   assignment: Assignment,
   firstAction: Action | null,
@@ -235,7 +260,8 @@ function playOut(
   rng: () => number,
   trace?: SimTrace,
   social?: SocialConfig,
-): boolean {
+  talk?: TalkSource,
+): Promise<boolean> {
   const game = state.game;
   const count = game.playerCount as PlayerCount;
   const seats = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => p.id);
@@ -257,50 +283,53 @@ function playOut(
   const talkative = Array.isArray(quality)
     ? quality.some((q) => q > 0)
     : (quality as number) > 0;
-  const channel =
-    talkative
-      ? syntheticChannel({
-          seats,
-          evilSeats: new Set(
-            seats.filter((seat) => info.get(seat)?.side === "evil"),
-          ),
-          quality,
-          deception: social?.deception,
-          rng,
-        })
-      : null;
-  const talk = channel ? channel.evidence()[Symbol.iterator]() : null;
+  /*
+   * Both kinds of speaker come through one source. The synthetic generator is
+   * wrapped as one rather than special-cased, so the controlled sweep and the
+   * closed loop cannot drift apart in how their talk reaches the belief.
+   */
+  const speak: TalkSource | null =
+    talk ??
+    (talkative
+      ? async (input) =>
+          syntheticRound(input.round, {
+            seats: input.seats,
+            evilSeats: new Set(
+              input.seats.filter((seat) => info.get(seat)?.side === "evil"),
+            ),
+            quality,
+            deception: social?.deception,
+            rng,
+          }).map((one, i) => ({ ...one, sequence: input.sequence + i + 1 }))
+      : null);
+
   const odds = new EvilOdds();
   const applied = new Map<string, number>();
-  let pendingTalk: SocialEvidence | null = null;
   let talkedThrough = 0;
 
-  const hearRound = (round: number) => {
-    if (!talk) return;
+  const hearRound = async (round: number) => {
+    if (!speak) return;
     while (talkedThrough < round) {
       talkedThrough += 1;
-      const batch: SocialEvidence[] = [];
-      if (pendingTalk && pendingTalk.missionNumber <= talkedThrough) {
-        batch.push(pendingTalk);
-        pendingTalk = null;
-      }
-      for (;;) {
-        const next = talk.next();
-        if (next.done) break;
-        if (next.value.missionNumber > talkedThrough) {
-          pendingTalk = next.value;
-          break;
-        }
-        batch.push(next.value);
-      }
       // Talk is not testimony: an accusation from a seat the table already
       // distrusts is worth less. Credibility comes from the belief itself.
       const read = marginals(filter);
+      const batch = await speak({
+        round: talkedThrough,
+        seats,
+        info,
+        game,
+        events: log,
+        read,
+        sequence: seq,
+      });
+      seq += Math.max(batch.length, 1);
       const credibility = new Map<string, number>();
       for (const seat of seats) {
         credibility.set(seat, Math.max(0, 1 - (read.get(seat) ?? 0)));
       }
       odds.absorb(batch, talkedThrough, credibility);
+      spoken.push(...batch);
     }
     // Only the change since last time — decay means old talk keeps moving.
     const now = odds.snapshot();
@@ -330,6 +359,33 @@ function playOut(
 
   // What the simulated table has publicly seen, which the leader reads back.
   const history = emptyHistory(seats.length);
+  /*
+   * The same thing again, as an event log.
+   *
+   * Redundant with `history` on purpose: that one is packed for the proposal
+   * features, this one is the shape seatBrief reads, so a speaker in a
+   * simulated game gets exactly the brief it would get in a recorded one. It
+   * is public only — no assignment, no marks.
+   */
+  const log: GameEvent[] = [];
+  const spoken: SocialEvidence[] = [];
+  let seq = 1;
+  // Distributive, or the union collapses to its shared fields and every
+  // type-specific one stops type-checking. The corpus loader hit this too.
+  type Partial = GameEvent extends infer T
+    ? T extends GameEvent
+      ? Omit<T, "id" | "gameId" | "timestamp">
+      : never
+    : never;
+  const note = (event: Partial) => {
+    log.push({
+      ...event,
+      id: `sim-${seq}`,
+      gameId: game.id,
+      timestamp: game.createdAt,
+    } as GameEvent);
+    seq += 1;
+  };
   const maskOf = (team: readonly string[]) => {
     let mask = 0;
     for (const seat of team) {
@@ -363,7 +419,7 @@ function playOut(
       return evilWins;
     }
 
-    hearRound(Math.min(sim.missionNumber, 5));
+    await hearRound(Math.min(sim.missionNumber, 5));
     refresh();
 
     if (!pending) {
@@ -394,6 +450,16 @@ function playOut(
       refresh();
     }
     alreadyScored = false;
+
+    const proposalId = `sim-${seq}`;
+    note({
+      type: "proposal",
+      leaderId: seats[sim.leaderIndex],
+      teamPlayerIds: [...pending],
+      missionNumber: Math.min(sim.missionNumber, 5),
+      proposalNumber: sim.rejections + 1,
+      sequence: seq,
+    });
 
     const teamRisk = readOf(pending);
     // One shared mood for this proposal, then each seat votes its own rate
@@ -461,6 +527,17 @@ function playOut(
         approvals * 2 > seats.length,
         seats.length,
       );
+      const votes: Record<string, "approve" | "reject"> = {};
+      for (const seat of seats) votes[seat] = cast.get(seat) ? "approve" : "reject";
+      note({
+        type: "vote",
+        proposalId,
+        votes,
+        finalResult: approvals * 2 > seats.length ? "passed" : "rejected",
+        missionNumber: Math.min(sim.missionNumber, 5),
+        proposalNumber: sim.rejections + 1,
+        sequence: seq,
+      });
     }
 
     if (approvals * 2 <= seats.length) {
@@ -518,6 +595,15 @@ function playOut(
 
     const succeeded = failCards < need;
     noteMission(history, maskOf(pending), succeeded, seats.length);
+    note({
+      type: "mission",
+      proposalId,
+      teamPlayerIds: [...pending],
+      result: succeeded ? "success" : "fail",
+      failCount: failCards,
+      missionNumber: Math.min(sim.missionNumber, 5),
+      sequence: seq,
+    });
     if (succeeded) sim.successes += 1;
     else sim.fails += 1;
 
@@ -588,11 +674,11 @@ export interface RolloutOptions {
  * decision actually changes the game. Without that, the difference between two
  * numbers near a half would be buried in sampling noise.
  */
-export function evaluateActions(
+export async function evaluateActions(
   state: DecisionState,
   actions: readonly Action[],
   options: RolloutOptions = {},
-): ActionValue[] {
+): Promise<ActionValue[]> {
   const worlds = options.worlds ?? 400;
   const seed = options.seed ?? 1;
   if (!state.viewerSide || actions.length === 0) return [];
@@ -614,16 +700,23 @@ export function evaluateActions(
   // own role, and the value of their decision is the value under what they know.
   const drawn = sampleAssignments(state.events, state.game, worlds, makeRng(seed));
 
-  return actions.map((action) => {
+  const out: ActionValue[] = [];
+  for (const action of actions) {
     let wins = 0;
     for (let i = 0; i < drawn.length; i += 1) {
       const rng = makeRng(seed * 1_000_003 + i * 7919 + 13);
-      if (playOut(state, drawn[i], action, publicWorlds, rng)) wins += 1;
+      if (await playOut(state, drawn[i], action, publicWorlds, rng)) wins += 1;
     }
     const n = drawn.length || 1;
     const q = wins / n;
-    return { action, q, se: Math.sqrt(Math.max(q * (1 - q), 1e-9) / n), worlds: n };
-  });
+    out.push({
+      action,
+      q,
+      se: Math.sqrt(Math.max(q * (1 - q), 1e-9) / n),
+      worlds: n,
+    });
+  }
+  return out;
 }
 
 /**
@@ -632,13 +725,14 @@ export function evaluateActions(
  * The calibration harness needs the shape of the simulated games, not their
  * value, and reaching into playOut is better than a second copy of it.
  */
-export function traceOne(
+export async function traceOne(
   state: DecisionState,
   assignment: Assignment,
   publicWorlds: readonly Assignment[],
   rng: () => number,
   social?: SocialConfig,
-): SimTrace {
+  talk?: TalkSource,
+): Promise<SimTrace> {
   const trace: SimTrace = {
     goodWon: false,
     proposals: 0,
@@ -657,7 +751,7 @@ export function traceOne(
     readByRound: [],
     rawByRound: [],
   };
-  playOut(state, assignment, null, publicWorlds, rng, trace, social);
+  await playOut(state, assignment, null, publicWorlds, rng, trace, social, talk);
   return trace;
 }
 

@@ -33,7 +33,7 @@ function separation(read: number[], k: number): number {
   );
 }
 
-it("compares real and simulated sharpening", () => {
+it("compares real and simulated sharpening", async () => {
   console.log("");
   console.log("每座位熵（bit，越低越尖）与分离度（前 k 名均值 − 其余均值）");
   console.log("");
@@ -76,7 +76,7 @@ it("compares real and simulated sharpening", () => {
     const publicWorlds = sampleAssignments(view.events, view.game, 120, makeRng(77));
     const worlds = sampleAssignments(state.events, state.game, 400, makeRng(5));
     for (let i = 0; i < worlds.length; i += 1) {
-      const t = traceOne(state, worlds[i], publicWorlds, makeRng(3000 + i));
+      const t = await traceOne(state, worlds[i], publicWorlds, makeRng(3000 + i));
       t.rawByRound.forEach((read, r) => {
         if (!read?.length) return;
         for (const q of read) raws[r].entropy += bits(q);

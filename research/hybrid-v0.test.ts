@@ -309,7 +309,7 @@ it("asks whether the model can at least name the right car", async () => {
       if (state.viewerSide === "good") {
         const teamOfIndex = (k: number) =>
           point.seats.filter((_, s) => point.teams[k] & (1 << s));
-        const values = evaluateActions(
+        const values = await evaluateActions(
           state,
           [
             { kind: "propose", team: teamOfIndex(order[0].k) },

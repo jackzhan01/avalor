@@ -15,7 +15,7 @@ import { corpusSplit } from "./splits";
  * intermediate quantities: how often proposals pass, how many attempts a
  * mission takes, how often five rejections end it, how often quests fail.
  */
-it("profiles simulated games against the corpus", () => {
+it("profiles simulated games against the corpus", async () => {
   console.log("");
   console.log("模拟 1200 局/人数。真实值：好人胜率 0.40–0.43、首提通过 0.657、任务失败率约 0.42");
   console.log("");
@@ -37,7 +37,7 @@ it("profiles simulated games against the corpus", () => {
     let wins = 0, proposals = 0, approvals = 0, missions = 0, quests = 0;
     let hitLimit = 0, failed = 0;
     for (let i = 0; i < worlds.length; i += 1) {
-      const t = traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i));
+      const t = await traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i));
       if (t.goodWon) wins += 1;
       proposals += t.proposals;
       approvals += t.approvals;
@@ -63,7 +63,7 @@ it("profiles simulated games against the corpus", () => {
  * and a seven-player table needs four of seven. If the real approval rate is
  * flat across sizes and ours is not, the gap is in the vote policy.
  */
-it("measures the corpus by table size", () => {
+it("measures the corpus by table size", async () => {
   console.log("");
   console.log("语料真实值，按人数");
   console.log("人数  好人胜率  过车率  每轮提案数  连否5次  任务失败率  局数");

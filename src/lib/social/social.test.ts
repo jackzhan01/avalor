@@ -172,6 +172,45 @@ describe("the synthetic table", () => {
     expect(high).toBeLessThan(-0.5);
   });
 
+  /*
+   * The dial has to mean what it says. It used to be the coefficient on truth
+   * before a 0.6 noise scale, so a nominal 0.31 produced stances correlated at
+   * 0.48 — and a measured channel dropped into that slot was reported about
+   * 1.5x stronger than it was.
+   */
+  it("delivers the correlation it was asked for", () => {
+    const seats2 = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"];
+    const evil2 = new Set(["p2", "p5", "p6"]);
+    for (const want of [0.2, 0.4, 0.6]) {
+      const v: number[] = [];
+      const t: number[] = [];
+      for (let seed = 1; seed <= 120; seed += 1) {
+        for (const e of syntheticRound(1, {
+          seats: seats2,
+          evilSeats: evil2,
+          quality: want,
+          rng: makeRng(seed),
+        })) {
+          if (evil2.has(e.speakerId)) continue;
+          v.push(e.valence);
+          t.push(evil2.has(e.targetId) ? -1 : 1);
+        }
+      }
+      const n = v.length;
+      const mv = v.reduce((a, b) => a + b, 0) / n;
+      const mt = t.reduce((a, b) => a + b, 0) / n;
+      let num = 0;
+      let dv = 0;
+      let dt = 0;
+      for (let i = 0; i < n; i += 1) {
+        num += (v[i] - mv) * (t[i] - mt);
+        dv += (v[i] - mv) ** 2;
+        dt += (t[i] - mt) ** 2;
+      }
+      expect(num / Math.sqrt(dv * dt)).toBeCloseTo(want, 1);
+    }
+  });
+
   it("never lets a seat speak about itself", () => {
     const rows = syntheticRound(2, {
       seats,

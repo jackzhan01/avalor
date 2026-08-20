@@ -36,26 +36,20 @@ interface Arm {
 }
 
 const ARMS: Arm[] = [
-  { label: "q=0.00 沉默" , quality: 0 },
-  { label: "q=0.15", quality: 0.15 },
-  { label: "q=0.15 但坏人不骗", quality: 0.15, deception: 0 },
+  { label: "q=0.00 沉默", quality: 0 },
+  { label: "q=0.20", quality: 0.2 },
   { label: "q=0.30", quality: 0.3 },
-  { label: "q=0.40", quality: 0.4 },
   { label: "q=0.45", quality: 0.45 },
-  { label: "q=0.60", quality: 0.6 },
-  { label: "q 随轮次上升 0.15→0.60", quality: [0.15, 0.25, 0.38, 0.5, 0.6] },
-  // Where gpt-5.4-mini actually lands, measured on its own generated stances:
-  // q 0.312 among good speakers, and deception NEGATIVE — its evil seats point
-  // at the truth too, teammates included. Both arms below, because the second
-  // is the same table with the liars a real game would have.
-  { label: "LLM 实测工作点 q=0.31 骗=-0.23", quality: 0.31, deception: -0.23 },
-  { label: "同 q，坏人照常骗 q=0.31 骗=0.60", quality: 0.31, deception: 0.6 },
-  // After the deception ablation: an explicit "your job is to make evil win,
-  // speech is a weapon" instruction moves the model from -0.19 to +0.44.
-  { label: "加了欺骗指令的 LLM q=0.31 骗=0.44", quality: 0.31, deception: 0.44 },
+  { label: "q=0.59", quality: 0.59 },
+  { label: "q=0.75", quality: 0.75 },
+  { label: "q=0.30 但坏人不骗", quality: 0.3, deception: 0 },
+  // The closed loop's measured coordinates, now that the dial means the
+  // realised correlation rather than a coefficient one noise-scale removed.
+  { label: "LLM 无记忆 实测 q=.265 骗=.385", quality: 0.265, deception: 0.385 },
+  { label: "LLM 有记忆 实测 q=.290 骗=.215", quality: 0.29, deception: 0.215 },
 ];
 
-it("sweeps how well the table reads people", () => {
+it("sweeps how well the table reads people", async () => {
 
   console.log("");
   console.log("社会信号质量扫描（q = 表态与真相的相关性）");
@@ -94,7 +88,7 @@ it("sweeps how well the table reads people", () => {
       const expected = [0, 0, 0, 0, 0];
 
       for (let i = 0; i < worlds.length; i += 1) {
-        const t = traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i), {
+        const t = await traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i), {
           quality: arm.quality,
           deception: arm.deception,
         });

@@ -13,7 +13,7 @@ import type { GameRecord } from "@/lib/types/game";
  * base rate, every number it reports downstream is measuring the simulator
  * rather than the decision.
  */
-it("plays opening positions at something like the real base rate", () => {
+it("plays opening positions at something like the real base rate", async () => {
   console.log("");
   console.log("从开局模拟，好人胜率（语料真实值：7人 0.43 / 8人 0.42 / 9人 0.42 / 10人 0.40）");
   console.log("");
@@ -27,7 +27,7 @@ it("plays opening positions at something like the real base rate", () => {
       viewerRole: "loyal",
     };
     const state = buildDecisionState(built.events, asLoyal);
-    const values = evaluateActions(
+    const values = await evaluateActions(
       state,
       [
         { kind: "vote", choice: "approve" },

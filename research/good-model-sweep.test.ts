@@ -25,7 +25,7 @@ import type { GameRecord } from "@/lib/types/game";
  *   quest fail .391 / .426 / .417 / .477
  *   loading    0.896 / 0.773 / 0.630 / 0.622 / 0.405
  */
-it("runs the simulator under each good-leader model", () => {
+it("runs the simulator under each good-leader model", async () => {
   const modes = ["moment", "mle", "history"] as const;
   const original = DEFAULT_PROPOSAL.goodModel;
 
@@ -65,7 +65,7 @@ it("runs the simulator under each good-leader model", () => {
       const expected = [0, 0, 0, 0, 0];
 
       for (let i = 0; i < worlds.length; i += 1) {
-        const t = traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i));
+        const t = await traceOne(state, worlds[i], publicWorlds, makeRng(1000 + i));
         if (t.goodWon) wins += 1;
         proposals += t.proposals;
         approvals += t.approvals;

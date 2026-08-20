@@ -18,7 +18,8 @@ const VOTE: Action[] = [
   { kind: "vote", choice: "reject" },
 ];
 
-const value = (values: ReturnType<typeof evaluateActions>, choice: string) =>
+type Values = Awaited<ReturnType<typeof evaluateActions>>;
+const value = (values: Values, choice: string) =>
   values.find((v) => v.action.kind === "vote" && v.action.choice === choice)!;
 
 /*
@@ -54,45 +55,45 @@ describe("a vote whose sign is obvious", () => {
     return buildDecisionState(built.events, asMerlin);
   }
 
-  it.skip("prefers rejecting a car Merlin can see two evils on", () => {
+  it.skip("prefers rejecting a car Merlin can see two evils on", async () => {
     const state = merlinFacingADirtyCar([4, 6, 2]);
     expect(state.viewerSide).toBe("good");
     expect(state.proposedTeam).toHaveLength(3);
 
-    const values = evaluateActions(state, VOTE, { worlds: 300, seed: 11 });
+    const values = await evaluateActions(state, VOTE, { worlds: 300, seed: 11 });
     const approve = value(values, "approve");
     const reject = value(values, "reject");
     expect(reject.q).toBeGreaterThan(approve.q);
   });
 
-  it.skip("prefers approving a car Merlin can see is clean", () => {
+  it.skip("prefers approving a car Merlin can see is clean", async () => {
     const state = merlinFacingADirtyCar([1, 2, 3]);
-    const values = evaluateActions(state, VOTE, { worlds: 300, seed: 11 });
+    const values = await evaluateActions(state, VOTE, { worlds: 300, seed: 11 });
     expect(value(values, "approve").q).toBeGreaterThan(value(values, "reject").q);
   });
 
-  it.skip("keeps the sign across seeds", () => {
+  it.skip("keeps the sign across seeds", async () => {
     const state = merlinFacingADirtyCar([4, 6, 2]);
     for (const seed of [1, 2, 3, 4, 5]) {
-      const values = evaluateActions(state, VOTE, { worlds: 300, seed });
+      const values = await evaluateActions(state, VOTE, { worlds: 300, seed });
       expect(value(values, "reject").q).toBeGreaterThan(value(values, "approve").q);
     }
   });
 
-  it("reports probabilities, not scores", () => {
+  it("reports probabilities, not scores", async () => {
     const state = merlinFacingADirtyCar([4, 6, 2]);
-    for (const v of evaluateActions(state, VOTE, { worlds: 200, seed: 9 })) {
+    for (const v of await evaluateActions(state, VOTE, { worlds: 200, seed: 9 })) {
       expect(v.q).toBeGreaterThanOrEqual(0);
       expect(v.q).toBeLessThanOrEqual(1);
       expect(v.worlds).toBe(200);
     }
   });
 
-  it("says nothing when the user has not said which side they are on", () => {
+  it("says nothing when the user has not said which side they are on", async () => {
     const built = game(9).proposal(2, [4, 6, 2]).build();
     const state = buildDecisionState(built.events, built.game);
     expect(state.viewerSide).toBeNull();
     // No objective to maximise means no recommendation, not a coin flip.
-    expect(evaluateActions(state, VOTE, { worlds: 50 })).toEqual([]);
+    expect(await evaluateActions(state, VOTE, { worlds: 50 })).toEqual([]);
   });
 });

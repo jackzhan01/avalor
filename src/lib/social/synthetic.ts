@@ -23,8 +23,14 @@ export interface SyntheticOptions {
   /**
    * How well a good seat reads the room, 0 to 1.
    *
-   * The correlation between a stance and the truth. At 0 the table is talking
-   * noise; at 1 everyone is Merlin. This is the dial the study sweeps.
+   * The correlation between a stance and the truth, REALISED — set 0.4 here
+   * and the stances that come out correlate with the truth at 0.4.
+   *
+   * That has to be said explicitly because it was wrong. The dial used to be
+   * the coefficient on truth before a noise term scaled by 0.6, so a nominal
+   * 0.31 produced stances correlated at 0.48, and a measured channel dropped
+   * into this slot came out about 1.5x stronger than it really was. The axis
+   * now means what its name says; see `coefficient` below.
    *
    * An array gives one value per round, because a real table does not read
    * strangers on the opening car as well as it reads them on the fifth.
@@ -50,6 +56,22 @@ function normal(rng: () => number): number {
 }
 
 const clamp = (x: number) => Math.min(1, Math.max(-1, x));
+
+/**
+ * Weight on truth that yields a given realised correlation.
+ *
+ * With valence = a*truth + s*noise and truth in {-1, +1}, the correlation is
+ * a / sqrt(a^2 + s^2), so a = q*s / sqrt(1 - q^2). The noise scale stays where
+ * it was — it keeps the stances off the clamp — and only the meaning of the
+ * dial changes.
+ */
+function coefficient(q: number, noiseScale: number): number {
+  const bounded = Math.min(0.999, Math.max(0, q));
+  return (bounded * noiseScale) / Math.sqrt(1 - bounded * bounded);
+}
+
+const GOOD_NOISE = 0.6;
+const EVIL_NOISE = 0.5;
 
 /**
  * Stances for one round.
@@ -88,14 +110,17 @@ export function syntheticRound(
       let valence: number;
       let confidence: number;
       if (speakerEvil) {
-        // He knows. He shades toward defending his own and accusing the rest,
-        // damped so he is not simply an inverted oracle.
-        valence = clamp(-deception * truth + Math.sqrt(1 - deception * deception) * normal(rng) * 0.5);
+        // He knows. He shades toward defending his own and accusing the rest.
+        // Negative deception is a table whose evils tell the truth, which is
+        // what an un-prompted language model does; the sign carries it.
+        const a = coefficient(Math.abs(deception), EVIL_NOISE);
+        valence = clamp(
+          -Math.sign(deception) * a * truth + EVIL_NOISE * normal(rng),
+        );
         confidence = 0.5 + 0.2 * rng();
       } else {
-        // Quality is the correlation with truth; the rest is noise.
         valence = clamp(
-          quality * truth + Math.sqrt(Math.max(0, 1 - quality * quality)) * normal(rng) * 0.6,
+          coefficient(quality, GOOD_NOISE) * truth + GOOD_NOISE * normal(rng),
         );
         confidence = 0.4 + 0.3 * Math.abs(valence);
       }
