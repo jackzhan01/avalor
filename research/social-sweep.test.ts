@@ -50,6 +50,9 @@ const ARMS: Arm[] = [
   // is the same table with the liars a real game would have.
   { label: "LLM 实测工作点 q=0.31 骗=-0.23", quality: 0.31, deception: -0.23 },
   { label: "同 q，坏人照常骗 q=0.31 骗=0.60", quality: 0.31, deception: 0.6 },
+  // After the deception ablation: an explicit "your job is to make evil win,
+  // speech is a weapon" instruction moves the model from -0.19 to +0.44.
+  { label: "加了欺骗指令的 LLM q=0.31 骗=0.44", quality: 0.31, deception: 0.44 },
 ];
 
 it("sweeps how well the table reads people", () => {

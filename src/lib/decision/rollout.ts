@@ -367,7 +367,16 @@ function playOut(
     refresh();
 
     if (!pending) {
-      pending = proposeTeam(seats, sim, info, filter, count, rng, history);
+      // A forced proposal is the action being valued: play the car the caller
+      // asked about, then let the policy take over. Without this the propose
+      // action existed in the type and did nothing, so every candidate team
+      // scored identically and the hybrid had nothing to rank.
+      if (forced?.kind === "propose" && seats[sim.leaderIndex] === state.viewerId) {
+        pending = forced.team;
+        forced = null;
+      } else {
+        pending = proposeTeam(seats, sim, info, filter, count, rng, history);
+      }
     }
 
     // Who the leader picked is evidence before anyone votes on it — and on
