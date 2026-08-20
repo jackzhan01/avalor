@@ -45,3 +45,7 @@ next-env.d.ts
 
 # research 数据集：体积大，且 AvalonLogs 未声明许可证
 research/data/
+
+# LLM 回答缓存：重跑免费、可复现，但不进仓库
+research/.llm-cache/
+research/.llm-*-out.txt

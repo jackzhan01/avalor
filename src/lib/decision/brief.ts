@@ -136,8 +136,19 @@ function renderSocial(brief: SeatBrief): string {
 }
 
 /** The brief as prose, which is what an LLM arm actually receives. */
-export function renderBrief(brief: SeatBrief): string {
-  const blocks = [buildBriefing(brief.game, brief.events), renderSocial(brief)];
+export function renderBrief(
+  brief: SeatBrief,
+  options: { includeInference?: boolean } = {},
+): string {
+  const blocks = [
+    // Derived conclusions are off by default here. Handing a language model
+    // the inference layer's answers would make it a hybrid arm wearing the
+    // language arm's name.
+    buildBriefing(brief.game, brief.events, {
+      includeInference: options.includeInference ?? false,
+    }),
+    renderSocial(brief),
+  ];
 
   if (brief.proposedTeam?.length) {
     const seatOf = (id: string) =>

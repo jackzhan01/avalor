@@ -43,6 +43,15 @@ export interface BriefingOptions {
    * is what a shared/exported game would look like.
    */
   includePrivate?: boolean;
+  /**
+   * The排除法 block — what the inference layer has already settled.
+   *
+   * Default true, which is what the product wants: the model should not
+   * re-derive what the engine can prove. An evaluation comparing a language
+   * model AGAINST that engine must turn it off, or the arm is measuring the
+   * engine's deductions wearing the model's name.
+   */
+  includeInference?: boolean;
 }
 
 /** 1 = 强踩 … 5 = 强保. Spelled out for the model on first use. */
@@ -428,13 +437,14 @@ export function buildBriefing(
   options: BriefingOptions = {},
 ): string {
   const includePrivate = options.includePrivate ?? true;
+  const includeInference = options.includeInference ?? true;
 
   const blocks = [
     section("牌局", renderSetup(game, events)),
     includePrivate ? section("我自己（私密信息，别人不知道）", renderViewer(game, events)) : "",
     // Placed straight after the private layer, before the raw log: the model
     // should know what is already settled before it starts reading events.
-    includePrivate
+    includePrivate && includeInference
       ? section("排除法已经确定的（纯逻辑推演，不是推测）", renderInference(game, events))
       : "",
     section("五轮任务", renderMissions(game, events)),

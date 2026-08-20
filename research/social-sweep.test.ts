@@ -44,6 +44,12 @@ const ARMS: Arm[] = [
   { label: "q=0.45", quality: 0.45 },
   { label: "q=0.60", quality: 0.6 },
   { label: "q 随轮次上升 0.15→0.60", quality: [0.15, 0.25, 0.38, 0.5, 0.6] },
+  // Where gpt-5.4-mini actually lands, measured on its own generated stances:
+  // q 0.312 among good speakers, and deception NEGATIVE — its evil seats point
+  // at the truth too, teammates included. Both arms below, because the second
+  // is the same table with the liars a real game would have.
+  { label: "LLM 实测工作点 q=0.31 骗=-0.23", quality: 0.31, deception: -0.23 },
+  { label: "同 q，坏人照常骗 q=0.31 骗=0.60", quality: 0.31, deception: 0.6 },
 ];
 
 it("sweeps how well the table reads people", () => {
