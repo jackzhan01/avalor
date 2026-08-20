@@ -353,7 +353,10 @@ it("fits the team-level proposal policy on train and validation", () => {
   console.log("");
   console.log(`提案拟合：train+validation ${games.length} 局，${shots.length} 个提案快照`);
 
-  const fitted: { [K in keyof ProposalParams]: number[] } = {
+  const fitted: Record<
+    "goodRisk" | "evilRisk" | "evilGain" | "ride" | "rideEvil" | "merlinRisk" | "merlinPublic",
+    number[]
+  > = {
     goodRisk: [],
     evilRisk: [],
     evilGain: [],

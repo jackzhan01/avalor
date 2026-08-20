@@ -57,7 +57,13 @@ import {
   updateOnProposal,
   updateOnVotes,
 } from "./particle-filter";
-import { chooseTeam } from "./proposal";
+import {
+  chooseTeam,
+  emptyHistory,
+  noteMission,
+  noteVote,
+  type ProposalHistory,
+} from "./proposal";
 import type { ParticleFilter } from "./particle-filter";
 import { publicView } from "./public-view";
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
@@ -267,6 +273,7 @@ function proposeTeam(
   filter: ParticleFilter,
   count: PlayerCount,
   rng: () => number,
+  history: ProposalHistory,
 ): string[] {
   const round = Math.min(sim.missionNumber, 5) as Mission;
   const size = teamSize(count, round);
@@ -280,6 +287,8 @@ function proposeTeam(
     filter,
     round,
     rng,
+    undefined,
+    history,
   );
 }
 
@@ -318,6 +327,17 @@ function playOut(
     leaderIndex: Math.max(0, seats.indexOf(state.leaderId ?? seats[0])),
   };
 
+  // What the simulated table has publicly seen, which the leader reads back.
+  const history = emptyHistory(seats.length);
+  const maskOf = (team: readonly string[]) => {
+    let mask = 0;
+    for (const seat of team) {
+      const i = seats.indexOf(seat);
+      if (i >= 0) mask |= 1 << i;
+    }
+    return mask;
+  };
+
   let pending: readonly string[] | null = state.proposedTeam;
   // The car already on the table is part of the log the public worlds were
   // drawn from. Scoring it again here would count one proposal twice.
@@ -343,7 +363,7 @@ function playOut(
     }
 
     if (!pending) {
-      pending = proposeTeam(seats, sim, info, filter, count, rng);
+      pending = proposeTeam(seats, sim, info, filter, count, rng, history);
     }
 
     // Who the leader picked is evidence before anyone votes on it — and on
@@ -416,6 +436,20 @@ function playOut(
     updateOnVotes(filter, pending, cast, Math.min(sim.missionNumber, 5), rng);
     refresh();
 
+    {
+      let approvedBy = 0;
+      for (let i = 0; i < seats.length; i += 1) {
+        if (cast.get(seats[i])) approvedBy |= 1 << i;
+      }
+      noteVote(
+        history,
+        maskOf(pending),
+        approvedBy,
+        approvals * 2 > seats.length,
+        seats.length,
+      );
+    }
+
     if (approvals * 2 <= seats.length) {
       sim.rejections += 1;
       if (trace && sim.rejections >= 5) trace.hitRejectionLimit = true;
@@ -469,8 +503,10 @@ function playOut(
 
     refresh();
 
-    if (failCards >= need) sim.fails += 1;
-    else sim.successes += 1;
+    const succeeded = failCards < need;
+    noteMission(history, maskOf(pending), succeeded, seats.length);
+    if (succeeded) sim.successes += 1;
+    else sim.fails += 1;
 
     sim.missionNumber = Math.min(sim.missionNumber + 1, 5);
     sim.rejections = 0;

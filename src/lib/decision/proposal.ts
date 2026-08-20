@@ -37,6 +37,83 @@
 import type { InfoSet } from "./policy";
 import type { ParticleFilter } from "./particle-filter";
 
+/**
+ * What the public log says about each seat, carried through a game.
+ *
+ * Every field is readable by anyone at the table. Masks are over seat index.
+ */
+export interface ProposalHistory {
+  rodeSuccess: number;
+  rodeFail: number;
+  everRode: number;
+  lastSuccess: number;
+  lastFail: number;
+  /** Masks of teams the table has approved. */
+  approved: number[];
+  aboardTotal: number[];
+  aboardPassed: number[];
+  votes: number[];
+  agreed: number[];
+  /** Seats that rode a failed quest together, as (a << 4) | b with a < b. */
+  failPairs: Set<number>;
+}
+
+export function emptyHistory(n: number): ProposalHistory {
+  return {
+    rodeSuccess: 0,
+    rodeFail: 0,
+    everRode: 0,
+    lastSuccess: 0,
+    lastFail: 0,
+    approved: [],
+    aboardTotal: new Array(n).fill(0),
+    aboardPassed: new Array(n).fill(0),
+    votes: new Array(n).fill(0),
+    agreed: new Array(n).fill(0),
+    failPairs: new Set(),
+  };
+}
+
+export function noteVote(
+  h: ProposalHistory,
+  teamMask: number,
+  approvedBy: number,
+  passed: boolean,
+  n: number,
+): void {
+  for (let s = 0; s < n; s += 1) {
+    if (teamMask & (1 << s)) {
+      h.aboardTotal[s] += 1;
+      if (passed) h.aboardPassed[s] += 1;
+    }
+    h.votes[s] += 1;
+    if (((approvedBy & (1 << s)) !== 0) === passed) h.agreed[s] += 1;
+  }
+  if (passed) h.approved.push(teamMask);
+}
+
+export function noteMission(
+  h: ProposalHistory,
+  teamMask: number,
+  success: boolean,
+  n: number,
+): void {
+  h.everRode |= teamMask;
+  if (success) {
+    h.rodeSuccess |= teamMask;
+    h.lastSuccess = teamMask;
+    return;
+  }
+  h.rodeFail |= teamMask;
+  h.lastFail = teamMask;
+  for (let a = 0; a < n; a += 1) {
+    if (!(teamMask & (1 << a))) continue;
+    for (let b = a + 1; b < n; b += 1) {
+      if (teamMask & (1 << b)) h.failPairs.add((a << 4) | b);
+    }
+  }
+}
+
 export interface ProposalParams {
   /** β by round: how hard a good leader avoids risk. */
   goodRisk: readonly number[];
@@ -75,6 +152,21 @@ export interface ProposalParams {
    */
   merlinRisk: readonly number[];
   merlinPublic: readonly number[];
+  historyRisk: readonly number[];
+  historyRide: readonly number[];
+  /**
+   * Which model the uninformed good leaders use.
+   *
+   * "moment" reproduces where their car lands in the risk ordering and how
+   * often they ride. "mle" fits the same two terms to the actual choice, over
+   * all legal teams. "history" adds the composition features below.
+   */
+  goodModel: "moment" | "mle" | "history";
+  /** Risk and ride again, by round, fitted by maximum likelihood. */
+  mleRisk: readonly number[];
+  mleRide: readonly number[];
+  /** The nine history features, pooled across rounds. Order matches below. */
+  history: readonly number[];
 }
 
 /**
@@ -101,7 +193,73 @@ export const DEFAULT_PROPOSAL: ProposalParams = {
   // Falls to nothing by round five: he defers to the table early and plays
   // his own read when the game is on the line.
   merlinPublic: [28.89, 41.34, 17.52, 13.29, 0],
+  /*
+   * Left on "moment" deliberately, and it is the worse PREDICTOR.
+   *
+   * The history features beat it soundly at guessing the next car — held-out
+   * log-likelihood -3.268 against -3.573, the real team ranked first 0.204 of
+   * the time against 0.144. They did not buy back any of the late-round
+   * loading decline; they cost a little of it. What they learn is habit —
+   * reuse the car that just worked, do not reach for someone nobody has
+   * tested — which predicts a leader without making him better at spotting an
+   * evil. Since the simulator exists to produce realistic GAMES rather than
+   * realistic guesses at single proposals, the moment fit stays.
+   *
+   * The other two are kept runnable, not dead: research/good-model-sweep.
+   */
+  goodModel: "moment",
+  mleRisk: [-0.043, -4.931, -6.018, -5.614, -5.105],
+  mleRide: [2.942, 2.175, 1.406, 2.698, 2.966],
+  // With the history terms carrying part of it, risk needs much less weight:
+  // "rode the quest that failed" is most of what drives posterior risk anyway.
+  historyRisk: [-0.038, -1.478, -2.307, -3.447, -3.743],
+  historyRide: [2.971, 2.918, 2.116, 2.894, 3.006],
+  history: [-0.771, -2.483, 4.107, -1.479, 2.385, -0.71, -0.077, -2.165, -2.702],
 };
+
+/**
+ * The nine composition features of a team, in the order `history` weights them.
+ *
+ * Fitted on train+validation as a conditional logit over every legal team, and
+ * they earn their place: held-out log-likelihood per proposal goes from -3.573
+ * to -3.268 and the real team is ranked first 0.204 of the time against 0.144.
+ * See research/history-features.test.ts.
+ */
+export function historyFeatures(
+  team: number,
+  size: number,
+  h: ProposalHistory,
+  n: number,
+  out: number[],
+): void {
+  out[0] = popcount(team & h.rodeSuccess) / size;
+  out[1] = popcount(team & h.rodeFail) / size;
+  out[2] = h.lastSuccess ? popcount(team & h.lastSuccess) / size : 0;
+  out[3] = h.lastFail ? popcount(team & h.lastFail) / size : 0;
+  let best = 0;
+  for (const a of h.approved) {
+    const o = popcount(team & a) / size;
+    if (o > best) best = o;
+  }
+  out[4] = best;
+  let pairs = 0;
+  for (const key of h.failPairs) {
+    if (team & (1 << (key >> 4)) && team & (1 << (key & 15))) pairs += 1;
+  }
+  out[5] = size > 1 ? pairs / ((size * (size - 1)) / 2) : 0;
+  let agree = 0;
+  let passRate = 0;
+  let never = 0;
+  for (let s = 0; s < n; s += 1) {
+    if (!(team & (1 << s))) continue;
+    agree += h.votes[s] > 0 ? h.agreed[s] / h.votes[s] : 0.5;
+    passRate += h.aboardTotal[s] > 0 ? h.aboardPassed[s] / h.aboardTotal[s] : 0.5;
+    if (!(h.everRode & (1 << s))) never += 1;
+  }
+  out[6] = agree / size;
+  out[7] = passRate / size;
+  out[8] = never / size;
+}
 
 /** Teams of `size` seats, as bitmasks over seat index. Cached per (n, size). */
 const teamCache = new Map<string, number[]>();
@@ -220,6 +378,7 @@ export function chooseTeam(
   round: number,
   rng: () => number,
   params: ProposalParams = DEFAULT_PROPOSAL,
+  history?: ProposalHistory,
 ): string[] {
   const n = seats.length;
   const teams = legalTeams(n, size);
@@ -249,14 +408,29 @@ export function chooseTeam(
     }
   }
 
+  // Uninformed good leaders can run any of the three fits; the others are
+  // moment-matched and stay that way.
+  const plain = !evilLeader && !merlin;
+  const useHistory = plain && params.goodModel === "history" && !!history;
   const beta = evilLeader
     ? params.evilRisk[r]
     : merlin
       ? params.merlinRisk[r]
-      : params.goodRisk[r];
+      : useHistory
+        ? -params.historyRisk[r]
+        : params.goodModel === "mle"
+          ? -params.mleRisk[r]
+          : params.goodRisk[r];
   const gain = evilLeader ? params.evilGain[r] : 0;
   const publicWeight = merlin ? params.merlinPublic[r] : 0;
-  const gamma = (evilLeader ? params.rideEvil : params.ride)[r];
+  const gamma = evilLeader
+    ? params.rideEvil[r]
+    : plain && useHistory
+      ? params.historyRide[r]
+      : plain && params.goodModel === "mle"
+        ? params.mleRide[r]
+        : params.ride[r];
+  const feats = useHistory ? new Array<number>(9).fill(0) : null;
 
   let best = -Infinity;
   const utility = new Array<number>(teams.length);
@@ -264,6 +438,10 @@ export function chooseTeam(
     let u = -beta * risk[t] + (teams[t] & leaderBit ? gamma : 0);
     if (gain) u += gain * popcount(teams[t] & mateMask);
     if (seen) u -= publicWeight * seen[t];
+    if (feats && history) {
+      historyFeatures(teams[t], size, history, n, feats);
+      for (let k = 0; k < 9; k += 1) u += params.history[k] * feats[k];
+    }
     utility[t] = u;
     if (u > best) best = u;
   }
