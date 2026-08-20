@@ -55,23 +55,52 @@ export interface ProposalParams {
    * gap is real — 0.71 against 0.88 in round three — so it gets its own row. */
   ride: readonly number[];
   rideEvil: readonly number[];
+  /**
+   * Merlin, who is solving a harder problem than a loyal leader.
+   *
+   * He does use his sight — his car sits at the 12th percentile of what HE can
+   * see in round one and the 2nd by round five, where a loyal leader stays
+   * flat near the 15th. But he does not spend it freely: given a legal car
+   * with none of the evils he can see, he takes one anyway 42% of the time in
+   * round one, 25% in round three, and only stops at 13% in round five.
+   *
+   * The first guess was camouflage — that he deliberately picks ordinary
+   * looking cars to avoid naming himself. The data says something simpler and
+   * stricter. Fitting beta alone against his private percentile produces cars
+   * sitting at the 45th public percentile in round two, where real Merlins are
+   * at the 26th. He is not buying ordinariness; he is refusing to hand the
+   * table a car it will not approve. So he carries BOTH terms — his own risk
+   * and the risk everyone else can see — and lambda is the weight on the
+   * second. That is where the unspent sight goes.
+   */
+  merlinRisk: readonly number[];
+  merlinPublic: readonly number[];
 }
 
 /**
  * Fitted on train+validation by matching real leaders on matched inputs — the
- * same table, the same round, the same public posterior — against three public
- * statistics: where the chosen team sits among all legal teams by risk, how
- * often the leader rides, and how often he takes a seat the table already
- * suspects. Ground-truth roles were used only to split good from evil.
+ * same table, the same round, the same public posterior — against public
+ * statistics of the choice: where the chosen team sits among all legal teams
+ * by risk, and how often the leader rides. Ground-truth roles were used only
+ * to split the fit by who the leader was, never as an input to the choice.
+ *
+ * Percival is fitted with the loyal leaders and not separately. Knowing one of
+ * two seats is Morgana does not say which, and it shows: his chosen cars sit
+ * at the 16th percentile of his own restricted posterior against a loyal
+ * leader's 15th. He has sight that does not help him pick.
  */
 export const DEFAULT_PROPOSAL: ProposalParams = {
-  goodRisk: [10.84, 38.84, 28.17, 20.17, 14.08],
+  goodRisk: [4.92, 39.54, 21.6, 18.66, 12.76],
   // Round one is unidentified: with no evidence yet every legal team carries
   // the same risk, so beta cannot be read off the choice. Zero, not fitted.
-  evilRisk: [0, 39.43, 15.83, 16.67, 12.5],
-  evilGain: [-0.16, -0.74, -0.3, -0.58, -0.77],
-  ride: [0.66, -0.62, -0.57, 1.49, 1.68],
-  rideEvil: [2.34, 2.32, 1.53, 2.44, 2.41],
+  evilRisk: [0, 43.01, 16.05, 16.4, 12.5],
+  evilGain: [-0.14, -0.68, -0.25, -0.56, -0.77],
+  ride: [1.75, -2, -0.41, 1.56, 2.43],
+  rideEvil: [2.36, 2.36, 1.69, 2.31, 2.41],
+  merlinRisk: [1.83, 5.18, 4.72, 3.81, 5.53],
+  // Falls to nothing by round five: he defers to the table early and plays
+  // his own read when the game is on the line.
+  merlinPublic: [28.89, 41.34, 17.52, 13.29, 0],
 };
 
 /** Teams of `size` seats, as bitmasks over seat index. Cached per (n, size). */
@@ -199,11 +228,18 @@ export function chooseTeam(
   const leaderBit = 1 << Math.max(0, seats.indexOf(leader));
 
   const evilLeader = info?.side === "evil";
+  const merlin = info?.role === "merlin";
   // An evil leader reads the risk the TABLE will read, because his problem is
   // getting the car approved, not avoiding his own people. A good leader reads
-  // his own, which for Merlin and Percival is sharper than the public one.
+  // his own — which for Merlin is a great deal sharper, and for Percival is
+  // barely different from public, since knowing one of two seats is Morgana
+  // does not say which.
   const view = leaderView(filter, seats, evilLeader ? undefined : info);
   const risk = teamRisk(view, teams, need);
+  // What the table will read off this car, which Merlin has to manage.
+  const seen = merlin
+    ? teamRisk(leaderView(filter, seats, undefined), teams, need)
+    : null;
 
   let mateMask = 0;
   if (evilLeader && info) {
@@ -213,8 +249,13 @@ export function chooseTeam(
     }
   }
 
-  const beta = evilLeader ? params.evilRisk[r] : params.goodRisk[r];
+  const beta = evilLeader
+    ? params.evilRisk[r]
+    : merlin
+      ? params.merlinRisk[r]
+      : params.goodRisk[r];
   const gain = evilLeader ? params.evilGain[r] : 0;
+  const publicWeight = merlin ? params.merlinPublic[r] : 0;
   const gamma = (evilLeader ? params.rideEvil : params.ride)[r];
 
   let best = -Infinity;
@@ -222,6 +263,7 @@ export function chooseTeam(
   for (let t = 0; t < teams.length; t += 1) {
     let u = -beta * risk[t] + (teams[t] & leaderBit ? gamma : 0);
     if (gain) u += gain * popcount(teams[t] & mateMask);
+    if (seen) u -= publicWeight * seen[t];
     utility[t] = u;
     if (u > best) best = u;
   }

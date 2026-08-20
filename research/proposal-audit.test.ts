@@ -104,8 +104,14 @@ function record(
   row.loadObserved += chosen;
   row.loadExpected += chance;
   let below = 0;
-  for (const alt of alternatives) if (alt < chosen) below += 1;
-  row.percentile += below / Math.max(1, alternatives.length);
+  let equal = 0;
+  for (const alt of alternatives) {
+    if (alt < chosen - 1e-12) below += 1;
+    else if (alt <= chosen + 1e-12) equal += 1;
+  }
+  // Mid-rank: before the first vote every legal team ties exactly, and a
+  // strictly-below count would report zero for all of them.
+  row.percentile += (below + equal / 2) / Math.max(1, alternatives.length);
 }
 
 function report(title: string, rows: Row[]): void {

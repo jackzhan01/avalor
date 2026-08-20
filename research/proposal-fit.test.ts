@@ -43,6 +43,8 @@ const EVIL_ROLES = ["morgana", "mordred", "oberon", "assassin", "minion"];
 interface Snapshot {
   round: number;
   evilLeader: boolean;
+  /** loyal | merlin | percival | evil — for splitting the fit, never an input. */
+  role: string;
   teams: readonly number[];
   /** Joint P(enough evils aboard to fail), under the leader's own view. */
   riskLeader: number[];
@@ -52,6 +54,8 @@ interface Snapshot {
   mateMask: number;
   /** Exact Belief V1 expected evils aboard, per legal team, for measurement. */
   expected: number[];
+  /** The same, under the leader's own restricted posterior. */
+  expectedPrivate: number[];
   realMask: number;
   realExpected: number;
   realRides: boolean;
@@ -123,11 +127,37 @@ function collect(games: ReturnType<typeof corpusSplit>): Snapshot[] {
             const evilLeader = EVIL_ROLES.includes(truth.byPlayer.get(leader) ?? "");
             const who = info.get(leader);
 
-            // Exact expected evils per legal team, for the percentile measure.
+            // Exact expected evils per legal team, for the percentile measure,
+            // both as the table sees it and as this leader does.
+            const role = truth.byPlayer.get(leader) ?? "loyal";
+            const live: number[] = [];
+            let liveTotal = 0;
+            for (let h = 0; h < side.surviving.length; h += 1) {
+              const hyp = side.surviving[h];
+              let ok = hyp.isEvil(leader) === evilLeader;
+              if (ok && who) {
+                for (const s2 of who.visibleEvil) {
+                  if (!hyp.isEvil(s2)) { ok = false; break; }
+                }
+                if (ok) {
+                  for (const s2 of who.knownEvil) {
+                    if (!hyp.isEvil(s2)) { ok = false; break; }
+                  }
+                }
+                if (ok && who.pair) {
+                  ok = who.pair.filter((id) => hyp.isEvil(id)).length === 1;
+                }
+              }
+              const w = ok ? weights[h] : 0;
+              live.push(w);
+              liveTotal += w;
+            }
             const expected = new Array<number>(teams.length).fill(0);
+            const expectedPrivate = new Array<number>(teams.length).fill(0);
             for (let h = 0; h < side.surviving.length; h += 1) {
               const w = weights[h];
-              if (w <= 0) continue;
+              const q = liveTotal > 0 ? live[h] / liveTotal : 0;
+              if (w <= 0 && q <= 0) continue;
               let mask = 0;
               for (let s = 0; s < n; s += 1) {
                 if (side.surviving[h].isEvil(seats[s])) mask |= 1 << s;
@@ -140,6 +170,7 @@ function collect(games: ReturnType<typeof corpusSplit>): Snapshot[] {
                   k += 1;
                 }
                 expected[t] += w * k;
+                expectedPrivate[t] += q * k;
               }
             }
 
@@ -169,12 +200,14 @@ function collect(games: ReturnType<typeof corpusSplit>): Snapshot[] {
               shots.push({
                 round,
                 evilLeader,
+                role,
                 teams,
                 riskLeader: teamRisk(mine, teams, need),
                 riskPublic: teamRisk(pub, teams, need),
                 leaderBit: li >= 0 ? 1 << li : 0,
                 mateMask,
                 expected,
+                expectedPrivate,
                 realMask,
                 realExpected: expected[realIndex],
                 realRides: event.teamPlayerIds.includes(leader),
@@ -227,12 +260,20 @@ function simulate(
   gamma: number,
   gain: number,
   rng: () => number,
-): { expected: number; rides: boolean; mates: number; mask: number } {
+  publicWeight = 0,
+): {
+  expected: number;
+  expectedPrivate: number;
+  rides: boolean;
+  mates: number;
+  mask: number;
+} {
   const risk = shot.evilLeader ? shot.riskPublic : shot.riskLeader;
   const utility = new Array<number>(shot.teams.length);
   let best = -Infinity;
   for (let t = 0; t < shot.teams.length; t += 1) {
     let u = -beta * risk[t] + (shot.teams[t] & shot.leaderBit ? gamma : 0);
+    if (publicWeight) u -= publicWeight * shot.riskPublic[t];
     if (gain) {
       let bits = shot.teams[t] & shot.mateMask;
       let k = 0;
@@ -267,6 +308,7 @@ function simulate(
   }
   return {
     expected: shot.expected[pick],
+    expectedPrivate: shot.expectedPrivate[pick],
     rides: (shot.teams[pick] & shot.leaderBit) !== 0,
     mates,
     mask: shot.teams[pick],
@@ -275,9 +317,31 @@ function simulate(
 
 /** Mean percentile of a team's risk among all legal teams. */
 function percentileOf(shot: Snapshot, value: number): number {
+  return midRank(shot.expected, value);
+}
+
+/**
+ * Mid-rank, not strictly-below.
+ *
+ * Before the first vote every legal team carries exactly the same risk, so a
+ * strictly-below count reports 0 for all of them and the statistic collapses
+ * — which left round one unidentified and let the fit wander onto a beta that
+ * reproduced the percentile and got the loading badly wrong. Counting half of
+ * each tie is the standard repair and applies to real and simulated alike.
+ */
+function midRank(values: readonly number[], value: number): number {
   let below = 0;
-  for (const e of shot.expected) if (e < value) below += 1;
-  return below / shot.expected.length;
+  let equal = 0;
+  for (const e of values) {
+    if (e < value - 1e-12) below += 1;
+    else if (e <= value + 1e-12) equal += 1;
+  }
+  return (below + equal / 2) / values.length;
+}
+
+/** The same, ordered by what the leader himself can see. */
+function privatePercentileOf(shot: Snapshot, value: number): number {
+  return midRank(shot.expectedPrivate, value);
 }
 
 it("fits the team-level proposal policy on train and validation", () => {
@@ -295,6 +359,8 @@ it("fits the team-level proposal policy on train and validation", () => {
     evilGain: [],
     ride: [],
     rideEvil: [],
+    merlinRisk: [],
+    merlinPublic: [],
   };
 
   for (const side of ["good", "evil"] as const) {
@@ -307,7 +373,9 @@ it("fits the team-level proposal policy on train and validation", () => {
     console.log("轮次    β      γ      η      分位 真实→模拟    上车 真实→模拟   带队友 真实→模拟   样本");
 
     for (let r = 1; r <= 5; r += 1) {
-      const rows = shots.filter((s) => s.round === r && s.evilLeader === wantEvil);
+      const rows = shots.filter(
+        (s) => s.round === r && s.evilLeader === wantEvil && s.role !== "merlin",
+      );
       if (!rows.length) {
         (wantEvil ? fitted.evilRisk : fitted.goodRisk).push(6);
         (wantEvil ? fitted.rideEvil : fitted.ride).push(4);
@@ -397,10 +465,73 @@ it("fits the team-level proposal policy on train and validation", () => {
   }
 
   console.log("");
+  console.log("梅林 — 目标 = 真实私有分位 / 真实公开分位");
+  console.log("轮次    β^M     λ      私有 真实→模拟    公开 真实→模拟   样本");
+  for (let r = 1; r <= 5; r += 1) {
+    const rows = shots.filter((s) => s.round === r && s.role === "merlin");
+    if (rows.length < 20) {
+      fitted.merlinRisk.push(fitted.goodRisk[r - 1] ?? 10);
+      fitted.merlinPublic.push(0);
+      continue;
+    }
+    const realPriv =
+      rows.reduce((a, s) => a + privatePercentileOf(s, s.expectedPrivate[
+        s.teams.indexOf(s.realMask)
+      ] ?? 0), 0) / rows.length;
+    const realPub =
+      rows.reduce((a, s) => a + percentileOf(s, s.realExpected), 0) / rows.length;
+    const gamma = fitted.ride[r - 1] ?? 1;
+
+    const score = (beta: number, publicWeight: number) => {
+      const rng = makeRng(909 + r);
+      let priv = 0;
+      let pub = 0;
+      for (const s of rows) {
+        const got = simulate(s, beta, gamma, 0, rng, publicWeight);
+        priv += privatePercentileOf(s, got.expectedPrivate);
+        pub += percentileOf(s, got.expected);
+      }
+      return { priv: priv / rows.length, pub: pub / rows.length };
+    };
+
+    // Both coefficients push their own percentile down, and each one raises
+    // the other's, so the coordinate search has to alternate until it settles.
+    let beta = fitted.goodRisk[r - 1] ?? 10;
+    let publicWeight = 0;
+    for (let pass = 0; pass < 10; pass += 1) {
+      let lo = 0;
+      let hi = 150;
+      for (let step = 0; step < 24; step += 1) {
+        const mid = (lo + hi) / 2;
+        if (score(mid, publicWeight).priv > realPriv) lo = mid;
+        else hi = mid;
+      }
+      beta = (lo + hi) / 2;
+      lo = 0;
+      hi = 150;
+      for (let step = 0; step < 24; step += 1) {
+        const mid = (lo + hi) / 2;
+        if (score(beta, mid).pub > realPub) lo = mid;
+        else hi = mid;
+      }
+      publicWeight = (lo + hi) / 2;
+    }
+    const got = score(beta, publicWeight);
+    fitted.merlinRisk.push(Number(beta.toFixed(2)));
+    fitted.merlinPublic.push(Number(publicWeight.toFixed(2)));
+    console.log(
+      `第${r}轮  ${beta.toFixed(2).padStart(6)} ${publicWeight.toFixed(2).padStart(6)}   ` +
+        `${realPriv.toFixed(3)}→${got.priv.toFixed(3)}    ${realPub.toFixed(3)}→${got.pub.toFixed(3)}     ${rows.length}`,
+    );
+  }
+
+  console.log("");
   console.log("拟合结果，粘进 DEFAULT_PROPOSAL：");
   console.log(`  goodRisk: [${fitted.goodRisk.join(", ")}],`);
   console.log(`  evilRisk: [${fitted.evilRisk.join(", ")}],`);
   console.log(`  evilGain: [${fitted.evilGain.join(", ")}],`);
   console.log(`  ride: [${fitted.ride.join(", ")}],`);
   console.log(`  rideEvil: [${fitted.rideEvil.join(", ")}],`);
+  console.log(`  merlinRisk: [${fitted.merlinRisk.join(", ")}],`);
+  console.log(`  merlinPublic: [${fitted.merlinPublic.join(", ")}],`);
 }, 3_600_000);
