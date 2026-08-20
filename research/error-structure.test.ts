@@ -30,6 +30,8 @@ import { llmTalk } from "./llm-talk";
  */
 
 const EVIL_ROLES = ["morgana", "mordred", "oberon", "assassin", "minion"];
+/** Corpus games per table size, so pooled figures match the target. */
+const WEIGHT: Record<number, number> = { 7: 1427, 8: 857, 9: 408, 10: 309 };
 /** Below this a stance is an accusation; above its negation, support. */
 const EDGE = 0.15;
 
@@ -75,6 +77,7 @@ function logChoose(n: number, k: number): number {
 interface Report {
   label: string;
   logs: RoundLog[];
+  outcome: Outcome;
 }
 
 /**
@@ -404,20 +407,41 @@ function calibration(logs: readonly RoundLog[]): {
 interface Arm {
   label: string;
   synthetic?: { quality: number; deception: number; consensus?: number };
-  llm?: { mathMemory: boolean };
+  llm?: { socialHistory: boolean; mathMemory: boolean };
+}
+
+interface Outcome {
+  games: number;
+  wins: number;
+  quests: number;
+  failed: number;
+  observed: number[];
+  expected: number[];
 }
 
 const ARMS: Arm[] = [
   { label: "合成 共识=0（独立）", synthetic: { quality: 0.29, deception: 0.215 } },
   { label: "合成 共识=0.3", synthetic: { quality: 0.29, deception: 0.215, consensus: 0.3 } },
-  { label: "合成 共识=0.5", synthetic: { quality: 0.29, deception: 0.215, consensus: 0.5 } },
-  { label: "合成 共识=0.7", synthetic: { quality: 0.29, deception: 0.215, consensus: 0.7 } },
-  { label: "LLM 无数学记忆", llm: { mathMemory: false } },
-  { label: "LLM + 数学后验", llm: { mathMemory: true } },
+  // The causal ablation. Each condition adds exactly one channel.
+  { label: "A 独立推理", llm: { socialHistory: false, mathMemory: false } },
+  { label: "B + 别人的发言", llm: { socialHistory: true, mathMemory: false } },
+  { label: "C + 数学后验（全反馈）", llm: { socialHistory: true, mathMemory: true } },
+  { label: "D 只加后验，不看发言", llm: { socialHistory: false, mathMemory: true } },
 ];
 
-async function collect(arm: Arm, perSize: number): Promise<RoundLog[]> {
+async function collect(
+  arm: Arm,
+  perSize: number,
+): Promise<{ logs: RoundLog[]; outcome: Outcome }> {
   const logs: RoundLog[] = [];
+  const outcome: Outcome = {
+    games: 0,
+    wins: 0,
+    quests: 0,
+    failed: 0,
+    observed: [0, 0, 0, 0, 0],
+    expected: [0, 0, 0, 0, 0],
+  };
 
   for (const count of [7, 8, 9, 10] as const) {
     const built = game(count).build();
@@ -477,14 +501,34 @@ async function collect(arm: Arm, perSize: number): Promise<RoundLog[]> {
         };
       }
       if (arm.llm) {
-        talk = llmTalk({ mathMemory: arm.llm.mathMemory, onEvidence: record });
+        talk = llmTalk({
+          socialHistory: arm.llm.socialHistory,
+          mathMemory: arm.llm.mathMemory,
+          onEvidence: record,
+        });
       }
 
-      await traceOne(state, assignment, publicWorlds, makeRng(1000 + i), undefined, talk);
+      const t = await traceOne(
+        state,
+        assignment,
+        publicWorlds,
+        makeRng(1000 + i),
+        undefined,
+        talk,
+      );
+      const w = WEIGHT[count];
+      outcome.games += w;
+      if (t.goodWon) outcome.wins += w;
+      outcome.quests += t.failCards.length * w;
+      for (const f of t.failCards) if (f > 0) outcome.failed += w;
+      for (let r = 0; r < 5; r += 1) {
+        outcome.observed[r] += t.byRoundObserved[r] * w;
+        outcome.expected[r] += t.byRoundExpected[r] * w;
+      }
     }
   }
 
-  return logs;
+  return { logs, outcome };
 }
 
 it("audits the shape of the table's mistakes", async () => {
@@ -499,7 +543,8 @@ it("audits the shape of the table's mistakes", async () => {
 
   const reports: Report[] = [];
   for (const arm of ARMS) {
-    reports.push({ label: arm.label, logs: await collect(arm, perSize) });
+    const { logs, outcome } = await collect(arm, perSize);
+    reports.push({ label: arm.label, logs, outcome });
   }
 
   console.log("");
@@ -549,6 +594,17 @@ it("audits the shape of the table's mistakes", async () => {
     const c = calibration(logs);
     console.log(
       `${label.padEnd(18)} ${c.accuseEvil.toFixed(3)}  ${c.accuseGood.toFixed(3)}  ${c.supportEvil.toFixed(3)}  ${c.supportGood.toFixed(3)}   ${c.heterogeneity.toFixed(2)}`,
+    );
+  }
+
+  console.log("");
+  console.log("六、结果（语料：胜率 .426，任务失败 .413，载荷 0.896/0.773/0.630/0.622/0.405）");
+  console.log("臂                  好人胜率  任务失败率   载荷 R1-R5");
+  for (const { label, outcome: o } of reports) {
+    console.log(
+      `${label.padEnd(18)} ${(o.wins / o.games).toFixed(3)}    ${(o.failed / Math.max(o.quests, 1)).toFixed(3)}       ${o.observed
+        .map((v, r) => (o.expected[r] ? (v / o.expected[r]).toFixed(2) : " — "))
+        .join(" ")}`,
     );
   }
 

@@ -52,6 +52,19 @@ ${SHARED}`;
 
 export interface LlmTalkOptions {
   /**
+   * Let a speaker read what the table has already said, in earlier rounds.
+   *
+   * Off in the first closed-loop arms, which turned out to matter: the false
+   * consensus was already there at 3.7x with nobody able to see anyone else's
+   * stance, so it cannot be imitation. This switch is what turns that from an
+   * inference into a measurement.
+   *
+   * Only earlier rounds. Within a round the table speaks at once, and letting
+   * a later seat read an earlier one would invent a speaking order the game
+   * does not have.
+   */
+  socialHistory?: boolean;
+  /**
    * Hand each speaker the current posterior as external belief memory.
    *
    * The memory ablation says this is the only intervention that made the model
@@ -74,6 +87,9 @@ function seatLine(
 }
 
 export function llmTalk(options: LlmTalkOptions): TalkSource {
+  // Everything said so far in this game, carried across rounds.
+  const said: SocialEvidence[] = [];
+
   return async (input: TalkInput): Promise<SocialEvidence[]> => {
     const { seats, info, game, events, round, read, sequence } = input;
 
@@ -84,7 +100,10 @@ export function llmTalk(options: LlmTalkOptions): TalkSource {
       if (!who) continue;
       let user = renderBrief(
         seatBrief(game as GameRecord, events, who, {
-          upTo: Number.MAX_SAFE_INTEGER,
+          // Always the same cut on events; only the social channel varies, so
+          // the conditions differ in exactly one thing.
+          upTo: sequence,
+          social: options.socialHistory ? said : undefined,
         }),
       );
       if (options.mathMemory) {
@@ -128,6 +147,7 @@ ${seatLine(game as GameRecord, seats, read)}`;
       }
     }
 
+    said.push(...out);
     options.onEvidence?.(out, round);
     return out;
   };
