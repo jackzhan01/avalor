@@ -49,3 +49,6 @@ research/data/
 # LLM 回答缓存：重跑免费、可复现，但不进仓库
 research/.llm-cache/
 research/.llm-*-out.txt
+
+# 构建输出到独立目录，避免和常驻 dev server 抢 .next
+.next-build/

@@ -18,6 +18,7 @@ import { TextNoteComposer } from "@/components/game/text-note-composer";
 import { LeaderPickerSheet } from "@/components/game/leader-picker-sheet";
 import { RoleSetupSheet } from "@/components/game/role-setup-sheet";
 import { Scratchpad } from "@/components/game/scratchpad";
+import { AdvisorSheet } from "@/components/game/advisor-sheet";
 import { AiSheet } from "@/components/game/ai-sheet";
 import { hasEnoughToAnalyze } from "@/lib/ai/client";
 import type { AiTask } from "@/lib/ai/types";
@@ -115,6 +116,8 @@ export default function GamePage() {
    * sort of thing you do not want read over your shoulder.
    */
   const [inferenceVisible, setInferenceVisible] = useState(false);
+  /** The offline decision layer. Nothing leaves the device for this one. */
+  const [advisorOpen, setAdvisorOpen] = useState(false);
   /**
    * What the layer is solving for. null = follow the default for this role,
    * so that filling in your identity re-points it without a second tap; once
@@ -911,6 +914,15 @@ export default function GamePage() {
               </div>
             )}
 
+            {/* Offline, deterministic, free. It sits above the two that call
+                out because it is the one you can lean on at a real table
+                without waiting on a network or spending anything. */}
+            <AiButton
+              label="该怎么走"
+              hint="上票还是下票 · 该点哪辆车 —— 本机算，不联网"
+              onClick={() => setAdvisorOpen(true)}
+            />
+
             {/* The only two things here that leave the device. They sit with
                 the private controls because that is what they read from, and
                 what they produce is for your eyes only too. */}
@@ -1001,6 +1013,8 @@ export default function GamePage() {
 
       {/* Keyed on the task so switching between the two features starts a
           fresh run rather than showing the previous one's result. */}
+      <AdvisorSheet open={advisorOpen} onClose={() => setAdvisorOpen(false)} />
+
       <AiSheet
         key={aiTask ?? "none"}
         task={aiTask}

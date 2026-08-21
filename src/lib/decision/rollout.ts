@@ -659,6 +659,15 @@ export interface SimTrace {
 }
 
 export interface ActionValue {
+  /**
+   * Per-world outcome, when the caller asks for it.
+   *
+   * Two actions valued at the same seed see the same worlds and the same
+   * random stream, so their results are paired. Keeping them lets a caller
+   * take the standard error of the DIFFERENCE, which is far tighter than
+   * combining two independent ones and is what the recommendation gate needs.
+   */
+  wins?: Uint8Array;
   action: Action;
   q: number;
   /** Standard error of q over the sampled worlds. */
@@ -675,6 +684,8 @@ export interface ActionValue {
 const PARTICLES = 120;
 
 export interface RolloutOptions {
+  /** Keep the per-world outcomes, for a paired difference between actions. */
+  collect?: boolean;
   worlds?: number;
   seed?: number;
 }
@@ -716,9 +727,14 @@ export async function evaluateActions(
   const out: ActionValue[] = [];
   for (const action of actions) {
     let wins = 0;
+    const each = options.collect ? new Uint8Array(drawn.length) : null;
     for (let i = 0; i < drawn.length; i += 1) {
       const rng = makeRng(seed * 1_000_003 + i * 7919 + 13);
-      if (await playOut(state, drawn[i], action, publicWorlds, rng)) wins += 1;
+      const won = await playOut(state, drawn[i], action, publicWorlds, rng);
+      if (won) {
+        wins += 1;
+        if (each) each[i] = 1;
+      }
     }
     const n = drawn.length || 1;
     const q = wins / n;
@@ -727,6 +743,7 @@ export async function evaluateActions(
       q,
       se: Math.sqrt(Math.max(q * (1 - q), 1e-9) / n),
       worlds: n,
+      ...(each ? { wins: each } : {}),
     });
   }
   return out;

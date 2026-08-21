@@ -47,6 +47,14 @@ if (!access.ok) return fail(access.error, access.status);
 
 调用成功后必须 `recordUsage(access.userId, task, data.usage)`，否则配额永远算不出来。前端要展示按钮状态就打 `/api/ai/status`，别自己另写一套判断——两套逻辑迟早对不上。
 
+## 决策层已经冻结（Product V1）
+
+产品 V1 的算法边界写在 [PRODUCT-V1.md](./PRODUCT-V1.md)，**动它之前先读那份**。三条最容易踩的：
+
+- **界面只调 `analyzeGame(events, game)`。** 不要从组件里碰粒子滤波、λ、经验似然表或 rollout 内部——那正是这个接口存在的理由。
+- **生产路径不许发网络请求。** 有测试拦截 `fetch` 并断言零调用。LLM 相关的一切都在 `research/` 和 `src/lib/social/`，是 V2。
+- **不要在并行测试套件里写计时断言。** 试过两次都失败：绝对阈值在负载下红，改成比值也红（7 人局只要 12ms，调度噪声就够把比值推到 115）。性能基准在 `research/perf-benchmark.test.ts`，单独跑，只打印不断言。
+
 ## 别重复造的东西
 
 动手写新组件前先看这里有没有现成的：
@@ -73,7 +81,7 @@ if (!access.ok) return fail(access.error, access.status);
 ## 命令
 
 ```bash
-npm test          # 339 项单测，改 selector 或 inference 必跑
+npm test          # 438 项单测，改 selector / inference / decision 必跑
 npx tsc --noEmit
 npm run build
 npm run dev -- -H 0.0.0.0
