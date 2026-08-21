@@ -25,11 +25,11 @@ const seatOf = (game: GameRecord, id: string) =>
 const TONE: Record<string, { label: string; className: string }> = {
   strong: {
     label: "建议",
-    className: "bg-[color:var(--fill-success)] text-[color:var(--label-inverse)]",
+    className: "bg-[color:var(--green)] text-[color:var(--on-color)]",
   },
   lean: {
     label: "略偏向",
-    className: "bg-[color:var(--fill-secondary)] text-[color:var(--label-primary)]",
+    className: "bg-[color:var(--fill-secondary)] text-[color:var(--label)]",
   },
   "too-close": {
     label: "太接近，两边都行",
@@ -43,7 +43,7 @@ function Bar({ value, label }: { value: number; label: string }) {
       <span className="t-caption w-16 shrink-0 text-[color:var(--label-secondary)]">
         {label}
       </span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--fill-tertiary)]">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--fill)]">
         <div
           className="h-full rounded-full bg-[color:var(--label-secondary)]"
           style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%` }}

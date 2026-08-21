@@ -6,6 +6,7 @@ import { useHydrated } from "@/lib/store/hooks";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { PageHeader } from "@/components/ui/page-header";
 import { AccountGroup } from "@/components/account/account-group";
+import { LATEST_VERSION, hasUnseenUpdates } from "@/lib/updates";
 
 /**
  * The menu behind the cover.
@@ -18,15 +19,22 @@ export default function MenuPage() {
   const [counts, setCounts] = useState<{ total: number; active: number } | null>(
     null,
   );
+  /*
+   * The dot only appears for someone who has actually used the thing. A brand
+   * new install has not missed an update, it has missed everything, and
+   * greeting a first run with an unread badge is just noise.
+   */
+  const [unseen, setUnseen] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
-    void repo.listRecentGames(100).then((games) =>
+    void repo.listRecentGames(100).then((games) => {
       setCounts({
         total: games.length,
         active: games.filter((g) => g.status === "active").length,
-      }),
-    );
+      });
+      setUnseen(games.length > 0 && hasUnseenUpdates());
+    });
   }, [hydrated]);
 
   return (
@@ -69,6 +77,22 @@ export default function MenuPage() {
             label="个人主页"
             detail="胜率、常玩角色"
             href="/profile"
+            accessory="chevron"
+          />
+          <ListRow
+            label={
+              <span className="flex items-center gap-2">
+                更新了什么
+                {unseen && (
+                  <span
+                    aria-label="有没看过的更新"
+                    className="size-1.5 rounded-full bg-[color:var(--red)]"
+                  />
+                )}
+              </span>
+            }
+            detail={`当前 v${LATEST_VERSION}`}
+            href="/updates"
             accessory="chevron"
           />
         </ListGroup>
