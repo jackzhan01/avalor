@@ -12,6 +12,12 @@
 
 export type { SocialEvidence, SocialChannel, SocialSource } from "./types";
 export { SocialLedger, visibleTo } from "./types";
-export { EvilOdds, evilLogOdds, type AggregateOptions } from "./aggregate";
+export {
+  EvilOdds,
+  evilLogOdds,
+  REGIME_RHO,
+  type AggregateOptions,
+  type SocialRegime,
+} from "./aggregate";
 export { socialFromEvents, recordedChannel, valenceOfRating } from "./from-events";
 export { syntheticChannel, syntheticRound, type SyntheticOptions } from "./synthetic";

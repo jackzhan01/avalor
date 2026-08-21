@@ -141,6 +141,14 @@ function accumulated(
 async function collect(
   arm: Arm,
   perSize: number,
+  /**
+   * Which block of simulated games to draw.
+   *
+   * rho becomes a model parameter, so it must not be estimated on the games it
+   * is then evaluated on. `block` moves every seed, which is what a held-out
+   * split looks like when the data is generated rather than recorded.
+   */
+  block = 0,
 ): Promise<{ clusters: Cluster[]; byRound: { evidence: SocialEvidence[]; round: number }[] }> {
   const clusters: Cluster[] = [];
   const byRound: { evidence: SocialEvidence[]; round: number }[] = [];
@@ -155,7 +163,7 @@ async function collect(
     const state = buildDecisionState(built.events, asLoyal);
     const view = publicView(state.events, state.game);
     const publicWorlds = sampleAssignments(view.events, view.game, 120, makeRng(77));
-    const worlds = sampleAssignments(state.events, state.game, perSize, makeRng(99));
+    const worlds = sampleAssignments(state.events, state.game, perSize, makeRng(99 + block));
 
     for (let i = 0; i < worlds.length; i += 1) {
       const assignment = worlds[i];
@@ -183,7 +191,7 @@ async function collect(
       let talk: TalkSource | undefined;
       if (arm.synthetic) {
         const spec = arm.synthetic;
-        const talkRng = makeRng(7000 + i);
+        const talkRng = makeRng(7000 + block * 977 + i);
         const sharedNoise = new Map<string, number>();
         talk = async (input) => {
           const out = syntheticRound(input.round, {
@@ -200,14 +208,24 @@ async function collect(
         };
       }
       if (arm.llm) {
+        // rho forced to zero: this run measures what the raw channel does, so
+        // the correction must not already be inside the thing being measured.
         talk = llmTalk({
           socialHistory: arm.llm.socialHistory,
           mathMemory: arm.llm.mathMemory,
+          rho: 0,
           onEvidence: record,
         });
       }
 
-      await traceOne(state, assignment, publicWorlds, makeRng(1000 + i), undefined, talk);
+      await traceOne(
+        state,
+        assignment,
+        publicWorlds,
+        makeRng(1000 + block * 977 + i),
+        undefined,
+        talk,
+      );
     }
   }
 
@@ -241,4 +259,34 @@ it("measures how far the aggregator over-counts correlated talk", async () => {
 
   console.log("");
   reportUsage("过计数审计");
+}, 3_600_000);
+
+it("estimates rho on a held-out block of simulated games", async () => {
+  if (!llmAvailable()) {
+    console.log("没有 OPENAI_API_KEY，跳过");
+    return;
+  }
+  const perSize = Number(process.env.RHO_GAMES ?? 10);
+  console.log("");
+  console.log(`ρ 估计（留出局，与后面评测用的那批完全不同）：每个人数 ${perSize} 局`);
+  console.log("聚合折算在这一步强制关掉，否则测的是修正之后的东西");
+  console.log("");
+  console.log("生成方式                簇内相关 ρ  平均簇大小  设计效应  簇数");
+
+  const REGIMES: Arm[] = [
+    { label: "independent（合成独立）", synthetic: { quality: 0.29, deception: 0.215 } },
+    { label: "llm（无后验反馈）", llm: { socialHistory: false, mathMemory: false } },
+    { label: "llm-feedback（有后验反馈）", llm: { socialHistory: false, mathMemory: true } },
+  ];
+
+  for (const arm of REGIMES) {
+    const { clusters } = await collect(arm, perSize, 1);
+    const stats = intraclass(clusters);
+    console.log(
+      `${arm.label.padEnd(24)} ${stats.rho.toFixed(3)}       ${stats.meanSize.toFixed(2)}      ${stats.design.toFixed(2)}×     ${stats.clusters}`,
+    );
+  }
+
+  console.log("");
+  reportUsage("ρ 估计");
 }, 3_600_000);

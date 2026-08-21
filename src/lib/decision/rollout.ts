@@ -103,7 +103,18 @@ export interface TalkInput {
   sequence: number;
 }
 
-export type TalkSource = (input: TalkInput) => Promise<SocialEvidence[]>;
+export interface TalkSource {
+  (input: TalkInput): Promise<SocialEvidence[]>;
+  /**
+   * How correlated this channel's statements are inside a (round, target)
+   * cluster, so the aggregator can stop counting five voices as five.
+   *
+   * A property of where the talk comes from, never of whether it is right —
+   * nobody at the table knows that, so a correction conditioned on it could
+   * not be run online. Absent means zero, which is the old behaviour.
+   */
+  rho?: number;
+}
 import { makeRng, sampleAssignments, type Assignment } from "./sampler";
 import type { Action, DecisionState } from "./state";
 
@@ -291,7 +302,7 @@ async function playOut(
   const speak: TalkSource | null =
     talk ??
     (talkative
-      ? async (input) =>
+      ? (async (input: TalkInput) =>
           syntheticRound(input.round, {
             seats: input.seats,
             evilSeats: new Set(
@@ -300,10 +311,12 @@ async function playOut(
             quality,
             deception: social?.deception,
             rng,
-          }).map((one, i) => ({ ...one, sequence: input.sequence + i + 1 }))
+          }).map((one, i) => ({ ...one, sequence: input.sequence + i + 1 })))
       : null);
 
-  const odds = new EvilOdds();
+  // The synthetic generator draws independently, so its own regime is zero
+  // and only an injected channel can ask for a discount.
+  const odds = new EvilOdds({ rho: talk?.rho ?? 0 });
   const applied = new Map<string, number>();
   let talkedThrough = 0;
 

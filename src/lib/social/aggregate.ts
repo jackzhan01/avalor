@@ -36,7 +36,42 @@ export interface AggregateOptions {
   decay?: number;
   /** Cap on the absolute log-odds any one seat can accumulate. */
   ceiling?: number;
+  /**
+   * Intraclass correlation of statements inside one (round, target) cluster.
+   *
+   * Adding one term per stance treats five seats saying the same thing as five
+   * independent readings. Measured over simulated games, they are not: a table
+   * of language models reaching its own conclusions has rho 0.116, and 0.208
+   * once the posterior is fed back to the speakers it came from — so five
+   * voices about one seat are worth about three, or two and two thirds.
+   *
+   * A cluster's total is divided by the design effect D = 1 + (m-1)rho, which
+   * is the usual correction for clustered sampling. At rho 0 it is exactly the
+   * old behaviour.
+   *
+   * Conditioned on the GENERATION REGIME and nothing else. Discounting harder
+   * when the statements happen to be wrong would need to know that they are,
+   * which is precisely what nobody at the table does.
+   */
+  rho?: number;
 }
+
+/**
+ * How correlated a channel's statements are, by where they come from.
+ *
+ * Estimated on a block of simulated games held out from the ones these numbers
+ * are evaluated on — the generated-data equivalent of a train split. The
+ * synthetic generator, which really does draw independently, comes out at
+ * exactly 0.000, which is what makes the other two believable. See the
+ * "estimates rho on a held-out block" case in research/overcounting.test.ts.
+ */
+export type SocialRegime = "independent" | "llm" | "llm-feedback";
+
+export const REGIME_RHO: Record<SocialRegime, number> = {
+  independent: 0,
+  llm: 0.123,
+  "llm-feedback": 0.27,
+};
 
 const DEFAULTS = {
   strength: 0.35,
@@ -61,6 +96,7 @@ export class EvilOdds {
       strength: options.strength ?? DEFAULTS.strength,
       decay: options.decay ?? DEFAULTS.decay,
       ceiling: options.ceiling ?? DEFAULTS.ceiling,
+      rho: options.rho ?? 0,
     };
   }
 
@@ -73,13 +109,27 @@ export class EvilOdds {
    *
    * Credibility may be passed per call, because who the table trusts changes
    * as the game goes and the belief that decides it is the caller's.
+   *
+   * Clustering happens WITHIN a call. Callers walk a round at a time, which is
+   * the intended unit; splitting one round across two calls would leave each
+   * half discounted as if it were the whole cluster.
    */
   absorb(
     evidence: Iterable<SocialEvidence>,
     now: number,
     credibility: ReadonlyMap<string, number> = this.options.credibility,
   ): void {
-    const { strength, decay } = this.options;
+    const { strength, decay, rho } = this.options;
+
+    /*
+     * Clustered by (round, target), which is the unit inside which speakers
+     * are reading the same thing about the same person. Everything in a
+     * cluster is summed and then divided once, rather than each term being
+     * shrunk on its own — the design effect applies to the cluster's total,
+     * and a cluster of one is left exactly alone.
+     */
+    const clusters = new Map<string, { target: string; total: number; m: number }>();
+
     for (const one of evidence) {
       const trust = credibility.get(one.speakerId) ?? 1;
       if (trust <= 0) continue;
@@ -92,7 +142,19 @@ export class EvilOdds {
         trust *
         strength *
         Math.pow(decay, age);
-      this.odds.set(one.targetId, (this.odds.get(one.targetId) ?? 0) + delta);
+      const key = `${one.missionNumber}|${one.targetId}`;
+      const cell = clusters.get(key);
+      if (cell) {
+        cell.total += delta;
+        cell.m += 1;
+      } else {
+        clusters.set(key, { target: one.targetId, total: delta, m: 1 });
+      }
+    }
+
+    for (const { target, total, m } of clusters.values()) {
+      const design = 1 + (m - 1) * rho;
+      this.odds.set(target, (this.odds.get(target) ?? 0) + total / design);
     }
   }
 

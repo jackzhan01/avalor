@@ -1,6 +1,6 @@
 import { renderBrief, seatBrief } from "@/lib/decision/brief";
 import type { TalkInput, TalkSource } from "@/lib/decision/rollout";
-import type { SocialEvidence } from "@/lib/social";
+import { REGIME_RHO, type SocialEvidence } from "@/lib/social";
 import type { GameRecord } from "@/lib/types/game";
 import { askAll } from "./llm-client";
 
@@ -72,6 +72,8 @@ export interface LlmTalkOptions {
    * an early read it then refused to update.
    */
   mathMemory: boolean;
+  /** Overrides the regime default, for the estimation run that has to be raw. */
+  rho?: number;
   /** Collected for measurement; the rollout never reads it back. */
   onEvidence?: (evidence: readonly SocialEvidence[], round: number) => void;
 }
@@ -90,7 +92,7 @@ export function llmTalk(options: LlmTalkOptions): TalkSource {
   // Everything said so far in this game, carried across rounds.
   const said: SocialEvidence[] = [];
 
-  return async (input: TalkInput): Promise<SocialEvidence[]> => {
+  const source: TalkSource = async (input: TalkInput): Promise<SocialEvidence[]> => {
     const { seats, info, game, events, round, read, sequence } = input;
 
     const asked: string[] = [];
@@ -151,4 +153,15 @@ ${seatLine(game as GameRecord, seats, read)}`;
     options.onEvidence?.(out, round);
     return out;
   };
+
+  /*
+   * How correlated this channel's statements are, so the aggregator stops
+   * treating five seats reading the same failed quest as five independent
+   * readings. Keyed on the regime and nothing else — whether a statement is
+   * right is not knowable at the table.
+   */
+  source.rho =
+    options.rho ??
+    REGIME_RHO[options.mathMemory ? "llm-feedback" : "llm"];
+  return source;
 }

@@ -123,6 +123,57 @@ describe("aggregating into log-odds", () => {
     expect(backward.get("p2")).toBeCloseTo(forward.get("p2"), 12);
   });
 
+  it("counts one voice at full weight however it is clustered", () => {
+    // A cluster of one has design effect 1 and must be untouched, or every
+    // sparse channel silently loses strength.
+    const plain = new EvilOdds({ decay: 1 });
+    const discounted = new EvilOdds({ decay: 1, rho: 0.5 });
+    plain.absorb([piece()], 1);
+    discounted.absorb([piece()], 1);
+    expect(discounted.get("p2")).toBeCloseTo(plain.get("p2"), 12);
+  });
+
+  it("discounts a cluster by its design effect, and only within it", () => {
+    const four = [
+      piece({ sequence: 1, speakerId: "p1", targetId: "p2", valence: -1 }),
+      piece({ sequence: 2, speakerId: "p3", targetId: "p2", valence: -1 }),
+      piece({ sequence: 3, speakerId: "p4", targetId: "p2", valence: -1 }),
+      piece({ sequence: 4, speakerId: "p5", targetId: "p2", valence: -1 }),
+    ];
+    const plain = new EvilOdds({ decay: 1, ceiling: 99 });
+    const discounted = new EvilOdds({ decay: 1, ceiling: 99, rho: 0.25 });
+    plain.absorb(four, 1);
+    discounted.absorb(four, 1);
+    // D = 1 + (4 - 1) * 0.25 = 1.75
+    expect(discounted.get("p2")).toBeCloseTo(plain.get("p2") / 1.75, 10);
+
+    // A different target is a different cluster and keeps its own size: the
+    // lone stance about p6 is not dragged down by the four about p2.
+    const alone = piece({ sequence: 5, speakerId: "p1", targetId: "p6" });
+    const mixed = new EvilOdds({ decay: 1, ceiling: 99, rho: 0.25 });
+    const solo = new EvilOdds({ decay: 1, ceiling: 99 });
+    mixed.absorb([...four, alone], 1);
+    solo.absorb([alone], 1);
+    expect(mixed.get("p6")).toBeCloseTo(solo.get("p6"), 12);
+  });
+
+  it("clusters by round as well as target", () => {
+    const spread = [
+      piece({ sequence: 1, missionNumber: 1, speakerId: "p1", valence: -1 }),
+      piece({ sequence: 2, missionNumber: 2, speakerId: "p3", valence: -1 }),
+    ];
+    const together = [
+      piece({ sequence: 1, missionNumber: 1, speakerId: "p1", valence: -1 }),
+      piece({ sequence: 2, missionNumber: 1, speakerId: "p3", valence: -1 }),
+    ];
+    const a = new EvilOdds({ decay: 1, ceiling: 99, rho: 0.5 });
+    const b = new EvilOdds({ decay: 1, ceiling: 99, rho: 0.5 });
+    a.absorb(spread, 1);
+    b.absorb(together, 1);
+    // Two rounds are two clusters of one; one round is a cluster of two.
+    expect(b.get("p2")).toBeLessThan(a.get("p2"));
+  });
+
   it("will not let one loud seat manufacture certainty", () => {
     const odds = new EvilOdds({ decay: 1, ceiling: 2.5 });
     const shouting = Array.from({ length: 200 }, (_, i) =>
