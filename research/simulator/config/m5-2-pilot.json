@@ -1,0 +1,53 @@
+{
+  "$comment": [
+    "M5.2 试点 profile —— 派权争夺。",
+    "",
+    "又一个新文件，理由和前两次一样：default.json 是实验 2 / 3 的可复现基线，",
+    "m5-pilot.json 是那局已经打完的 prompt-0.3.0 对局（$6.9745，g-a0b76ac9），",
+    "m5-1-pilot.json 是 M5.1 计划中但尚未跑过的试点。三份都一个字节不动。",
+    "",
+    "这份文件只列出与 default.json 不同的字段，其余全部继承。",
+    "",
+    "用法：",
+    "  ... run-live-game.ts -- --profile m5-2-pilot --dry-run",
+    "  ... run-live-game.ts -- --profile m5-2-pilot --live --yes ..."
+  ],
+
+  "promptVersion": "prompt-0.4.0",
+
+  "cognition": {
+    "$comment": [
+      "maxCognitionRepairs 仍然是 2，和 M5.1 一致。",
+      "",
+      "0.4.0 的 contest 块比 social 块检查得更严（结构一致性、竞争者必须全部评估、",
+      "不跳的理由不能照抄上一轮），所以第一次真实对局里重问次数可能上升。",
+      "2 次修复之后仍然不合法就终止 —— 那是需要人来看的信号，不是自动重试能解决的。"
+    ],
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "limits": {
+    "$comment": [
+      "12,000，和 M5.1 一致，来自 M5 试点的实测：输出峰值 5,511（占 20,000 的 27.6%）。",
+      "",
+      "0.4.0 在 social 块之外再加一个 contest 块。按上限写满约 2,400 字符 ≈ 1,200 token；",
+      "加上 M5 试点实测的 5,511 峰值和 social 块的约 800，合计约 7,500，仍在 12,000 之内。",
+      "",
+      "没有把它调高：20,000 就是根据一个高估约 7 倍的预检定的，而多给上限不会省钱，",
+      "只会在真的耗尽时晚一点发现。容量重试对确定性的输出耗尽没有用。"
+    ],
+    "maxOutputTokens": 12000
+  },
+
+  "experiment": {
+    "$comment": [
+      "personaMode 和 seed 与 M5.1 计划保持一致，这样两者之间只差提示栈和策略档。",
+      "但注意：这仍然不是受控对比 —— 0.4.0 同时改了协议层、schema、事实表和动作格式。"
+    ],
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-claim-contest"
+  }
+}

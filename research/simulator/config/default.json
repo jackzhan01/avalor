@@ -1,0 +1,61 @@
+{
+  "simulatorVersion": "sim-0.2.0",
+  "promptVersion": "prompt-0.2.0",
+  "playerCount": 10,
+
+  "model": {
+    "id": "gpt-5.6-terra",
+    "reasoningEffort": "high",
+    "params": {}
+  },
+
+  "cognition": {
+    "enabled": false,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "limits": {
+    "maxStandardInputTokens": 250000,
+    "maxOutputTokens": 12000,
+    "speechCharLimit": 220,
+    "maxActionsPerGame": 4000,
+    "maxLiveCallsPerGame": 600
+  },
+
+  "budget": {
+    "costWarningPerGameUsd": 12,
+    "hardCostLimitPerGameUsd": 25,
+    "hardBatchCostLimitUsd": 100
+  },
+
+  "pricing": {
+    "configured": true,
+    "modelId": "gpt-5.6-terra",
+    "sourceUrl": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+    "verifiedOn": "2026-08-23",
+    "pricingVersion": "gpt-5.6-terra@2026-08-23",
+    "uncachedInputUsdPerMTok": 2.0,
+    "cachedInputUsdPerMTok": 0.2,
+    "outputUsdPerMTok": 12.0
+  },
+
+  "smoke": {
+    "ceilingUsd": 0.1,
+    "maxOutputTokens": 1000,
+    "assumedInputTokens": 500,
+    "pessimisticInputUsdPerMTok": 20,
+    "pessimisticOutputUsdPerMTok": 80
+  },
+
+  "experiment": {
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "baseline"
+  },
+
+  "run": {
+    "concurrency": 1,
+    "maxRetries": 2
+  }
+}

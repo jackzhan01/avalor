@@ -1,0 +1,46 @@
+{
+  "$comment": [
+    "M5 试点 profile —— 一份具名的、可提交的配置，不是对 default.json 的临时修改。",
+    "",
+    "为什么单独一个文件：default.json 是实验 2 / 实验 3 的可复现基线。",
+    "在里面改一个字段跑试点，等于让那两局的产物再也无法从仓库状态重建出来。",
+    "这份文件只列出与 default.json 不同的字段，其余全部继承。",
+    "",
+    "用法：",
+    "  ... run-live-game.ts -- --profile m5-pilot --dry-run",
+    "  ... run-live-game.ts -- --profile m5-pilot --live --yes ...",
+    "不加 --profile 的命令一律走 default.json，也就是旧路径。"
+  ],
+
+  "promptVersion": "prompt-0.3.0",
+
+  "cognition": {
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "limits": {
+    "$comment": [
+      "20,000 只属于这次试点。default.json 的 12,000 不动。",
+      "",
+      "理由（这个数字被改过一次，过程值得记下来）：",
+      "认知块是新增输出。实验 3 在没有它的情况下输出峰值已经到 6,562；",
+      "把每个认知字段写满，按三局实测的 1.98x 高估率校准后约 10,323 —— 合计 16,885。",
+      "第一版定的 16,000 比这个最坏组合还小 885，等于把上限压在一个已知会被超过的点上。",
+      "",
+      "而容量重试对这种超限没有用：它原样重发同一个请求，一个确定性的输出耗尽",
+      "会以完全相同的方式再耗尽一次，只是多付一次钱。这正是第一局 2000 时的死法。",
+      "",
+      "所以给到 20,000。这只是允许的上限，不是预期用量 —— 计费按真实用量走，",
+      "真正管钱的是 $25 单局硬闸，它不受这个数字影响。"
+    ],
+    "maxOutputTokens": 20000
+  },
+
+  "experiment": {
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-cognitive"
+  }
+}

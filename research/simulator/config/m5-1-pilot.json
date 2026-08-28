@@ -1,0 +1,53 @@
+{
+  "$comment": [
+    "M5.1 试点 profile —— 事实 ID 修复 + 桌面协调层。",
+    "",
+    "为什么又是一个新文件：m5-pilot.json 是那局已经打完的 prompt-0.3.0 对局的",
+    "可复现基线（$6.9745，坏人 3:0，g-a0b76ac9）。在里面改一个字段，",
+    "那局的产物就再也无法从仓库状态重建。default.json 同理，一个字都不动。",
+    "",
+    "这份文件只列出与 default.json 不同的字段，其余全部继承。",
+    "",
+    "用法：",
+    "  ... run-live-game.ts -- --profile m5-1-pilot --dry-run",
+    "  ... run-live-game.ts -- --profile m5-1-pilot --live --yes ...",
+    "不加 --profile 的命令一律走 default.json，也就是最早的旧路径。"
+  ],
+
+  "promptVersion": "prompt-0.3.1",
+
+  "cognition": {
+    "$comment": [
+      "maxCognitionRepairs 仍然是 2。M5 试点用掉了 5 次重问，全部一次就修好，",
+      "没有任何一次逼近这个上限 —— 而且那 5 次的根因（事实表不渲染 id）这次已经修了，",
+      "所以预期次数应该更低，不是更高。"
+    ],
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "limits": {
+    "$comment": [
+      "12,000，从 M5 试点的 20,000 降下来。",
+      "",
+      "20,000 是根据一个高估了约 7 倍的估算定的：预检把写满的认知块算成 10,323 token，",
+      "实测整个认知块只有约 1,500 字符。M5 试点的输出峰值是 5,511（占 20,000 的 27.6%），",
+      "比没有认知块的实验 3 的 6,562 还低。",
+      "",
+      "12,000 的余量怎么来的：5,511 是旧栈的峰值，0.3.1 多了一个 social 块",
+      "（三个焦点候选 + alignment + coalitionPlan，按上限约 1,600 字符 ≈ 800 token），",
+      "留到 12,000 仍有一倍以上的头寸。",
+      "",
+      "容量重试对确定性的输出耗尽没有用 —— 它原样重发，会以同样的方式再耗尽一次。",
+      "所以余量必须来自这个数字本身。"
+    ],
+    "maxOutputTokens": 12000
+  },
+
+  "experiment": {
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-social"
+  }
+}

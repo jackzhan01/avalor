@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:sim": "vitest run --config research/simulator/vitest.config.ts",
     "check:imports": "node scripts/check-imports.mjs"
   },
   "dependencies": {

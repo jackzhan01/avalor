@@ -52,3 +52,8 @@ research/.llm-*-out.txt
 
 # 构建输出到独立目录，避免和常驻 dev server 抢 .next
 .next-build/
+
+# 模拟器的运行产物：回放日志、manifest、模型回答缓存。
+# 重跑可复现（同 seed 同结果），体积会长，不进仓库。
+research/simulator/out/
+research/simulator/.cache/
