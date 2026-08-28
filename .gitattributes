@@ -1,0 +1,4 @@
+# 对局回放是逐位可校验的数据产物，不是源码。
+# core.autocrlf=true 会在 checkout 时把 LF 改成 CRLF，
+# 于是仓库里的字节和跑出来的产物对不上、sha256 也对不上。
+research/simulator/games/*.jsonl -text
