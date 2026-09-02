@@ -24,11 +24,13 @@ import { isSeat } from "../core/order";
 import type {
   Action,
   Belief,
+  ClaimPurpose,
   DecisionRequest,
   PrivateMemoryPatch,
   Seat,
   Stance,
 } from "../core/types";
+import { CLAIM_PURPOSES } from "../core/types";
 
 export type ParseResult =
   | { readonly ok: true; readonly action: Action }
@@ -156,6 +158,34 @@ function claim(value: unknown): RoleType | null {
  * referee elsewhere; it is a research annotation and never affects play, so a
  * stray one costs nothing while losing a real one would cost a trace.
  */
+/**
+ * `claimPurpose`, validated against the closed list.
+ *
+ * Returns `undefined` for absent/null so the key stays off actions produced by
+ * a stack that does not ask for it, and `null` is never written — the same rule
+ * `retractClaim` follows, and for the same reason: an always-present key would
+ * change the bytes of every replayed speech recorded before 0.7.0.
+ */
+function claimPurpose(value: unknown): ClaimPurpose | undefined | "bad" {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") return "bad";
+  return (CLAIM_PURPOSES as readonly string[]).includes(value)
+    ? (value as ClaimPurpose)
+    : "bad";
+}
+
+/** `ambiguityEventIds`, validated as a list of non-negative integers. */
+function ambiguityEventIds(value: unknown): readonly number[] | undefined | "bad" {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) return "bad";
+  const out: number[] = [];
+  for (const item of value) {
+    if (typeof item !== "number" || !Number.isInteger(item) || item < 0) return "bad";
+    out.push(item);
+  }
+  return out;
+}
+
 function withExtras<T extends Action>(base: T, cell: Record<string, unknown>): T {
   const patch = memoryPatch(cell.memoryPatch);
   const rationale = text(cell.rationale);
@@ -201,6 +231,16 @@ export function parseAction(raw: string, request: DecisionRequest): ParseResult 
       if (cell.tentativeTeam != null && tentative === null) {
         return fail("tentativeTeam 里有不是座位的东西");
       }
+      const purpose = claimPurpose(cell.claimPurpose);
+      if (purpose === "bad") {
+        return fail(
+          `claimPurpose 只能是 ${CLAIM_PURPOSES.join(" / ")} 之一，或者 null`,
+        );
+      }
+      const ambiguity = ambiguityEventIds(cell.ambiguityEventIds);
+      if (ambiguity === "bad") {
+        return fail("ambiguityEventIds 只能是一组非负整数 seq，或者 null");
+      }
       return {
         ok: true,
         action: withExtras(
@@ -216,6 +256,10 @@ export function parseAction(raw: string, request: DecisionRequest): ParseResult 
             // Only when true. An always-present `false` would put a key into
             // every replayed action of every game recorded before 0.4.0.
             ...(cell.retractClaim === true ? { retractClaim: true as const } : {}),
+            // `prompt-0.7.0`. Written only when present, so a 0.6.0 answer
+            // parses to exactly the bytes it always did.
+            ...(purpose !== undefined ? { claimPurpose: purpose } : {}),
+            ...(ambiguity !== undefined ? { ambiguityEventIds: ambiguity } : {}),
           },
           cell,
         ),

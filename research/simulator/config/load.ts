@@ -24,6 +24,11 @@ import defaults from "./default.json";
 import m5Pilot from "./m5-pilot.json";
 import m51Pilot from "./m5-1-pilot.json";
 import m52Pilot from "./m5-2-pilot.json";
+import m53Pilot from "./m5-3-pilot.json";
+import m53Terra from "./m5-3-terra-pilot.json";
+import m53Luna from "./m5-3-luna-pilot.json";
+import m54Pilot from "./m5-4-pilot.json";
+import m55Pilot from "./m5-5-pilot.json";
 import type { PersonaMode } from "../prompts/personas";
 import { CATALOG_IDS, type CatalogStrategyId } from "../prompts/strategies";
 import {
@@ -31,7 +36,10 @@ import {
   PROMPT_VERSION_COGNITIVE,
   PROMPT_VERSION_COGNITIVE_V2,
   PROMPT_VERSION_CONTEST,
+  PROMPT_VERSION_DISCLOSURE,
   PROMPT_VERSION_LEGACY,
+  PROMPT_VERSION_M54,
+  PROMPT_VERSION_M55,
 } from "../prompts/version";
 
 /** How hard the model is asked to think. Passed through to the provider later. */
@@ -79,6 +87,45 @@ export interface CognitionConfig {
   readonly maxCognitionRepairs: number;
   /** Record per-field utilisation in the private trace. Private only. */
   readonly telemetry: boolean;
+}
+
+/**
+ * One stage's model, provider-neutral, and every field optional.
+ *
+ * `null` means INHERIT from `model` / `limits`. That is not laziness: a
+ * default that silently pins the planner to today's model id would make a
+ * profile written now unreproducible the moment the top-level model changed,
+ * and a required field would force every profile to restate three values it
+ * does not care about. Inheritance keeps a one-model run a one-line config and
+ * makes a hybrid run state exactly what differs.
+ *
+ * NOTHING HERE NAMES A PROVIDER. A stage is a model id, an effort and a cap;
+ * which vendor serves it is `model/openai-responses.ts`'s problem, and a
+ * config that hard-coded a second vendor would have to be edited to run the
+ * comparison it exists to describe.
+ */
+export interface StageModelConfig {
+  /** Model id, or null to inherit `model.id`. */
+  readonly model: string | null;
+  /** Reasoning effort, or null to inherit `model.reasoningEffort`. */
+  readonly reasoningEffort: ReasoningEffort | null;
+  /** Output cap including reasoning, or null to inherit `limits.maxOutputTokens`. */
+  readonly maxOutputTokens: number | null;
+}
+
+/**
+ * The two-stage split. Inert unless `promptVersion` separates the stages.
+ *
+ * `maxPublicMessageRepairs` bounds the ONE retry loop that exists here: a
+ * spokesperson whose sentence the firewall refused. It is deliberately small.
+ * A spokesperson that leaks twice from a prompt containing no secrets is not
+ * a wording problem, it is a signal that something upstream is wrong, and
+ * grinding through ten identical retries would spend money hiding it.
+ */
+export interface StagesConfig {
+  readonly planner: StageModelConfig;
+  readonly spokesperson: StageModelConfig;
+  readonly maxPublicMessageRepairs: number;
 }
 
 export interface LimitsConfig {
@@ -201,6 +248,7 @@ export interface SimConfig {
   readonly model: ModelConfig;
   readonly limits: LimitsConfig;
   readonly cognition: CognitionConfig;
+  readonly stages: StagesConfig;
   readonly budget: BudgetConfig;
   readonly pricing: PricingConfig;
   readonly smoke: SmokeConfig;
@@ -277,6 +325,7 @@ export type SimConfigOverrides = {
   readonly model?: Partial<ModelConfig>;
   readonly limits?: Partial<LimitsConfig>;
   readonly cognition?: Partial<CognitionConfig>;
+  readonly stages?: Partial<StagesConfig>;
   readonly budget?: Partial<BudgetConfig>;
   readonly pricing?: Partial<PricingConfig>;
   readonly smoke?: Partial<SmokeConfig>;
@@ -308,6 +357,11 @@ export const PROFILES = {
   "m5-pilot": m5Pilot as unknown as Record<string, unknown>,
   "m5-1-pilot": m51Pilot as unknown as Record<string, unknown>,
   "m5-2-pilot": m52Pilot as unknown as Record<string, unknown>,
+  "m5-3-pilot": m53Pilot as unknown as Record<string, unknown>,
+  "m5-3-terra-pilot": m53Terra as unknown as Record<string, unknown>,
+  "m5-3-luna-pilot": m53Luna as unknown as Record<string, unknown>,
+  "m5-4-pilot": m54Pilot as unknown as Record<string, unknown>,
+  "m5-5-pilot": m55Pilot as unknown as Record<string, unknown>,
 } as const;
 
 export type ProfileName = keyof typeof PROFILES;
@@ -316,7 +370,96 @@ export const PROFILE_NAMES: readonly ProfileName[] = [
   "m5-pilot",
   "m5-1-pilot",
   "m5-2-pilot",
+  "m5-3-pilot",
+  "m5-3-terra-pilot",
+  "m5-3-luna-pilot",
+  "m5-4-pilot",
+  "m5-5-pilot",
 ];
+
+/**
+ * Which profile a run should use, given the flag and the checkpoint.
+ *
+ * THE ONE PLACE THAT DECIDES, so the rule cannot be half-applied. It exists
+ * because of a real near miss: resuming the completed M5.2 pilot without
+ * `--profile` fell back to `default.json` — a different prompt version, a
+ * different strategy arm, a different output ceiling. Nothing was damaged
+ * because the checkpoint was cognitive and `resumeFromCheckpoint` refused on
+ * `prompt_version_mismatch` before any request left. A `prompt-0.2.0`
+ * checkpoint resumed the same way would have passed every gate.
+ *
+ * THE RULE:
+ *
+ *   fresh run, no flag        →  `default.json`, exactly as before
+ *   fresh run, flag           →  that profile
+ *   resume, flag              →  that profile, but it must MATCH the checkpoint
+ *   resume, no flag, recorded →  the recorded one, and say so out loud
+ *   resume, no flag, absent   →  REFUSE
+ *
+ * The last line is the point. A checkpoint written before `profile` existed
+ * records `null`, and `null` is indistinguishable from "this game really was
+ * started under default.json". Guessing between those two is exactly the
+ * failure this function exists to prevent, so it does not guess.
+ */
+export type ResumeProfileResolution =
+  | { readonly ok: true; readonly profile: ProfileName | null; readonly derived: boolean }
+  | { readonly ok: false; readonly error: string };
+
+export function resolveProfileForResume(input: {
+  readonly flag: ProfileName | null;
+  /** Null for a fresh run. `{profile: null}` for a checkpoint that records none. */
+  readonly checkpoint: { readonly profile: string | null } | null;
+  /**
+   * `--profile-default`: the operator asserts this game really was started
+   * under `default.json`.
+   *
+   * An explicit opt-in rather than the default behaviour, which is the whole
+   * fix: the dangerous version of this is the one nobody had to type.
+   */
+  readonly allowDefault?: boolean;
+}): ResumeProfileResolution {
+  const { flag, checkpoint } = input;
+
+  if (!checkpoint) return { ok: true, profile: flag, derived: false };
+
+  const recorded = checkpoint.profile;
+
+  if (flag !== null) {
+    if (recorded !== null && recorded !== flag) {
+      return {
+        ok: false,
+        error:
+          `检查点是用 profile ${recorded} 跑的，命令行给的是 ${flag}。` +
+          `一局游戏不能拆成两个 profile —— 用 --profile ${recorded} 续跑，或者开新的一局。`,
+      };
+    }
+    return { ok: true, profile: flag, derived: false };
+  }
+
+  if (recorded === null) {
+    if (input.allowDefault === true) return { ok: true, profile: null, derived: false };
+    return {
+      ok: false,
+      error:
+        "续跑没有给 --profile，而这个检查点里也没有记录 profile（它是加这个字段之前写的）。" +
+        `拒绝续跑：不给 --profile 会退回 default.json（${PROMPT_VERSION_LEGACY} + baseline），` +
+        "那是另一条实验臂，而「没记录」和「本来就是 default.json」在这里分不出来。" +
+        `请显式给出 --profile（${PROFILE_NAMES.join(" / ")}）；` +
+        "如果这一局确实是 default.json 跑的，用 --profile-default 明说。",
+    };
+  }
+
+  if (!isProfileName(recorded)) {
+    return {
+      ok: false,
+      error:
+        `检查点记录的 profile 是 ${recorded}，这个版本不认识它。` +
+        `已知的是 ${PROFILE_NAMES.join(" / ")}。`,
+    };
+  }
+
+  return { ok: true, profile: recorded, derived: true };
+}
 
 export function isProfileName(name: string): name is ProfileName {
   return (PROFILE_NAMES as readonly string[]).includes(name);
@@ -360,6 +503,9 @@ export function loadProfile(
     ...(base.cognition || overrides.cognition
       ? { cognition: { ...base.cognition, ...overrides.cognition } }
       : {}),
+    ...(base.stages || overrides.stages
+      ? { stages: { ...base.stages, ...overrides.stages } }
+      : {}),
     ...(base.limits || overrides.limits
       ? { limits: { ...base.limits, ...overrides.limits } }
       : {}),
@@ -369,6 +515,13 @@ export function loadProfile(
     ...(base.model || overrides.model
       ? { model: { ...base.model, ...overrides.model } }
       : {}),
+    ...(base.pricing || overrides.pricing
+      ? { pricing: { ...base.pricing, ...overrides.pricing } }
+      : {}),
+    ...(base.budget || overrides.budget
+      ? { budget: { ...base.budget, ...overrides.budget } }
+      : {}),
+    ...(base.run || overrides.run ? { run: { ...base.run, ...overrides.run } } : {}),
   };
   const config = loadConfig(merged);
   assertProfileCoherent(name, config);
@@ -387,6 +540,12 @@ const ARM_FOR_VERSION: Readonly<Record<string, CatalogStrategyId>> = {
   [PROMPT_VERSION_COGNITIVE]: "expert-cognitive",
   [PROMPT_VERSION_COGNITIVE_V2]: "expert-social",
   [PROMPT_VERSION_CONTEST]: "expert-claim-contest",
+  [PROMPT_VERSION_DISCLOSURE]: "expert-disclosure-safe",
+  [PROMPT_VERSION_M54]: "expert-disciplined",
+  // 0.7.0 keeps M5.4's arm on purpose. M5.5 changes what the prompts ASK
+  // and what the checks REFUSE; the strategy text is byte-identical, so a
+  // new arm id would claim a difference that does not exist.
+  [PROMPT_VERSION_M55]: "expert-disciplined",
 };
 
 export function assertProfileCoherent(name: string, config: SimConfig): void {
@@ -440,6 +599,11 @@ export function loadConfig(overrides: SimConfigOverrides = {}): SimConfig {
     requireObject(raw.cognition ?? {}, "cognition"),
     overrides.cognition,
     "cognition",
+  );
+  const stages = section(
+    requireObject(raw.stages ?? {}, "stages"),
+    overrides.stages,
+    "stages",
   );
   const budget = section(requireObject(raw.budget, "budget"), overrides.budget, "budget");
   const pricing = section(requireObject(raw.pricing, "pricing"), overrides.pricing, "pricing");
@@ -530,6 +694,7 @@ export function loadConfig(overrides: SimConfigOverrides = {}): SimConfig {
       cognition,
       requireString(overrides.promptVersion ?? raw.promptVersion, "promptVersion"),
     ),
+    stages: readStages(stages),
     budget: { costWarningPerGameUsd, hardCostLimitPerGameUsd, hardBatchCostLimitUsd },
     pricing: readPricing(pricing, requireString(model.id, "model.id")),
     smoke: readSmoke(smoke),
@@ -538,6 +703,54 @@ export function loadConfig(overrides: SimConfigOverrides = {}): SimConfig {
       concurrency: requireInt(run.concurrency, "run.concurrency", { min: 1, max: 64 }),
       maxRetries: requireInt(run.maxRetries, "run.maxRetries", { min: 0, max: 10 }),
     },
+  };
+}
+
+function readStage(value: unknown, path: string): StageModelConfig {
+  const raw = value === undefined ? {} : requireObject(value, path);
+  for (const key of Object.keys(raw)) {
+    if (!["model", "reasoningEffort", "maxOutputTokens"].includes(key)) {
+      throw new ConfigError(`${path}.${key} is not a known setting`);
+    }
+  }
+  return {
+    model:
+      raw.model === undefined || raw.model === null
+        ? null
+        : requireString(raw.model, `${path}.model`),
+    reasoningEffort:
+      raw.reasoningEffort === undefined || raw.reasoningEffort === null
+        ? null
+        : requireEffort(raw.reasoningEffort, `${path}.reasoningEffort`),
+    maxOutputTokens:
+      raw.maxOutputTokens === undefined || raw.maxOutputTokens === null
+        ? null
+        : requireInt(raw.maxOutputTokens, `${path}.maxOutputTokens`, { min: 1, max: 200_000 }),
+  };
+}
+
+function readStages(raw: Record<string, unknown>): StagesConfig {
+  return {
+    planner: readStage(raw.planner, "stages.planner"),
+    spokesperson: readStage(raw.spokesperson, "stages.spokesperson"),
+    maxPublicMessageRepairs: requireInt(
+      raw.maxPublicMessageRepairs ?? 1,
+      "stages.maxPublicMessageRepairs",
+      { min: 0, max: 5 },
+    ),
+  };
+}
+
+/** The effective model, effort and cap for one stage. Inheritance resolved. */
+export function resolveStage(
+  config: SimConfig,
+  stage: "planner" | "spokesperson",
+): { readonly model: string; readonly reasoningEffort: ReasoningEffort; readonly maxOutputTokens: number } {
+  const s = config.stages[stage];
+  return {
+    model: s.model ?? config.model.id,
+    reasoningEffort: s.reasoningEffort ?? config.model.reasoningEffort,
+    maxOutputTokens: s.maxOutputTokens ?? config.limits.maxOutputTokens,
   };
 }
 

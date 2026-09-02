@@ -65,6 +65,7 @@ import type {
   Side,
 } from "./types";
 import { evilRoster, knowledgeFor, type EvilRosterEntry } from "./visibility";
+import { coordinationFor, type MissionCoordination } from "./evil-coordination";
 
 /** Everything about WHERE this seat is, as opposed to what it knows. */
 export interface PositionView {
@@ -136,6 +137,24 @@ export interface Observation {
   readonly evilRoster: readonly EvilRosterEntry[] | null;
   /** The evil team's closing discussion. Empty for every good seat, always. */
   readonly evilDiscussion: readonly EvilDiscussionLine[];
+
+  /**
+   * The private evil mission-card coordination context. HOUSE CONVENTION.
+   *
+   * Non-null ONLY for a mutually aware evil seat (Mordred / Morgana /
+   * Assassin) that is on the CURRENT proposed team. Null for every good seat,
+   * null for Oberon — who is not mutually aware and must not be — and null for
+   * an evil seat not riding this mission.
+   *
+   * It never mentions Oberon, so a designated rider cannot learn from it that
+   * a fourth villain is aboard. See `core/evil-coordination.ts` for why the
+   * order is fixed and why Oberon's extra fail card is deliberate.
+   *
+   * RENDERED only under a prompt version that declares `evilCoordination`;
+   * the field is populated regardless, so the gate a reader has to check is
+   * the capability, not two different code paths.
+   */
+  readonly missionCoordination: MissionCoordination | null;
 
   /** SOFT. This seat's own notes, and only its own. */
   readonly memory: PrivateMemory;
@@ -243,6 +262,15 @@ export function observationFor(state: GameState, seat: Seat): Observation {
     position,
     evilRoster: rosterVisible ? evilRoster(state.deal) : null,
     evilDiscussion,
+    missionCoordination: state.proposedTeam
+      ? coordinationFor({
+          deal: state.deal,
+          seat,
+          team: state.proposedTeam,
+          missionNumber: state.missionNumber,
+          failsRequired: requiredFails(PLAYER_COUNT, state.missionNumber),
+        })
+      : null,
     memory: state.memory[seat],
     // Self-only. See the header: a mission-card request names an evil seat.
     request: state.pending && state.pending.seat === seat ? state.pending : null,

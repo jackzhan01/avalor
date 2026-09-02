@@ -352,3 +352,24 @@ export const FACT_ID_LEGEND = [
   ">",
   "> 只要有一条前提不硬，从它推出来的结论就不硬。系统会自己查，你只管填 id。",
 ].join("\n");
+
+/**
+ * The legend as the PUBLIC SPOKESPERSON reads it.
+ *
+ * Three prefixes, not four. The `p…` line is gone because the spokesperson has
+ * no private ids — telling it that a private category exists would be telling
+ * it there is something it has not been shown, and the one failure mode a
+ * blind writer has is inventing a private-sounding fact to fill the gap.
+ *
+ * It also drops the `premiseIds` reference: the wording schema has one string
+ * field and no premise array, so pointing at a field that is not there is an
+ * instruction the model can only follow by doing something wrong.
+ */
+export const FACT_ID_LEGEND_PUBLIC = [
+  "> **怎么引用**：下面每一行前面的方括号就是它的编号，说话时可以直接指给别人看。",
+  "> - `[f…]` 裁判记录的事实。",
+  "> - `[c…]` 有人公开说过这句话 —— **他说过**这件事是事实，**他说的内容**不是。",
+  "> - `[k…]` 派权争夺里发生过的事：谁声称、谁退水、谁踩了谁。同样只是「发生过」。",
+  ">",
+  "> 这里列出来的就是全部。**没有别的、只有某个人看得到的东西** —— 不要暗示有。",
+].join("\n");

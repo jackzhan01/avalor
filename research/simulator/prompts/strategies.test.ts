@@ -81,12 +81,14 @@ function sampleObservation(): Observation {
 }
 
 describe("the catalog", () => {
-  it("is exactly the five shipped arms, plus custom built per run", () => {
+  it("is exactly the seven shipped arms, plus custom built per run", () => {
     const shipped = [
       "baseline",
       "community-meta",
       "expert-claim-contest",
       "expert-cognitive",
+      "expert-disciplined",
+      "expert-disclosure-safe",
       "expert-social",
     ];
     expect([...CATALOG_IDS].sort()).toEqual(shipped);

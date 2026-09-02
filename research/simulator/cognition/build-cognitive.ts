@@ -31,11 +31,8 @@ import { renderPersona, type PersonaDefinition } from "../prompts/personas";
 import { renderRoleLayer } from "../prompts/roles";
 import { renderStrategy, type StrategyDefinition } from "../prompts/strategies";
 import { renderTask, taskSchemaFor, type TaskSchema } from "../prompts/tasks";
-import {
-  PROMPT_VERSION_COGNITIVE,
-  PROMPT_VERSION_COGNITIVE_V2,
-  PROMPT_VERSION_CONTEST,
-} from "../prompts/version";
+import { capabilitiesFor } from "../prompts/capabilities";
+import { PROMPT_VERSION_COGNITIVE_V2 } from "../prompts/version";
 import { jsonSchemaFor, type Fragment } from "../model/json-schema";
 import {
   packContext,
@@ -49,8 +46,16 @@ import {
   DECISION_PROTOCOL_LAYER,
   DECISION_PROTOCOL_LAYER_V2,
   DECISION_PROTOCOL_LAYER_V3,
+  DECISION_PROTOCOL_LAYER_V4,
   renderCognition,
 } from "./protocol";
+import { renderDisclosureRules } from "./disclosure";
+import { renderMissionCoordination } from "../core/evil-coordination";
+import { VOTE_ANALYSIS_INSTRUCTION } from "./vote-discipline";
+import { ASSASSINATION_INSTRUCTION, LADY_INSTRUCTION } from "./assassination";
+import { claimPersistenceInstruction } from "./claim-persistence";
+import { INTENT_INSTRUCTION, intentFragment } from "./intent";
+import { messageFieldFor, taskHasPublicMessage } from "./firewall";
 import { renderContest } from "./contest";
 import { cognitionFragment, COGNITION_FRAGMENT } from "./response";
 import { renderSocial } from "./social";
@@ -123,20 +128,40 @@ export function fusedSchemaFor(task: TaskSchema, promptVersion?: string): Fragme
     required: string[];
     properties: Record<string, Fragment>;
   };
-  const contest = promptVersion === PROMPT_VERSION_CONTEST;
-  const social = contest || promptVersion === PROMPT_VERSION_COGNITIVE_V2;
+  // A caller that passes no version gets exactly what the completed M5 pilot
+  // sent — that default is load-bearing and predates the capability table.
+  const caps = capabilitiesFor(promptVersion ?? PROMPT_VERSION_COGNITIVE_V2);
+  const disclosure = caps.twoStageSpeech;
+  const contest = caps.claimContest;
+  const social = caps.social;
+
+  // 0.5.0: the planner does not write the public sentence. The message field is
+  // REMOVED from its schema and replaced by the envelope, so "the planner must
+  // not write the wording" is a shape the provider enforces rather than an
+  // instruction the model may drift from.
+  let required = [...base.required];
+  const properties: Record<string, Fragment> = { ...base.properties };
+  if (disclosure && taskHasPublicMessage(task.id)) {
+    const field = messageFieldFor(task.id);
+    delete properties[field];
+    required = required.filter((r) => r !== field);
+    properties.communicationIntent = intentFragment();
+    required.push("communicationIntent");
+  }
+
   return {
     type: "object",
     additionalProperties: false,
-    required: [...base.required, "cognition"],
+    required: [...required, "cognition"],
     properties: {
-      ...base.properties,
+      ...properties,
       // Default keeps the frozen 0.3.0 object, so a caller that does not pass a
       // version gets exactly what the completed pilot sent.
       cognition: social
-        ? cognitionFragment(limitsFor(promptVersion ?? PROMPT_VERSION_COGNITIVE_V2), {
+        ? cognitionFragment(caps.limits, {
             withSocial: true,
             ...(contest ? { withContest: true } : {}),
+            ...(caps.stableCommitmentIds ? { withCommitmentIds: true } : {}),
           })
         : COGNITION_FRAGMENT,
     },
@@ -165,18 +190,31 @@ export function buildCognitivePrompt(input: CognitivePromptInput): BuiltCognitiv
     );
   }
 
-  // One flag decides the whole stack: which limit table, which schema, whether
-  // ids are rendered, whether the social block is asked for. Keeping it a
-  // single derived boolean is what stops the two versions from interleaving.
-  const contest = config.promptVersion === PROMPT_VERSION_CONTEST;
-  // 0.4.0 is a superset: it renders ids and the social block too. One derived
-  // pair of booleans rather than a chain of version comparisons scattered
-  // through the builder — that is what stops the three stacks interleaving.
-  const social = contest || config.promptVersion === PROMPT_VERSION_COGNITIVE_V2;
-  const limits = limitsFor(config.promptVersion);
+  // Capabilities are DECLARED by the version, not re-derived here. The three
+  // locals stay for readability; what changed is where their values come from.
+  // See `prompts/capabilities.ts` for what re-deriving them cost.
+  const caps = capabilitiesFor(config.promptVersion);
+  const disclosure = caps.twoStageSpeech;
+  const contest = caps.claimContest;
+  const social = caps.social;
+  const limits = caps.limits;
+
+  // THE OBERON GATE. Under 0.6.0 the coordination FIELD was gated on the
+  // version and the coordination SECTION on `observation.missionCoordination`,
+  // so Oberon got a required block pointing at a section he did not have. Both
+  // now ask the same question, and 0.6.0 keeps its exact bytes because the
+  // second half of the condition is itself version-gated.
+  const wantsCoordination =
+    caps.evilCoordination &&
+    (!caps.coordinationFieldGated || observation.missionCoordination !== null);
 
   const schema = taskSchemaFor(request, config.limits.speechCharLimit, {
     withRetraction: contest,
+    ...(wantsCoordination ? { withCoordination: true } : {}),
+    ...(caps.voteDiscipline ? { withVoteAnalysis: true } : {}),
+    ...(caps.assassinRanking ? { withAssassinationRanking: true } : {}),
+    ...(caps.ladyNeutralAssassination ? { withLadyAnalysis: true } : {}),
+    ...(caps.persistentClaims ? { withClaimPurpose: true } : {}),
   });
 
   const cognitionText = renderCognition({
@@ -185,16 +223,45 @@ export function buildCognitivePrompt(input: CognitivePromptInput): BuiltCognitiv
     dossiers: ledger.dossiers,
     seats: SEATS,
     rolePlan: ledger.self.rolePlan,
-    commitments: activeCommitments(ledger.self.publicCommitments).map((c) => c.text),
+    // 0.5.0 renders the id in front of each promise, because 0.5.0 closes by
+    // id. The three frozen stacks render the bare text, byte for byte.
+    commitments: activeCommitments(ledger.self.publicCommitments).map((c) =>
+      disclosure ? `\`[${c.id}]\` ${c.text}` : c.text,
+    ),
     ...(social ? { social: renderSocial(ledger.social) } : {}),
     ...(contest ? { contest: renderContest(ledger.contest) } : {}),
   });
 
+  // 0.5.0 only, and only where there is a sentence to write. The envelope
+  // instruction sits BEFORE the cognition instruction because it changes what
+  // the answer's action half looks like, and a model that reads "fill in
+  // `cognition`" first will have already decided the shape of the answer.
+  const wantsIntent = disclosure && taskHasPublicMessage(schema.id);
   const taskText = [
     renderTask(schema),
     "",
+    ...(wantsIntent ? [INTENT_INSTRUCTION, ""] : []),
+    ...(disclosure
+      ? [caps.proseExampleIds ? COMMITMENT_ID_INSTRUCTION_PROSE : COMMITMENT_ID_INSTRUCTION, ""]
+      : []),
+    ...(caps.voteDiscipline && schema.requestKind === "vote"
+      ? [VOTE_ANALYSIS_INSTRUCTION, ""]
+      : []),
+    ...(caps.assassinRanking && schema.requestKind === "assassinate"
+      ? [ASSASSINATION_INSTRUCTION, ""]
+      : []),
+    ...(caps.ladyNeutralAssassination && schema.requestKind === "assassinate"
+      ? [LADY_INSTRUCTION, ""]
+      : []),
+    ...(caps.persistentClaims && schema.fields.some((f) => f.name === "claimPurpose")
+      ? [claimPersistenceInstruction(observation), ""]
+      : []),
+    // 0.7.0 swaps the id paragraph for prose placeholders. A separate constant
+    // rather than an edit, because four completed games need V2/V3 verbatim.
     contest
-      ? COGNITION_INSTRUCTION_V3
+      ? caps.proseExampleIds
+        ? COGNITION_INSTRUCTION_V4
+        : COGNITION_INSTRUCTION_V3
       : social
         ? COGNITION_INSTRUCTION_V2
         : COGNITION_INSTRUCTION,
@@ -215,14 +282,25 @@ export function buildCognitivePrompt(input: CognitivePromptInput): BuiltCognitiv
     {
       index: 2,
       title: "思考流程",
-      text: contest
-        ? DECISION_PROTOCOL_LAYER_V3
-        : social
-          ? DECISION_PROTOCOL_LAYER_V2
-          : DECISION_PROTOCOL_LAYER,
+      text: disclosure
+        ? DECISION_PROTOCOL_LAYER_V4
+        : contest
+          ? DECISION_PROTOCOL_LAYER_V3
+          : social
+            ? DECISION_PROTOCOL_LAYER_V2
+            : DECISION_PROTOCOL_LAYER,
     },
     { index: 3, title: "说话风格", text: renderPersona(persona) },
-    { index: 4, title: "身份与合法信息类型", text: renderRoleLayer(observation.role) },
+    {
+      index: 4,
+      title: "身份与合法信息类型",
+      // 0.5.0 appends the role-specific disclosure rule. It is a function of
+      // `role` and nothing else, so it stays inside the cacheable system prefix
+      // and two seats holding the same role read identical bytes.
+      text: disclosure
+        ? [renderRoleLayer(observation.role), "", renderDisclosureRules(observation.role)].join("\n")
+        : renderRoleLayer(observation.role),
+    },
     { index: 5, title: "硬事实与挂车约束", text: pack.factTables },
     ...(contest
       ? [{ index: 5.5, title: "身份声称与派权争夺", text: pack.claimContest }]
@@ -230,8 +308,24 @@ export function buildCognitivePrompt(input: CognitivePromptInput): BuiltCognitiv
     {
       index: 6,
       title: "只有你知道的硬信息",
-      text: renderOwnPrivateFacts(observation, { withIds: social }),
+      text: renderOwnPrivateFacts(observation, {
+        withIds: social,
+        ...(caps.evilRosterRendered ? { withEvilRoster: true } : {}),
+      }),
     },
+    // The evil coordination convention. Rendered ONLY under a version that
+    // declares it AND only when the referee actually granted this seat one —
+    // `observationFor` returns null for every good seat, for Oberon, and for an
+    // evil seat not riding this mission.
+    ...(caps.evilCoordination && observation.missionCoordination
+      ? [
+          {
+            index: 6.5,
+            title: "坏人出牌协调",
+            text: renderMissionCoordination(observation.missionCoordination),
+          },
+        ]
+      : []),
     { index: 7, title: "你自己的推理记录", text: cognitionText },
     { index: 8, title: "策略档", text: renderStrategy(strategy, observation) },
     { index: 9, title: "最近的发言与本次任务", text: renderRecent(pack) },
@@ -253,11 +347,10 @@ export function buildCognitivePrompt(input: CognitivePromptInput): BuiltCognitiv
     : userParts.join("\n\n");
 
   return {
-    promptVersion: contest
-      ? PROMPT_VERSION_CONTEST
-      : social
-        ? PROMPT_VERSION_COGNITIVE_V2
-        : PROMPT_VERSION_COGNITIVE,
+    // The version this stack IS, straight from the capability row. Deriving it
+    // back out of the booleans was another place the four stacks could
+    // interleave without anybody noticing.
+    promptVersion: caps.version,
     taskId: schema.id,
     schema,
     jsonSchema: fusedSchemaFor(schema, config.promptVersion),
@@ -323,14 +416,65 @@ export const COGNITION_INSTRUCTION = [
  * starting with `f` in the fact table above", and the fact table printed none.
  * It now points at the bracket that is actually there, and shows one.
  */
-export const COGNITION_INSTRUCTION_V2 = [
+/**
+ * The id paragraph, as 0.3.1 through 0.6.0 printed it. FROZEN.
+ *
+ * Split out of the instruction body rather than edited, because 0.7.0 needs a
+ * different one and four completed games need these exact bytes. The two
+ * variants are spliced into one shared body below, so the rest of the text
+ * cannot drift between them.
+ *
+ * ⚠ WHAT IS WRONG WITH IT, recorded here rather than fixed here. Every example
+ * is written in the notation of a REAL citable row, and `[p.pair]` is not a
+ * placeholder at all — it is Percival's actual pair id. A seat that copies it
+ * cites a private id it does not hold. The scripted double did exactly that for
+ * four milestones and nothing failed, because an unresolvable premise is only
+ * silently unverified. `prompt-0.7.0` refuses it, which is how this was found.
+ */
+const ID_PARAGRAPH_WITH_EXAMPLES: readonly string[] = [
+  "**先说 id 怎么填。** 上面事实表和你的私有信息里，每一行开头都有一个方括号 ——",
+  "`[f12]`、`[f.fail1]`、`[c33:role]`、`[p.pair]` 这样的。**照抄方括号里面的东西**，",
+  "不要自己造。造出来的 id 系统查不到，那条前提就会被算成不硬的。",
+];
+
+/**
+ * The `prompt-0.7.0` id paragraph. No copyable token, and no private id NAMED.
+ *
+ * Three rules, and each closes a hole the frozen paragraph left open:
+ *
+ *   NOTHING HERE PARSES AS AN ID. The placeholders are Chinese prose inside the
+ *   brackets, so a model that copies one verbatim produces a string the premise
+ *   grammar rejects — a bounded `malformed-reference` repair, never an accepted
+ *   premise. A test asserts no token in this text matches the grammar and none
+ *   resolves in any seat's registry.
+ *
+ *   NO PRIVATE ID IS NAMED. The frozen text spells out `p.pair` and `p.self`.
+ *   Both are real, both belong to specific roles, and printing them in an
+ *   instruction every seat receives tells every seat that those ids exist and
+ *   what they are called. 0.7.0 says "the bracket in front of your own private
+ *   line" and lets the seat read its own.
+ *
+ *   IT POINTS AT THE TABLE THAT IS ACTUALLY RENDERED. "Copy exactly one id, from
+ *   the table above, into each box" — one box, one id, from THIS turn's table.
+ *   That is the same sentence `evidence-refs.ts` enforces.
+ */
+const ID_PARAGRAPH_PROSE: readonly string[] = [
+  "**先说 id 怎么填。** 上面事实表和你的私有信息里，每一行开头都有一个方括号，",
+  "里面那一小段就是这一行的 id。**从上面那张表里照抄，一格只放一个。**",
+  "",
+  "这份说明里**不会给你任何可以直接抄的 id 样例** —— 样例抄进去只会变成查不到的编号。",
+  "要引哪一行，就翻上去看那一行开头的方括号里写的是什么。",
+  "",
+  "**自己造的、猜的、从这段说明里抄的，系统都查得出来**，会被当成格式错误退回来重填。",
+  "引不到就留空：空数组是诚实的，一个查不到的 id 会让整条结论被记成没有依据。",
+];
+
+const INSTRUCTION_V2_BODY = (idParagraph: readonly string[], proseIds: boolean) => [
   "### 除了动作，还要填一个 `cognition` 对象",
   "",
   "把上面思考流程的**结论**填进去，不要写过程。",
   "",
-  "**先说 id 怎么填。** 上面事实表和你的私有信息里，每一行开头都有一个方括号 ——",
-  "`[f12]`、`[f.fail1]`、`[c33:role]`、`[p.pair]` 这样的。**照抄方括号里面的东西**，",
-  "不要自己造。造出来的 id 系统查不到，那条前提就会被算成不硬的。",
+  ...idParagraph,
   "",
   "- `factsUsed`：你用到的硬事实 id（`f` 开头，包括 `f.now` 和 `f.fail…` 这类算出来的）",
   "- `claimsReliedOn`：你**采信了**的说法 id（`c` 开头）。采信不等于它是真的",
@@ -340,7 +484,9 @@ export const COGNITION_INSTRUCTION_V2 = [
   "- `intendedPublicSignal`：这一步你想让牌桌接收到什么（私有，牌桌看不到）",
   "- `updatedRolePlan`：身份计划有变就写新的，没变填 null",
   "- `constraints`：你推出来的约束。**每条至少要有一个 `premiseIds`** —— 事实 id 或说法 id 都行。",
-  "  你自己的身份用 `p.self`。系统会自己判断这些前提硬不硬，你不需要（也不能）声明",
+  proseIds
+    ? "  要引你自己的身份，就抄你私有信息那一节里那一行开头的方括号。系统会自己判断这些前提硬不硬，你不需要（也不能）声明"
+    : "  你自己的身份用 `p.self`。系统会自己判断这些前提硬不硬，你不需要（也不能）声明",
   "- `hypotheses`：**至少两种**同时说得通的坏人配置，每一种都要有真正的 label 和 rationale",
   "- `seatReads`：你对各座位的判断，用 strong-good / lean-good / unresolved / lean-evil / strong-evil",
   "- `coverStory` / `claimPlan` / `nextTurnPlan`：你自己的计划，全部私有",
@@ -362,7 +508,18 @@ export const COGNITION_INSTRUCTION_V2 = [
   "**跳身份、藏身份、跟人、驳人，全部是你自己的选择。** 上面这些字段只是要求你把选择记下来。",
   "",
   "**公开发言里只放你真正想在牌桌上说的话，认知内容一个字都不要写进去。**",
-].join("\n");
+];
+
+export const COGNITION_INSTRUCTION_V2 = INSTRUCTION_V2_BODY(
+  ID_PARAGRAPH_WITH_EXAMPLES,
+  false,
+).join("\n");
+
+/** The same body, with the 0.7.0 id paragraph. `prompt-0.7.0` only. */
+export const COGNITION_INSTRUCTION_V2_PROSE = INSTRUCTION_V2_BODY(
+  ID_PARAGRAPH_PROSE,
+  true,
+).join("\n");
 
 /**
  * The `prompt-0.4.0` instruction: everything 0.3.1 asks for, plus the contest.
@@ -371,8 +528,7 @@ export const COGNITION_INSTRUCTION_V2 = [
  * of "here is how to fill `factsUsed`" would drift, and the drift would be
  * invisible until a game produced two different answers to the same question.
  */
-export const COGNITION_INSTRUCTION_V3 = [
-  COGNITION_INSTRUCTION_V2,
+const CONTEST_TAIL: readonly string[] = [
   "",
   "### `contest`：派权争夺",
   "",
@@ -415,4 +571,67 @@ export const COGNITION_INSTRUCTION_V3 = [
   "",
   "**打一个人的声称，不等于说他是坏人。** 时机不对、故事对不上、票和话不一致，",
   "都是在打声称；直接指认是另一个动作，代价也不一样。",
+];
+
+export const COGNITION_INSTRUCTION_V3 = [COGNITION_INSTRUCTION_V2, ...CONTEST_TAIL].join("\n");
+
+/**
+ * `prompt-0.7.0`: the same contest tail on the prose-placeholder body.
+ *
+ * ONE TAIL, shared. Two copies of the contest instruction would drift, and the
+ * drift would only ever show up as two games answering the same question
+ * differently — which is the failure mode `capabilities.ts` was written for.
+ */
+export const COGNITION_INSTRUCTION_V4 = [
+  COGNITION_INSTRUCTION_V2_PROSE,
+  ...CONTEST_TAIL,
+].join("\n");
+
+/**
+ * The 0.5.0 override for `closedCommitments`.
+ *
+ * APPENDED AFTER the 0.4.0 instruction rather than folded into it, and it says
+ * so in as many words — the earlier text tells the model to echo the promise
+ * 「一字不差」, and a reader who met both without being told which wins would
+ * reasonably do the wrong one. Restating the whole instruction to change one
+ * paragraph would be two copies that drift.
+ *
+ * WHY IT CHANGED. Text equality produced three unmatched closures across ten
+ * seats in one M5.2 game: the model meant to close a promise, a character
+ * drifted, and the ledger silently went on holding the seat to it.
+ */
+export const COMMITMENT_ID_INSTRUCTION = [
+  "### `closedCommitments`：0.5.0 起改用 id（**这一条覆盖上面那段关于原文的说明**）",
+  "",
+  "你的公开承诺现在每一条前面都有一个方括号 id，像 `[k30.0]`。",
+  "要关掉一条承诺，**填它的 id，不要填原文**：",
+  "",
+  '`{"id": "k30.0", "resolution": "fulfilled"}`',
+  "",
+  "`resolution` 还是三选一：`fulfilled`（兑现了）/ `obsolete`（局面把它作废了）/",
+  "`withdrawn`（你公开反悔了）。**原文不用抄** —— 之前要求一字不差抄回来，",
+  "而一个字符的偏差就会让这次关闭静默失败，账本继续拿那条承诺要求你。",
+].join("\n");
+
+/**
+ * `prompt-0.7.0`: the same rule with no copyable token.
+ *
+ * The frozen text shows `[k30.0]` twice, including inside a JSON example. A
+ * commitment id is a different namespace from a premise id — copying one
+ * produces an unmatched closure rather than a false premise — but it is still
+ * a string shaped like a real id sitting in an instruction, which is the whole
+ * pattern this milestone removes. The placeholder here cannot be mistaken for
+ * one, and cannot be parsed as one.
+ */
+export const COMMITMENT_ID_INSTRUCTION_PROSE = [
+  "### `closedCommitments`：0.5.0 起改用 id（**这一条覆盖上面那段关于原文的说明**）",
+  "",
+  "你的公开承诺现在每一条前面都有一个方括号 id。要关掉一条承诺，",
+  "**把那条承诺前面方括号里的东西抄进 `id`，不要填原文**：",
+  "",
+  '`{"id": "（这里抄那条承诺前面方括号里的东西）", "resolution": "fulfilled"}`',
+  "",
+  "`resolution` 还是三选一：`fulfilled`（兑现了）/ `obsolete`（局面把它作废了）/",
+  "`withdrawn`（你公开反悔了）。**原文不用抄** —— 之前要求一字不差抄回来，",
+  "而一个字符的偏差就会让这次关闭静默失败，账本继续拿那条承诺要求你。",
 ].join("\n");

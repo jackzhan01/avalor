@@ -152,6 +152,17 @@ const record: PublicRecord = {
       publicMessage: String(e.publicMessage),
       atSequence: Number(e.sequence),
     })),
+  // The one irreversible decision, so `assassinationError` can score it. Read
+  // from the PUBLIC replay: the target and the assassin are both public once
+  // the strike happens.
+  assassination:
+    pubEvents
+      .filter((e) => e.type === "assassination_target")
+      .map((e) => ({
+        assassin: Number(e.assassin) as Seat,
+        target: Number(e.target) as Seat,
+        atSequence: Number(e.sequence),
+      }))[0] ?? null,
 };
 // Votes carry no roster; the preceding proposal does. Carried across so the
 // vote-alignment metric sees the same team the table saw.

@@ -77,6 +77,7 @@ import {
 import { replayPrefix, runGame, UnrecoverableAgentError } from "./runner";
 import { CognitionStore, type CognitionStoreState } from "../cognition/store";
 import type { CognitionReport } from "../agents/llm-agent";
+import { COGNITION_REFUSAL_PREFIXES, type CognitionRejection } from "../cognition/rejection";
 import { CognitionInvalidError } from "../agents/llm-agent";
 import type { GameState } from "../core/state";
 
@@ -95,6 +96,14 @@ export interface LiveGameOptions {
   readonly maxOutputTokens?: number;
   /** Shared across a batch so the $100 ceiling survives between games. */
   readonly batch?: BatchAccount;
+  /**
+   * The named profile this run is using, recorded into the checkpoint.
+   *
+   * Absent means `default.json`. It is written so a later resume can rebuild
+   * the exact arm without anybody remembering which flag was typed — see
+   * `PrivateCheckpoint.profile`.
+   */
+  readonly profile?: string;
   /** A parsed checkpoint. Its identity and arms override the flags. */
   readonly resumeFrom?: PrivateCheckpoint;
   readonly onWarning?: (message: string) => void;
@@ -384,6 +393,15 @@ export async function runLiveGame(
    */
   const cognitionStore = new CognitionStore(resume?.cognition ?? undefined);
   const cognitionReports: CognitionReport[] = [...(resume?.cognitionReports ?? [])];
+  /**
+   * Refused cognition attempts. PRIVATE, and NOT restored from a checkpoint.
+   *
+   * Deliberately not carried across a resume: a checkpoint stores accepted
+   * state, and a rejection is by definition state that was never accepted.
+   * Restoring them would make the resumed run's counts describe two sessions
+   * while its `cognitionReports` describe one.
+   */
+  const cognitionRejections: CognitionRejection[] = [];
 
   // Everything accumulated so far comes back, so a resumed game's trace is the
   // whole game rather than the tail of it.
@@ -416,6 +434,12 @@ export async function runLiveGame(
               onCognition: (report: CognitionReport) => {
                 if (report.attempt > 1) cognitionRepairs += 1;
                 if (config.cognition.telemetry) cognitionReports.push(report);
+              },
+              // The refusal channel. Separate hook, separate list, and it
+              // touches neither the store nor the ledger — a rejected block is
+              // exactly the state that must not be remembered.
+              onRejection: (rejection: CognitionRejection) => {
+                if (config.cognition.telemetry) cognitionRejections.push(rejection);
               },
             },
           }
@@ -480,7 +504,7 @@ export async function runLiveGame(
           strategyId: strategy.id,
           strategyFingerprint: strategyDigest,
           ...(config.cognition.enabled
-            ? { cognition: config.cognition, cognitionReports }
+            ? { cognition: config.cognition, cognitionReports, cognitionRejections }
             : {}),
           modelCalls: attempts as readonly ModelCallRecord[],
           ...(failureReason ? { failureReason } : {}),
@@ -505,6 +529,7 @@ export async function runLiveGame(
           personaAssignment: personas,
           strategyId: strategy.id,
           ...(strategy.customText ? { customStrategyText: strategy.customText } : {}),
+          ...(options.profile ? { profile: options.profile } : {}),
           maxOutputTokens,
           ...(config.cognition.enabled
             ? {
@@ -551,10 +576,13 @@ export async function runLiveGame(
           if (attempts[i].seat === seat) {
             attempts[i].appliedLegalAction = false;
             attempts[i].rejectionReason = feedback.error;
+            // M5.5 added two more cognition refusals with their own prefixes.
+            // Matching only the old one filed them as `action-format`, which is
+            // the same mis-attribution this block was written to fix.
             attempts[i].rejectedBy =
               source === "referee"
                 ? "referee"
-                : feedback.error.startsWith("cognition 有问题")
+                : COGNITION_REFUSAL_PREFIXES.some((p) => feedback.error.startsWith(p))
                   ? "cognition"
                   : "action-format";
             break;

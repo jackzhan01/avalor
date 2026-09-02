@@ -16,6 +16,23 @@
     "telemetry": true
   },
 
+  "stages": {
+    "$comment": [
+      "两阶段（私有规划者 / 公开发言者）的模型配置。",
+      "只有 promptVersion 是 prompt-0.5.0 时才起作用，别的版本这一段完全没人读。",
+      "",
+      "全部字段默认 null = 继承 model / limits。写死一个模型 id 会让今天写的",
+      "profile 在顶层模型换掉的那天变得不可复现；把三个值都设成必填又会逼每个",
+      "profile 重复它并不关心的东西。继承让「同一个模型跑两段」是零行配置，",
+      "让「混合两个模型」明确写出差在哪。",
+      "",
+      "这里不出现任何供应商名字：一段就是 模型 id + 思考强度 + 输出上限。"
+    ],
+    "planner": { "model": null, "reasoningEffort": null, "maxOutputTokens": null },
+    "spokesperson": { "model": null, "reasoningEffort": null, "maxOutputTokens": null },
+    "maxPublicMessageRepairs": 1
+  },
+
   "limits": {
     "maxStandardInputTokens": 250000,
     "maxOutputTokens": 12000,

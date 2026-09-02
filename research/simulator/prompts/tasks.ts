@@ -21,6 +21,9 @@
  */
 
 import type { DecisionRequest } from "../core/types";
+import type { Fragment } from "../model/json-schema";
+import { assassinationFragment } from "../cognition/assassination";
+import { COGNITION_LIMITS_V3 } from "../cognition/limits";
 
 export type SchemaGroup = "public" | "action" | "memory" | "rationale";
 
@@ -30,6 +33,17 @@ export interface SchemaField {
   readonly required: boolean;
   readonly group: SchemaGroup;
   readonly description: string;
+  /**
+   * A JSON Schema fragment that overrides the one keyed by `name`.
+   *
+   * Added for M5.5, where two fields differ BY VERSION rather than by name:
+   * 0.7.0's `assassination` carries a per-candidate Lady analysis and 0.6.0's
+   * does not, and the answer key has to stay `assassination` in both. The
+   * alternative — a second entry in `FRAGMENTS` under a versioned name —
+   * would put the version back into a lookup key, which is the pattern
+   * `prompts/capabilities.ts` exists to remove.
+   */
+  readonly fragment?: Fragment;
 }
 
 export interface TaskSchema {
@@ -72,9 +86,34 @@ const RATIONALE_FIELD: SchemaField = {
  */
 export interface TaskOptions {
   readonly withRetraction?: boolean;
+  /**
+   * `prompt-0.6.0`: the mission card carries a bounded coordination record.
+   *
+   * A separate flag for the same reason `withRetraction` is one — a field
+   * appearing in a strict schema changes `required`, which changes the
+   * request, which would make four completed games unbuildable.
+   */
+  readonly withCoordination?: boolean;
+  /**
+   * `prompt-0.6.0`: the vote carries a bounded six-question analysis.
+   *
+   * ATTENTION, NOT A QUOTA. It requires the voter to have looked at what the
+   * last mission result constrained; it never requires a particular vote.
+   */
+  readonly withVoteAnalysis?: boolean;
+  /** `prompt-0.6.0`: the Assassin ranks candidates before naming one. */
+  readonly withAssassinationRanking?: boolean;
+  /** `prompt-0.7.0`: the per-candidate Lady analysis inside the ranking. */
+  readonly withLadyAnalysis?: boolean;
+  /** `prompt-0.7.0`: `claimPurpose` beside `claim` on every speech. */
+  readonly withClaimPurpose?: boolean;
 }
 
-function speechFields(withTeam: boolean, withRetraction = false): SchemaField[] {
+function speechFields(
+  withTeam: boolean,
+  withRetraction = false,
+  withClaimPurpose = false,
+): SchemaField[] {
   const fields: SchemaField[] = [
     {
       name: "publicMessage",
@@ -97,9 +136,36 @@ function speechFields(withTeam: boolean, withRetraction = false): SchemaField[] 
       required: false,
       group: "public",
       description:
-        "公开声称自己是某个身份，或者 null 表示不声称。声称是可选的，桌上没有任何规则要求你声称或不声称。",
+        "公开声称自己是某个身份，或者 null 表示不声称。声称是可选的，桌上没有任何规则要求你声称或不声称。" +
+        (withClaimPurpose
+          ? "**已经成立的声称不需要再报一次** —— 想引用它，在话里说就行，claim 留空。"
+          : ""),
     },
   ];
+  if (withClaimPurpose) {
+    fields.push({
+      name: "claimPurpose",
+      type: '"first-claim" | "answering-challenge" | "resolving-ambiguity" | "re-entering" | null',
+      required: false,
+      group: "public",
+      description:
+        "只有 claim 不为 null 时才要填：这一次报身份是为了什么。" +
+        "`first-claim` 第一次报；`answering-challenge` 有人跳了同一个身份或者当面质疑你；" +
+        "`resolving-ambiguity` 牌桌在当你没报过；`re-entering` 你退过水，现在重新报。" +
+        "**会拿公开记录核对** —— 对不上会被打回。",
+    });
+    fields.push({
+      name: "ambiguityEventIds",
+      type: "number[] | null",
+      required: false,
+      group: "public",
+      description:
+        "只有 `claimPurpose` 是 `resolving-ambiguity` 时才要填：" +
+        "**哪一件公开的事**让你这个已经成立的声称重新变得不清楚 —— 填它的 seq。" +
+        "必须是你上次报身份之后发生的，而且得是别人跳身份 / 退水 / 踩你 / 新的任务结果 / 女神宣布这几类之一。" +
+        "**这是私有字段，牌桌看不到。** 一件都指不出来，就说明没有歧义可澄清。",
+    });
+  }
   if (withRetraction) {
     fields.push({
       name: "retractClaim",
@@ -217,7 +283,7 @@ export function taskSchemaFor(
               "你也可以顺手给一个意向车，表示你希望车主带谁 —— 但决定权不在你。",
             ].join("\n"),
         speechCharLimit,
-        speechFields(true, options.withRetraction === true),
+        speechFields(true, options.withRetraction === true, options.withClaimPurpose === true),
         opening
           ? {
               publicMessage: "我先带 1、4、7，理由是他们前面都没被质疑过。",
@@ -297,6 +363,22 @@ export function taskSchemaFor(
             group: "action",
             description: "上票还是下票。",
           },
+          ...(options.withVoteAnalysis === true
+            ? [
+                {
+                  name: "voteAnalysis",
+                  type:
+                    "{ newConstraint, constraintFit, implicatedRiders, leaderExplanation, " +
+                    "informationFromApproving, rejectionStreak, hammerRisk, choice, reason, evidenceIds }",
+                  required: true,
+                  group: "action" as const,
+                  description:
+                    "投票前的六问，填**结论**不填过程。`choice` 必须和上面的 choice 一致。" +
+                    "**这六问不是要你投反对** —— 每一个的合理答案里都包含「所以我上票」。" +
+                    "要求的只有一件事：这六件事你看过了。",
+                },
+              ]
+            : []),
         ],
         {
           choice: "reject",
@@ -325,6 +407,25 @@ export function taskSchemaFor(
             group: "action",
             description: "成功或失败。出成功也是一个正当的选择。",
           },
+          ...(options.withCoordination === true
+            ? [
+                {
+                  name: "coordination",
+                  type:
+                    "{ designated: boolean, failsRequired: number, card: \"success\"|\"fail\", " +
+                    'intent: "sabotage"|"conceal", evidenceIds: string[] }',
+                  required: true,
+                  group: "action" as const,
+                  description:
+                    "按房规约定填的**有界结论**，不要写推理过程。" +
+                    "`designated` 抄第四节里给你的指定状态；`failsRequired` 抄这一轮需要几张失败票；" +
+                    "`card` 和上面的 card 必须一致；" +
+                    "`intent` 是 sabotage（推进破坏）还是 conceal（这一轮藏自己）；" +
+                    "`evidenceIds` 填你据以判断的**公开**事实 id（可以为空）。" +
+                    "**不是指定出牌人就必须出 success** —— 多加一张失败票会把你们这一队的人数报出去。",
+                },
+              ]
+            : []),
         ],
         {
           card: "success",
@@ -449,6 +550,30 @@ export function taskSchemaFor(
             group: "action",
             description: "你认为是梅林的座位。",
           },
+          ...(options.withAssassinationRanking === true
+            ? [
+                {
+                  name: "assassination",
+                  type:
+                    "{ candidates: [{seat, signals, evidence, counterEvidence, evidenceIds, " +
+                    (options.withLadyAnalysis === true ? "lady, " : "") +
+                    "confidence}], target, why, whatWouldChangeIt }",
+                  required: true,
+                  group: "action" as const,
+                  fragment: assassinationFragment(
+                    COGNITION_LIMITS_V3,
+                    options.withLadyAnalysis === true ? { withLadyAnalysis: true } : {},
+                  ),
+                  description:
+                    "指认之前的有界候选排序：至少两个候选，每个都要有正面和反面。" +
+                    "`target` 必须和上面的 target 一致，而且必须是候选之一。" +
+                    (options.withLadyAnalysis === true
+                      ? "**宣布过验人结果的候选必须填 `lady`。**"
+                      : "") +
+                    "**没有「刺最准的那个」这条规则** —— 最会组织的人同样可能是派西维尔或做掩护的忠臣。",
+                },
+              ]
+            : []),
         ],
         {
           target: 2,

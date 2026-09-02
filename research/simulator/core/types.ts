@@ -177,6 +177,28 @@ export interface OpeningDirectionAction extends ActionBase {
   readonly publicMessage: string;
 }
 
+/**
+ * Why a seat is emitting a role claim right now. `prompt-0.7.0`.
+ *
+ * DEFINED HERE, in the action shape, rather than in `cognition/`. It is a field
+ * of the answer the model submits, so the canonical parser has to know it — and
+ * a parser that reached up into the cognition layer for a type would be the
+ * layering inversion this file exists to prevent. `cognition/claim-persistence`
+ * imports it back.
+ */
+export type ClaimPurpose =
+  | "first-claim"
+  | "answering-challenge"
+  | "resolving-ambiguity"
+  | "re-entering";
+
+export const CLAIM_PURPOSES: readonly ClaimPurpose[] = [
+  "first-claim",
+  "answering-challenge",
+  "resolving-ambiguity",
+  "re-entering",
+];
+
 export interface SpeechAction extends ActionBase {
   readonly kind: "speech";
   readonly publicMessage: string;
@@ -191,6 +213,26 @@ export interface SpeechAction extends ActionBase {
   readonly noTeamYet?: boolean;
   readonly stances?: readonly Stance[];
   readonly claim?: RoleType | null;
+  /**
+   * `prompt-0.7.0`: why this claim is being made now.
+   *
+   * PRIVATE. The referee never copies it into the public `speech` event — it
+   * builds that event field by field — so it reaches the trace and the seat's
+   * own validation and nothing else.
+   *
+   * IT LIVES ON THE ACTION, not in a side channel, because the M5.5 pilot
+   * showed what the side channel costs: the field was in the strict schema, the
+   * model answered it, and `withExtras` did not copy it through, so every read
+   * saw `undefined`. Same shape as the M5.4 folding defect — asked for,
+   * answered, discarded.
+   */
+  readonly claimPurpose?: ClaimPurpose | null;
+  /**
+   * `prompt-0.7.0`: which public events made a standing claim ambiguous.
+   *
+   * PRIVATE, for the same reason and by the same mechanism as `claimPurpose`.
+   */
+  readonly ambiguityEventIds?: readonly number[] | null;
   /**
    * 退水 — publicly withdrawing a claim this seat is currently standing on.
    *

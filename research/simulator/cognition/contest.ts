@@ -875,6 +875,28 @@ export function contestProblems(c: ContestWire, input: ContestCheckInput): strin
   const iAmStanding = ["active", "contested"].includes(contest.bySeat[seat]?.status ?? "none");
   const iEverClaimed = (contest.bySeat[seat]?.history.length ?? 0) > 0;
 
+  /**
+   * Does THIS action put the seat on a Percival claim?
+   *
+   * WHY IT EXISTS. `contest` is the referee's record from BEFORE this answer is
+   * applied, so a seat making its first counter-claim is not standing yet — it
+   * is standing BECAUSE of the action being validated. Reading only the prior
+   * record made 「第一次对跳，并且对现任声称者做出计划」 structurally impossible,
+   * and that is not a rule anybody wrote: `NEEDS_OWN_CLAIM` deliberately omits
+   * `counterclaim-percival`, which shows the exception was already intended and
+   * simply missed one line below.
+   *
+   * It cost a live game. The M5.5 Terra pilot terminated at request 10 with
+   * seat 7 (Morgana) counter-claiming against seat 8 and planning against him —
+   * a textbook line, refused three times, `cognition_invalid`, $0.4448.
+   *
+   * A RETRACTION IN THE SAME ACTION DOES NOT COUNT. Claiming and retracting at
+   * once is a contradiction the referee itself rejects; treating it as standing
+   * here would launder it.
+   */
+  const claimsPercivalNow =
+    input.speech?.claim === "percival" && input.speech.retractClaim !== true;
+
   if (NEEDS_TARGET_CLAIMANT.includes(move.act)) {
     if (move.targetSeats.length === 0) {
       problems.push(`publicClaimMove.act 是 ${move.act}，但 targetSeats 是空的 —— 冲谁去`);
@@ -953,7 +975,16 @@ export function contestProblems(c: ContestWire, input: ContestCheckInput): strin
   }
   const rivals = new Set(c.rivalPlans.map((r) => r.rivalSeat));
   if (rivals.has(seat)) problems.push("rivalPlans 里有你自己");
-  if (!iAmStanding && c.rivalPlans.length > 0) {
+  // ATOMIC, and only here. A seat may plan against a rival when it is already
+  // standing OR when this very action puts it on a claim.
+  //
+  // The two neighbouring uses of `iAmStanding` deliberately stay on the prior
+  // record. `NEEDS_OWN_CLAIM` (defend-own-claim, retract-claim) is about a
+  // claim that must ALREADY exist — you cannot defend or withdraw one you are
+  // making in the same breath. And Part F below is a REQUIREMENT rather than a
+  // permission: extending it would newly refuse a first-time claimant who
+  // simply has no plan yet, which is a different rule nobody asked for.
+  if (!iAmStanding && !claimsPercivalNow && c.rivalPlans.length > 0) {
     problems.push("rivalPlans 只在你自己也站在声称上时才有意义");
   }
   // Part F: an active claimant facing rivals must have a plan for at least one.

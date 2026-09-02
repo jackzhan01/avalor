@@ -15,7 +15,7 @@ import {
 } from "../fixtures/leak-scan";
 import { observationFor, type Observation } from "./observation";
 import type { GameState } from "./state";
-import { SEATS, type Action, type Seat } from "./types";
+import { SEATS, type Action, type RoleType, type Seat } from "./types";
 import { knowledgeFor } from "./visibility";
 
 /**
@@ -35,7 +35,58 @@ const ALLOWED_ROLE_PATHS = [
   /^evilRoster\[\d+\]\.role$/,
   // A public claim to hold a role. Everyone heard it.
   /^position\.standingClaims\[\d+\]\.claimed$/,
+  // The evil mission-card coordination convention — a DELIBERATE private
+  // grant, not a leak. Widening the allowlist by one path is only safe
+  // because `coordinationGateHolds` below checks the gate itself, which is
+  // the stronger property: who may hold this at all, and what it may contain.
+  /^missionCoordination\.riders\[\d+\]\.role$/,
 ];
+
+/**
+ * The coordination grant is correctly gated.
+ *
+ * Four separate things, because each is a different way it could go wrong:
+ * a good seat holding one, Oberon holding one, a rider list naming Oberon
+ * (which would tell the designated seat a fourth villain is aboard), and an
+ * evil seat holding one for a mission it is not on.
+ */
+function coordinationGateHolds(
+  observation: Observation,
+  state: GameState,
+  seat: Seat,
+): string[] {
+  const problems: string[] = [];
+  const c = observation.missionCoordination;
+  const role: RoleType = state.deal.bySeat[seat];
+  const mutuallyAware = role === "mordred" || role === "morgana" || role === "assassin";
+
+  if (c === null) {
+    const shouldHave =
+      mutuallyAware && state.proposedTeam !== null && state.proposedTeam.includes(seat);
+    if (shouldHave) problems.push(`seat ${seat}: entitled to coordination but got none`);
+    return problems;
+  }
+
+  if (!mutuallyAware) {
+    problems.push(`seat ${seat} (${role}): holds evil coordination it must never see`);
+  }
+  if (!state.proposedTeam?.includes(seat)) {
+    problems.push(`seat ${seat}: holds coordination for a mission it is not on`);
+  }
+  for (const rider of c.riders) {
+    const riderRole: RoleType = state.deal.bySeat[rider.seat];
+    if (riderRole === "oberon") {
+      problems.push(`seat ${seat}: coordination names Oberon (${rider.seat}号)`);
+    }
+    if (!state.proposedTeam?.includes(rider.seat)) {
+      problems.push(`seat ${seat}: coordination names ${rider.seat}号, not on this team`);
+    }
+    if (riderRole !== rider.role) {
+      problems.push(`seat ${seat}: coordination misreports ${rider.seat}号's role`);
+    }
+  }
+  return problems;
+}
 
 function auditOne(observation: Observation, state: GameState): string[] {
   const problems: string[] = [];
@@ -58,6 +109,8 @@ function auditOne(observation: Observation, state: GameState): string[] {
       problems.push(`seat ${seat}: can see a Lady result belonging to ${holder}`);
     }
   }
+
+  problems.push(...coordinationGateHolds(observation, state, seat));
 
   for (const mention of privateRoleMentions(observation)) {
     if (!ALLOWED_ROLE_PATHS.some((pattern) => pattern.test(mention.path))) {

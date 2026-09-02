@@ -40,6 +40,7 @@
 import type { RoleType } from "@/lib/types/game";
 import type { CognitionConfig, ModelConfig, SimConfig } from "../config/load";
 import { COGNITION_LIMITS } from "../cognition/limits";
+import type { CognitionRejection } from "../cognition/rejection";
 import type { CognitionReport } from "../agents/llm-agent";
 import { redactConfig } from "../config/load";
 import type { PrivateEvent, PublicEvent } from "../core/events";
@@ -289,6 +290,16 @@ export interface PrivateResearchTrace {
   readonly modelCalls: readonly ModelCallRecord[];
   /** Per-request cognition telemetry. Empty for a legacy run. */
   readonly cognitionReports: readonly CognitionReport[];
+  /**
+   * Every REFUSED cognition attempt. PRIVATE, and bounded by construction.
+   *
+   * Separate from `cognitionReports` because they answer different questions:
+   * one is what the seats remembered, the other is what they were refused. A
+   * single list would make "how many decisions carried memory" unanswerable
+   * without filtering, which is how the rejected half went uncounted for four
+   * milestones.
+   */
+  readonly cognitionRejections: readonly CognitionRejection[];
   /** Sanitised. Present only when the run failed or was interrupted. */
   readonly failureReason: string | null;
   readonly outcome: Outcome | null;
@@ -309,6 +320,7 @@ export interface PrivateTraceOptions {
   readonly cognition?: CognitionConfig;
   /** Per-request cognition telemetry. Private; never in the public replay. */
   readonly cognitionReports?: readonly CognitionReport[];
+  readonly cognitionRejections?: readonly CognitionRejection[];
   /** Sanitised provider or agent failure. Private, like everything else here. */
   readonly failureReason?: string;
 }
@@ -361,6 +373,7 @@ export function buildPrivateResearchTrace(
     ladyResults: { ...state.ladyResults },
     modelCalls: options.modelCalls ?? [],
     cognitionReports: [...(options.cognitionReports ?? [])],
+    cognitionRejections: [...(options.cognitionRejections ?? [])],
     failureReason: options.failureReason ?? null,
     outcome: state.outcome,
   };
@@ -411,6 +424,14 @@ export type PrivateTraceLine =
     }
   /** Per-request cognition utilisation. PRIVATE, and absent for legacy runs. */
   | { readonly t: "cognition-telemetry"; readonly data: readonly CognitionReport[] }
+  /**
+   * One line per REFUSED cognition attempt. PRIVATE.
+   *
+   * `publicReplayLines` has no branch that can emit it, and every field is a
+   * closed enum, a schema field name, a seat or a counter — there is nowhere
+   * for a private value to sit.
+   */
+  | { readonly t: "cognition-rejection"; readonly data: CognitionRejection }
   | { readonly t: "outcome"; readonly data: Outcome };
 
 export function privateTraceLines(trace: PrivateResearchTrace): PrivateTraceLine[] {
@@ -436,6 +457,12 @@ export function privateTraceLines(trace: PrivateResearchTrace): PrivateTraceLine
   lines.push({ t: "lady-results", data: trace.ladyResults });
   if (trace.cognitionReports.length > 0) {
     lines.push({ t: "cognition-telemetry", data: trace.cognitionReports });
+  }
+  // ONE LINE PER REFUSAL rather than one array. A rejected attempt is an event
+  // in a repair chain, and a reader grepping the file for a seat's trouble
+  // wants the lines, not an array to index into.
+  for (const rejection of trace.cognitionRejections) {
+    lines.push({ t: "cognition-rejection", data: rejection });
   }
   if (trace.outcome) lines.push({ t: "outcome", data: trace.outcome });
   return lines;

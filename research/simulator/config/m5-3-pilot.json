@@ -1,0 +1,77 @@
+{
+  "$comment": [
+    "M5.3 试点 profile —— 私有认知与公开表达分离，加系统所有的防泄露闸。",
+    "",
+    "又一个新文件，理由和前三次完全一样：default.json 是实验 2 / 3 的可复现基线，",
+    "m5-pilot.json 是已经打完的 prompt-0.3.0 那局（$6.9745，g-a0b76ac9），",
+    "m5-1-pilot.json 是计划中但没跑过的 0.3.1 试点，",
+    "m5-2-pilot.json 是已经打完的 0.4.0 那局（$7.6470，g-6ebccca0）。四份都一个字节不动。",
+    "",
+    "**这份 profile 到目前为止一次都没有跑过。** 下面的数字全部是离线投影，",
+    "不是实测 —— 见 cognition/README-M5.3.md 的第十节。",
+    "",
+    "这份文件只列出与 default.json 不同的字段，其余全部继承。",
+    "",
+    "用法：",
+    "  ... run-live-game.ts -- --profile m5-3-pilot --dry-run"
+  ],
+
+  "promptVersion": "prompt-0.5.0",
+
+  "cognition": {
+    "$comment": [
+      "maxCognitionRepairs 仍然是 2，和 M5.1 / M5.2 一致。",
+      "",
+      "0.5.0 在 contest 块之外还要求一个 communicationIntent 信封。信封是有界的",
+      "（三个短文本字段 + 四个结构字段），结构检查比 contest 简单得多，",
+      "所以没有理由为它调高修复次数。"
+    ],
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "stages": {
+    "$comment": [
+      "**第一次科学试点建议两段用同一个模型族**（都继承顶层的 gpt-5.6-terra）。",
+      "理由：0.5.0 已经同时改了协议层、schema、动作格式和调用次数；",
+      "再换一个模型进来，任何差异都归因不到分离架构本身。",
+      "混合模型是一个**独立的、需要人明确选择**的对比，不是这一次的默认。",
+      "",
+      "planner 全部 null = 继承（gpt-5.6-terra / high / 12,000）。",
+      "",
+      "spokesperson.maxOutputTokens = 3,000，这是这份 profile 里唯一一个",
+      "**没有继承**的数字，理由写在下面。"
+    ],
+    "planner": { "model": null, "reasoningEffort": null, "maxOutputTokens": null },
+    "spokesperson": {
+      "model": null,
+      "reasoningEffort": "medium",
+      "maxOutputTokens": 3000
+    },
+    "maxPublicMessageRepairs": 1
+  },
+
+  "limits": {
+    "$comment": [
+      "12,000，和 M5.1 / M5.2 一致 —— 这是**规划者**这一段的上限，",
+      "M5.2 实测输出峰值 8,711（占 12,000 的 73%）。",
+      "",
+      "0.5.0 把 publicMessage 从规划者的 schema 里拿掉了，换成一个更短的信封，",
+      "所以规划者这一段的输出只会更小，不会更大。没有理由动它。"
+    ],
+    "maxOutputTokens": 12000
+  },
+
+  "experiment": {
+    "$comment": [
+      "personaMode 与前三次一致。策略档换成 expert-disclosure-safe。",
+      "",
+      "**这不是受控对比。** 0.5.0 相对 0.4.0 同时改了：提示栈、协议层、",
+      "策略档、动作 schema、以及一个说话回合的物理请求数（1 → 2）。"
+    ],
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-disclosure-safe"
+  }
+}

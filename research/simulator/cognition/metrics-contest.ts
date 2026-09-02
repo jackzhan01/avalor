@@ -810,9 +810,158 @@ function latestBefore(
   return best;
 }
 
+/* ── Silent support ─────────────────────────────────────────────────────── */
+
+/**
+ * Support that never said anything.
+ *
+ * WHY THIS EXISTS. The completed M5.2 game ended with seat 7 — the false
+ * Percival — holding exactly ONE public backer and still carrying a 7:3 vote.
+ * Every other vote it received came from a seat that had privately picked it
+ * and never said so. That is the shape of a false consensus, and none of the
+ * existing metrics could see it: `coalitionsByClaimant` counts declared
+ * stances, and a silent follower declares nothing.
+ *
+ * PRIVATE AND OBSERVATIONAL. Nothing here is read on the live path. It needs
+ * the per-seat contest records, which are private telemetry, so a runtime that
+ * consulted it would be a runtime reading ten seats' private state to decide
+ * one seat's move. `metrics-contest.test.ts` asserts no runtime module imports
+ * this file.
+ *
+ * WHAT COUNTS AS PUBLIC ENDORSEMENT. A public ACT, not a private stance:
+ * `endorse-claimant` naming the claimant, or a positive stance recorded in the
+ * public speech event. A seat that privately holds `support` and says nothing
+ * is exactly what this measures, so its private stance cannot also be what
+ * makes it public.
+ */
+export interface SilentSupport {
+  readonly claimant: Seat;
+  /** Backers who voted with the claimant while never endorsing it in public. */
+  readonly votedWithClaimantWithoutPublicEndorsement: number;
+  /** Distinct seats in that state. */
+  readonly silentSupportCount: number;
+  /** Distinct seats that DID publicly endorse this claimant at least once. */
+  readonly publicEndorsementCount: number;
+  /** Silent backers who later went public. The ratio is over silent backers. */
+  readonly silentToPublicConversion: number;
+  /** Silent backers who switched to a different claimant without ever speaking. */
+  readonly silentFollowerSwitching: number;
+}
+
+/** Public endorsements, from public acts only. */
+function publicEndorsers(
+  observations: readonly ContestObservation[],
+): ReadonlyMap<Seat, ReadonlySet<Seat>> {
+  const out = new Map<Seat, Set<Seat>>();
+  for (const o of observations) {
+    if (o.act !== "endorse-claimant") continue;
+    for (const target of o.targetSeats) {
+      const set = out.get(target) ?? new Set<Seat>();
+      set.add(o.seat);
+      out.set(target, set);
+    }
+  }
+  return out;
+}
+
+/** The first sequence at which a seat publicly endorsed a given claimant. */
+function firstPublicEndorsement(
+  observations: readonly ContestObservation[],
+  seat: Seat,
+  claimant: Seat,
+): number | null {
+  let best: number | null = null;
+  for (const o of observations) {
+    if (o.seat !== seat || o.act !== "endorse-claimant") continue;
+    if (!o.targetSeats.includes(claimant)) continue;
+    if (best === null || o.atSequence < best) best = o.atSequence;
+  }
+  return best;
+}
+
+export function silentSupport(
+  observations: readonly ContestObservation[],
+  record: PublicRecord,
+): SilentSupport[] {
+  const endorsers = publicEndorsers(observations);
+  const byClaimant = new Map<
+    Seat,
+    { votes: number; silent: Set<Seat>; converted: Set<Seat>; switched: Set<Seat> }
+  >();
+  const ensure = (claimant: Seat) => {
+    const e = byClaimant.get(claimant) ?? {
+      votes: 0,
+      silent: new Set<Seat>(),
+      converted: new Set<Seat>(),
+      switched: new Set<Seat>(),
+    };
+    byClaimant.set(claimant, e);
+    return e;
+  };
+
+  for (const vote of record.votes) {
+    for (const seat of SEATS) {
+      const mine = latestBefore(observations, seat, vote.atSequence);
+      const claimant = mine?.selectedClaimant ?? null;
+      if (!mine || claimant === null || claimant === seat) continue;
+      if (mine.stance !== "support" && mine.stance !== "conditional-support") continue;
+      const theirs = vote.votes[claimant];
+      const ours = vote.votes[seat];
+      if (theirs === undefined || ours === undefined || theirs !== ours) continue;
+
+      // Silent AT THIS MOMENT: no public endorsement of this claimant had
+      // happened yet. A seat that endorses later was still silent for this vote.
+      const spokeAt = firstPublicEndorsement(observations, seat, claimant);
+      if (spokeAt !== null && spokeAt < vote.atSequence) continue;
+
+      const entry = ensure(claimant);
+      entry.votes += 1;
+      entry.silent.add(seat);
+      if (spokeAt !== null) entry.converted.add(seat);
+    }
+  }
+
+  // A silent backer that moved to a different claimant without ever endorsing
+  // anybody in public. The quiet half of `followerSwitches`.
+  for (const seat of SEATS) {
+    const mine = observations
+      .filter((o) => o.seat === seat)
+      .sort((a, b) => a.atSequence - b.atSequence);
+    let previous: Seat | null = null;
+    for (const o of mine) {
+      const now = o.selectedClaimant;
+      if (previous !== null && now !== null && now !== previous) {
+        const everSpoke = observations.some(
+          (x) => x.seat === seat && x.act === "endorse-claimant",
+        );
+        if (!everSpoke) ensure(previous).switched.add(seat);
+      }
+      if (now !== null) previous = now;
+    }
+  }
+
+  const claimants = new Set<Seat>([...byClaimant.keys(), ...endorsers.keys()]);
+  return [...claimants]
+    .map((claimant) => {
+      const e = byClaimant.get(claimant);
+      const silent = e?.silent.size ?? 0;
+      return {
+        claimant,
+        votedWithClaimantWithoutPublicEndorsement: e?.votes ?? 0,
+        silentSupportCount: silent,
+        publicEndorsementCount: endorsers.get(claimant)?.size ?? 0,
+        silentToPublicConversion: silent === 0 ? 0 : (e?.converted.size ?? 0) / silent,
+        silentFollowerSwitching: e?.switched.size ?? 0,
+      };
+    })
+    .sort((a, b) => a.claimant - b.claimant);
+}
+
 /* ── The whole set, for a report ────────────────────────────────────────── */
 
 export interface ContestReport {
+  /** Support that never said anything. PRIVATE, observational only. */
+  readonly silentSupport: readonly SilentSupport[];
   readonly timeline: ClaimTimeline;
   readonly activeByTurn: readonly ActiveClaimantPoint[];
   readonly latency: CounterclaimLatency;
@@ -850,6 +999,7 @@ export function contestReport(
     defence: defenceResponseRate(observations, contest),
     actionable: actionableRequestRate(observations),
     coalitions: coalitionsByClaimant(observations),
+    silentSupport: silentSupport(observations, record),
     voteAlignment: voteAlignmentByClaimant(observations, record),
     teamOverlap: teamOverlapWithClaimant(observations, record),
     switches: followerSwitches(observations),

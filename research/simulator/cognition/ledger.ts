@@ -368,6 +368,21 @@ export interface SeatDossier {
 export type CommitmentResolution = "fulfilled" | "obsolete" | "withdrawn";
 
 export interface PublicCommitment {
+  /**
+   * Stable, deterministic, and the ONLY safe way to close this promise.
+   *
+   * WHY. Closing used to be matched by free-text equality: the model had to
+   * echo a promise back 「一字不差」 to retire it. The M5.2 pilot produced three
+   * unmatched closures out of ten seats in one game — the model meant to close
+   * something, the text drifted by a character, and the ledger silently kept a
+   * promise the seat believed it had discharged. From there every later turn
+   * reasoned against a commitment list that was wrong.
+   *
+   * FORM: `k{atSequence}.{index}`, where index disambiguates several promises
+   * made in the same turn. A pure function of position, so a replay and a
+   * resume mint identical ids and a checkpoint's stored id still resolves.
+   */
+  readonly id: string;
   readonly text: string;
   readonly atSequence: number;
   /** Set when the agent has publicly gone back on it. Honesty about drift. */
@@ -383,6 +398,36 @@ export interface PublicCommitment {
    */
   readonly resolvedAtSequence?: number | null;
   readonly resolution?: CommitmentResolution | null;
+}
+
+/**
+ * The id for the `index`-th commitment made at `atSequence`.
+ *
+ * Deterministic on purpose: replay, resume and the live run must mint the same
+ * string, or a checkpoint's `closedCommitments` would stop resolving the
+ * moment the game was restarted.
+ */
+export function commitmentId(atSequence: number, index: number): string {
+  return `k${atSequence}.${index}`;
+}
+
+/**
+ * Give ids to commitments restored from a checkpoint written before ids existed.
+ *
+ * Backfilled rather than refused: a paused game from an earlier schema has to
+ * stay resumable, and its promises are still real. The index is the position
+ * among commitments sharing that sequence, in stored order, which is exactly
+ * how a live run would have numbered them.
+ */
+export function withCommitmentIds(
+  commitments: readonly PublicCommitment[],
+): readonly PublicCommitment[] {
+  const seen = new Map<number, number>();
+  return commitments.map((c) => {
+    const n = seen.get(c.atSequence) ?? 0;
+    seen.set(c.atSequence, n + 1);
+    return c.id ? c : { ...c, id: commitmentId(c.atSequence, n) };
+  });
 }
 
 /** Still binding: not withdrawn, not resolved. The list the prompt renders. */

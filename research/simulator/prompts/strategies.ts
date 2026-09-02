@@ -137,6 +137,8 @@ export type StrategyId =
   | "expert-cognitive"
   | "expert-social"
   | "expert-claim-contest"
+  | "expert-disclosure-safe"
+  | "expert-disciplined"
   | "custom";
 
 /** The selectable catalog. `custom` is built per run, so it is not in here. */
@@ -1399,6 +1401,358 @@ const EXPERT_CLAIM_CONTEST: StrategyDefinition = {
   ],
 };
 
+/**
+ * Ids `expert-disclosure-safe` REPLACES rather than inherits.
+ *
+ * Each one told a seat, in some form, that the Percival pair belongs in public
+ * — as an organising basis, as the content of a claim, or as something worth
+ * trading for a return. The completed M5.2 pilot read three of them and
+ * published 「7、9一梅林一莫甘娜」 at sequences 45 and 58, with seat 7 being the
+ * false-claiming Morgana. That sentence reduced Merlin to one seat.
+ *
+ * REPLACED, NOT DELETED. Every entry below has a corrected `eds.*` counterpart
+ * that keeps the same decision alive — claim, delay, fight, reject the team —
+ * and moves only where the public REASON comes from. Removing them outright
+ * would leave a Percival with no guidance on the hardest position in the game,
+ * which is a different way of breaking the experiment.
+ */
+const SUPERSEDED_BY_DISCLOSURE_SAFE: readonly string[] = [
+  // "反对得越明确、越等于自报身份并点出候选对" — treats naming the pair as the
+  // natural consequence of objecting, when it is a separate and avoidable act.
+  "ec.percival-pair-same-team",
+  // "代价是把梅林的候选范围从六个好人缩到两个" — under 0.5.0 that is simply no
+  // longer true: claiming publishes a claim, and the pair never crosses.
+  "ec.percival-early-claim-default",
+  // "如果确实要用这个信息换东西，先想清楚换到的是什么" — contemplates trading
+  // the pair. There is no return that buys it back.
+  "ec.percival-do-not-rank-the-pair-publicly",
+  // "沉默地投反对既救不了这一轮、也不会有人接住" — pushes toward publishing the
+  // one deduction only the pair supports.
+  "es.percival-pair-same-team-crosses-a-line",
+  // "把候选对变成公开的组织依据" — the exact sentence the pilot acted on.
+  "ecc.percival-claim-tradeoff",
+  // "打他的候选对故事" — sound in itself, but sits one step from comparing his
+  // story with your own, which publishes yours.
+  "ecc.percival-fight-the-rival",
+  // "带上可执行的东西：候选对怎么处理" — asks the claim to say what it will do
+  // with the pair, in public.
+  "ecc.percival-claim-must-be-actionable",
+];
+
+/**
+ * `expert-disclosure-safe` — `expert-claim-contest`, with the pair kept private.
+ *
+ * WHY A FIFTH PROFILE. Four fingerprints are recorded in shipped artifacts and
+ * one completed live game. Editing a single character of any of them would make
+ * a recorded arm describe a profile that no longer exists — the same rule that
+ * produced profiles three and four. So this one spreads `expert-claim-contest`,
+ * FILTERS the seven superseded ids above, and appends corrected entries.
+ *
+ * WHAT CHANGED, and it is exactly one thing: where a public reason may come
+ * from. Every action stays available. Percival may claim, counterclaim, delay,
+ * attack a rival, reject a team, run a distinction test. What no entry does any
+ * more is treat the pair as something the table gets to hear.
+ *
+ * WHAT THIS PROFILE IS NOT. It is not the mechanism. A strategy entry is a
+ * consideration, and the pilot proved a consideration does not hold: the seat
+ * that leaked had `ec.percival-do-not-rank-the-pair-publicly` in its prompt.
+ * The mechanism is the two-stage split — the spokesperson is never handed the
+ * pair. These entries exist so the PLANNER has somewhere sound to go once the
+ * unsound option is gone.
+ */
+const EXPERT_DISCLOSURE_SAFE: StrategyDefinition = {
+  id: "expert-disclosure-safe",
+  name: "专家线 · 私有信息不进公开发言",
+  status: "draft",
+  summary:
+    "`expert-claim-contest` 的全部内容，减去七条会把派西维尔候选对推向公开的条目，" +
+    "换成对应的安全版本。**动作一个都没少** —— 跳、对跳、拖、打竞争者、否车、设检验，全都还在。" +
+    "变的只有一件事：**公开理由从哪里来**。私有信息决定你做什么，公开记录决定你怎么解释。",
+  heuristics: [
+    ...EXPERT_CLAIM_CONTEST.heuristics.filter(
+      (h) => !SUPERSEDED_BY_DISCLOSURE_SAFE.includes(h.id),
+    ),
+
+    /* ── 真派西维尔：动作照旧，理由换来源 ─────────────────────────────── */
+    {
+      id: "eds.percival-pair-is-for-deciding-not-for-saying",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "knowledge", "position.proposedTeam"],
+      when: "你是派西维尔，正在用你那一对做判断",
+      consider:
+        "**那一对是用来决定的，不是用来说的。** 它可以决定你发哪辆车、避开谁、怎么投、什么时候跳、打谁、设计什么检验 —— 这些别人都看得到结果，看不到来源。它不能作为公开理由出现在你的发言里：说出来等于替刺客把梅林从六个好人缩到两个",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.percival-pair-same-team",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "knowledge", "position.proposedTeam"],
+      when: "你的两个候选被放进同一辆车",
+      consider:
+        "这辆车里必然有莫甘娜 —— 这是你手上唯一的硬推论。**处理它的动作完全由你选**：反对、包装着反对、或者放行换信息。要小心的是**公开理由**：「这两个人里有莫甘娜」只有你能说出口，所以说出来就等于报出了那一对。改成从公开记录里找一条支持同一个动作的理由 —— 谁的车票和话对不上、哪一辆挂过的车和这一辆重叠、谁的预测没兑现",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.percival-claim-tradeoff",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "knowledge", "position.speakingOrder", "position.missionNumber"],
+      when: "你是派西维尔，在权衡跳不跳",
+      consider:
+        "换到的：给好人一个公开锚点、不让莫甘娜独占这个身份、把你的判断变成能执行的车和票。付出的：你成为焦点、被几个对跳同时冲、被自己说早了的话绑住。**跳这个身份公开的是「我这么说」，不包括你手上那一对** —— 你可以跳，而且不交出任何值",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.percival-fight-the-rival-on-public-record",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "position.standingClaims", "publicLog", "position.proposedTeam"],
+      when: "你是派西维尔，而且已经跳了，桌上出现了另一个自称派西维尔的人",
+      consider:
+        "**他抢的是你的权威，不是在发表平行意见**，通常应该正面争。打点全部从公开记录里取：他声称的时机与发言位、他的车和票对不对得上、任务结果打没打他的脸、他说会发生的事发生了吗、被追问时答不答、跟他的人是在复述证据还是只在造声势。**不要用「我的那一对和他讲的不一样」去打他** —— 那句话本身就把你的那一对交出去了",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.percival-claim-must-be-actionable",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "knowledge", "position.proposedTeam", "position.leader"],
+      when: "你是派西维尔，这一次发言你要跳",
+      consider:
+        "带上可执行的东西：**这一辆车用谁或避开谁、大家该怎么投、有人对跳你打算怎么办、什么公开事件会让你改口**。只报身份不给方案等于把焦点位置卖了却没换到组织权。注意这四样**全都不需要提到你的那一对** —— 车和票是动作，改口条件是公开可检验的",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.percival-distinction-test-over-assertion",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "position.standingClaims", "position.proposedTeam", "publicLog"],
+      when: "你想让牌桌相信某个人有问题，而你的依据来自那一对",
+      consider:
+        "**把断言换成检验。** 断言要别人相信你看得见；检验让结果自己说话 —— 推一辆把两个人分开的车、要求一次能区分他们的投票、问一个只有真的那个答得上的公开问题。检验比断言慢一轮，但它不花掉任何私有信息，而且结果出来之后是全桌一起看到的",
+      disputed: false,
+    },
+    {
+      id: "eds.percival-no-public-reason-is-still-an-action",
+      scope: { kind: "roles", roles: ["percival"] },
+      reads: ["role", "position.proposedTeam", "publicLog"],
+      when: "你想反对一辆车，但拿得出的公开理由不够强",
+      consider:
+        "**「我没有能公开核对的安全依据，所以我反对，建议换成 X」是一个完整的动作**，而且不泄露任何东西。它比编一个理由好，也比说出真实来源好。代价是说服力弱一些 —— 那就用一辆具体的替代车把它补上",
+      disputed: false,
+    },
+
+    /* ── 桌面这一侧：不要替刺客提问 ───────────────────────────────────── */
+    {
+      id: "eds.do-not-ask-for-the-pair",
+      scope: { kind: "all" },
+      reads: ["position.standingClaims", "publicLog"],
+      when: "桌上有人自称派西维尔，而你想核实他",
+      consider:
+        "**追问「你的两个候选是谁」等于替刺客提问** —— 真的那个如果答了，梅林就只剩两个候选；假的那个随口编一个，你也验证不了任何东西。改成问公开可核对的：他要哪辆车、他要大家怎么投、什么结果会让他改口、他上一次的预测兑现了吗",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.pair-story-is-not-evidence",
+      scope: { kind: "all" },
+      reads: ["position.standingClaims", "publicLog"],
+      when: "某个声称者主动讲了一个候选对故事",
+      consider:
+        "**「他给了一对」不是核实，也不是他更可信的理由。** 没有那一对的人编一个的成本是零，有那一对的人交出来的代价却是全场最高的。所以「敢报一对」这件事本身**反而更像是没有那一对** —— 但这也只是一条软线索，不要反过来当成硬结论",
+      disputed: true,
+    },
+
+    /* ── 梅林与坏人：同一条规则的另外两个面 ───────────────────────────── */
+    {
+      id: "eds.merlin-never-quote-the-whole-set",
+      scope: { kind: "roles", roles: ["merlin"] },
+      reads: ["role", "knowledge", "publicLog"],
+      when: "你是梅林，想把话说得更有用一点",
+      consider:
+        "**完整视野一次都不能作为一个集合说出来**，也不能说成「我知道」「我看得见」。可以一次只推动一个结论，并且每一次都从公开记录里给理由。还要注意**你的准确度本身就是线索**：每一次都刚好踩对人的那个座位，是刺客最容易认出来的",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.evil-never-quote-the-roster",
+      scope: { kind: "side", side: "evil" },
+      reads: ["side", "knowledge", "publicLog"],
+      when: "你在公开场合谈到你认识的队友",
+      consider:
+        "**队友名单不能被点出来**，也不能用「我们」「我这边」把他们圈进去。反过来也要注意：一直互相保、从不互相踩，这条痕迹在公开记录里看得见，而且不需要任何人有视野就能读出来",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eds.lady-truth-needs-the-announcement",
+      scope: { kind: "all" },
+      reads: ["ladyResults", "position.ladyHolder", "publicLog"],
+      when: "你拿过湖中女神，而且在普通发言里想谈验人的事",
+      consider:
+        "**裁判给你的真实答案只能通过「宣布」这个动作变成公开的。** 在普通发言里说「我验了 X 是坏人」不是宣布，是泄露 —— 而且宣布出去的值可以是假的，牌桌拿到的永远是「他宣布了什么」。这两件事在公开记录里是分开记的，别人也是这么读的",
+      disputed: false,
+    },
+  ],
+};
+
+/**
+ * `expert-disciplined` — `expert-disclosure-safe`, plus vote and endgame care.
+ *
+ * WHY A SIXTH PROFILE. Five fingerprints are recorded in shipped artifacts and
+ * four completed live games. Editing one would make a recorded arm describe a
+ * profile that no longer exists — the rule that produced profiles three, four
+ * and five. So this one spreads `expert-disclosure-safe` and appends.
+ *
+ * WHAT IT ADDS, and each entry points at something a real game did:
+ *
+ *   THE VOTE. The M5.3 Terra game passed all five proposals on the first
+ *   attempt. Round two opened three fail cards on 1、2、3、4; round three's
+ *   proposal still carried seat 1 with no public explanation and passed 7:3. A
+ *   table that never rejects has a vote that carries no information.
+ *
+ *   THE ENDGAME. That game's Assassin picked the loudest organiser and missed.
+ *   Merlin had held the Lady and announced three times, and was discounted for
+ *   exactly the visibility that made him findable.
+ *
+ * NOTHING HERE IS A QUOTA. Not one entry says to reject, or to reject after a
+ * failure, or to avoid the accurate voter. Every one is a CONDITION plus
+ * something to CONSIDER, and the `obligation` entries constrain what a seat
+ * must NOTICE, never what it must do.
+ */
+const EXPERT_DISCIPLINED: StrategyDefinition = {
+  id: "expert-disciplined",
+  name: "专家线 · 投票纪律与终局",
+  status: "draft",
+  summary:
+    "`expert-disclosure-safe` 的全部内容，加上投票纪律与刺杀终局两组考量。" +
+    "**没有任何一条要求你投反对**，也没有任何一条说「刺最准的那个」。" +
+    "加的是「这件事你得看过」，看完怎么做还是你的判断。",
+  heuristics: [
+    ...EXPERT_DISCLOSURE_SAFE.heuristics,
+
+    /* ── 投票纪律 ──────────────────────────────────────────────────────── */
+    {
+      id: "edv.what-did-the-result-constrain",
+      scope: { kind: "all" },
+      reads: ["position.missionTrack", "position.proposedTeam", "publicLog"],
+      when: "上一轮任务刚刚结算，现在要投一辆新车",
+      consider:
+        "先把**这个结果给出了什么约束**说清楚，再看这辆车。一轮四人车开出三张失败票，说的是「这四个人里至少三个坏」——不是「这四个人可疑」。把约束说成一句能核对的算术，再问这辆车和它是什么关系",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "edv.carrying-an-implicated-rider",
+      scope: { kind: "all" },
+      reads: ["position.proposedTeam", "publicLog", "position.leader"],
+      when: "这辆车带着上一次失败牵连到的人",
+      consider:
+        "**队长为此说了什么？** 一个字都没说，本身就是一条信息 —— 他可以给出理由（这个人在别处的记录、别的组合更差、想用结果检验），也可以什么都不给。有理由和没理由，是两种完全不同的局面。**给了理由之后放行，是完全正当的一手**",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "edv.repeating-a-failed-team",
+      scope: { kind: "all" },
+      reads: ["position.proposedTeam", "publicLog"],
+      when: "这辆车和刚挂掉的那辆几乎一样",
+      consider:
+        "原样重带一辆挂过的车，需要的不是「大家再信一次」，而是一个**新出现的**理由 —— 中间有过什么结果、什么票型、什么话，改变了这辆车的风险。没有新东西就重带，等于把上一轮的结果当没发生",
+      disputed: false,
+    },
+    {
+      id: "edv.approving-buys-information",
+      scope: { kind: "all" },
+      reads: ["position.proposedTeam", "position.missionTrack", "position.rejectionStreak"],
+      when: "你倾向于反对，但说不出更好的替代车",
+      consider:
+        "**放过去也是一种取证。** 一辆有疑问的车过了，结果会把疑问变成事实；否掉它换来的是一次干净的检验，代价是一次连否。哪个更值取决于现在的比分和连否次数 —— 这是个真问题，两个答案都可能对",
+      disputed: true,
+    },
+    {
+      id: "edv.hammer-is-always-on-the-scale",
+      scope: { kind: "all" },
+      reads: ["position.rejectionStreak", "position.missionNumber", "position.fails"],
+      when: "同一轮已经连否两次或更多",
+      consider:
+        "连否五次这一轮直接判坏人赢。**这一票不再是「我信不信这辆车」，而是「这辆车和直接判负比，哪个更差」** —— 之前跟着别人反对是便宜的，现在不是",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "edv.catastrophic-result-needs-an-answer",
+      scope: { kind: "side", side: "good" },
+      reads: ["publicLog", "position.proposedTeam", "position.leader"],
+      when: "上一轮开出了两张或更多失败票，而新车里有被牵连的人或那个队长",
+      consider:
+        "这种结果把一大块人锁进了风险池。**在没有公开、可核对的解释之前就放行，等于把那条约束扔掉** —— 而它是全场最硬的一条信息。要求解释不是刁难，是让那条约束继续起作用。当然，解释给出来之后放行也完全可以",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "edv.evil-may-approve-a-bad-team",
+      scope: { kind: "side", side: "evil" },
+      reads: ["position.proposedTeam", "position.missionTrack"],
+      when: "你是坏人，桌上出现一辆对好人不利的车",
+      consider:
+        "放它过去往往比否掉更值：结果会替你说话，而你不用留下一条反对的记录。反过来，跟着好人一起否掉一辆脏车，是一种很便宜的可信度",
+      disputed: false,
+    },
+
+    /* ── 终局：刺杀 ────────────────────────────────────────────────────── */
+    {
+      id: "eda.loudest-is-not-merlin",
+      scope: { kind: "roles", roles: ["assassin"] },
+      reads: ["role", "publicLog", "position.standingClaims"],
+      when: "你是刺客，正在挑目标，而场上有一个明显在带节奏的人",
+      consider:
+        "**最会组织的那个人同样可能是派西维尔，或者一个在替梅林挡枪的忠臣。** 真梅林要在「有用」和「活下来」之间选，所以他常常不是最显眼的。把这个人和一个安静但票型一直像有信息的人放在一起比，再决定",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eda.quiet-consistency",
+      scope: { kind: "roles", roles: ["assassin"] },
+      reads: ["role", "publicLog"],
+      when: "你在给候选排序",
+      consider:
+        "找**几轮之间读法一致**的人：他否的车后来挂了、他保的车后来成了、而且他的理由在结果出来之前就给了。一个每次都在结果之后才调整的人，看起来准，其实只是跟着走",
+      disputed: false,
+    },
+    {
+      id: "eda.lady-holder-is-visible-not-informed",
+      scope: { kind: "roles", roles: ["assassin"] },
+      reads: ["role", "position.ladyHeldBy", "publicLog"],
+      when: "某个候选拿过湖中女神并公开宣布过结果",
+      consider:
+        "拿过女神的人**必然显眼**，但那是规则给的，不是视野给的。他的宣布可以是真也可以是假，而且他有一个梅林没有的合法信息源 —— 别把「他说得多」当成「他看得见」",
+      disputed: true,
+    },
+    {
+      id: "eda.write-the-counter-case",
+      scope: { kind: "roles", roles: ["assassin"] },
+      reads: ["role", "publicLog"],
+      when: "你已经有一个明显的首选",
+      consider:
+        "给他写一条**反面**：什么公开记录和「他是梅林」不一致？写不出来通常不是因为他真的是，而是因为你还没找。一个只有正面没有反面的候选，是断言不是评估",
+      disputed: false,
+      obligation: true,
+    },
+    {
+      id: "eda.roster-is-exact-now",
+      scope: { kind: "side", side: "evil" },
+      reads: ["side", "role"],
+      when: "进入刺杀环节，规则把四个坏人的确切身份公开给了你们",
+      consider:
+        "**这份名单是精确的，而且包含奥伯伦** —— 整局你都不认识他。剩下六个人里有一个是梅林。不要再用之前那份「我认识的同伴」去推第四个坏人是谁：那份名单少一个人，按它推会把一个好人当成自己人",
+      disputed: false,
+      obligation: true,
+    },
+  ],
+};
+
 export const STRATEGIES: Readonly<Record<CatalogStrategyId, StrategyDefinition>> =
   Object.freeze({
     baseline: BASELINE,
@@ -1406,6 +1760,8 @@ export const STRATEGIES: Readonly<Record<CatalogStrategyId, StrategyDefinition>>
     "expert-cognitive": EXPERT_COGNITIVE,
     "expert-social": EXPERT_SOCIAL,
     "expert-claim-contest": EXPERT_CLAIM_CONTEST,
+    "expert-disclosure-safe": EXPERT_DISCLOSURE_SAFE,
+    "expert-disciplined": EXPERT_DISCIPLINED,
   });
 
 export const CATALOG_IDS: readonly CatalogStrategyId[] = [
@@ -1414,6 +1770,8 @@ export const CATALOG_IDS: readonly CatalogStrategyId[] = [
   "expert-cognitive",
   "expert-social",
   "expert-claim-contest",
+  "expert-disclosure-safe",
+  "expert-disciplined",
 ];
 
 export function strategyById(id: CatalogStrategyId): StrategyDefinition {

@@ -31,6 +31,7 @@
 import { COGNITION_LIMITS as L, checkChars, checkCount, checkMinCount, type LimitViolation } from "./limits";
 import type { Confidence, DerivedConstraint, Hypothesis, SeatDossier } from "./ledger";
 import type { Seat } from "../core/types";
+import { DISCLOSURE_SEPARATION_LAYER } from "./disclosure";
 
 /* ── The layer text ─────────────────────────────────────────────────────── */
 
@@ -193,6 +194,26 @@ export const DECISION_PROTOCOL_LAYER_V3 = [
 ].join("\n");
 
 export const PROTOCOL_VERSION_V3 = "cognition-protocol-0.3.0";
+
+/**
+ * The 0.5.0 system layer: everything 0.4.0 asks for, then the separation rule.
+ *
+ * APPENDED, not edited. The three earlier stacks keep their exact bytes, and
+ * the separation rule reads as the last thing before the task because it is the
+ * last check the planner makes: it has chosen an action, and now it has to say
+ * what public reason it can give for it.
+ *
+ * The rule text lives in `disclosure.ts` beside the role-specific rules, so a
+ * reviewer reading "what did M5.3 tell the agents" reads one file.
+ */
+export const DECISION_PROTOCOL_LAYER_V4 = [
+  DECISION_PROTOCOL_LAYER,
+  PUBLIC_BRIDGE_LAYER,
+  CLAIM_CONTEST_LAYER,
+  DISCLOSURE_SEPARATION_LAYER,
+].join("\n");
+
+export const PROTOCOL_VERSION_V4 = "cognition-protocol-0.4.0";
 
 /* ── The structured conclusion ──────────────────────────────────────────── */
 

@@ -83,6 +83,12 @@ export interface PublicRecord {
     readonly publicMessage: string;
     readonly atSequence: number;
   }[];
+  /** The one irreversible decision. Absent in a game evil never reached. */
+  readonly assassination?: {
+    readonly assassin: Seat;
+    readonly target: Seat;
+    readonly atSequence: number;
+  } | null;
 }
 
 /** Hidden truth. Post-mortem only — see the header. */
@@ -503,6 +509,64 @@ export function coordinationOutcomes(
   });
 }
 
+/* ── 13. Was the one irreversible decision spent on a known villain? ─────── */
+
+export interface AssassinationError {
+  readonly assassin: Seat;
+  readonly target: Seat;
+  readonly atSequence: number;
+  readonly targetWasMerlin: boolean;
+  /**
+   * NAMED STRATEGIC ERROR: the Assassin spent the kill on a seat whose identity
+   * he had already been shown.
+   *
+   * A legal move — the referee takes it and ends the game — and one of the most
+   * instructive mistakes an Assassin can make, which is exactly why it is
+   * counted here rather than prevented upstream. `assassination.ts` warns about
+   * it privately and ranks those seats last; nothing refuses it, and nothing
+   * rewrites the target. See the header note there.
+   *
+   * Computed from revealed roles, so it is right even for a game recorded
+   * before the metric existed.
+   */
+  readonly knownEvilAssassinationTarget: boolean;
+  /** Which villain, when the error occurred. */
+  readonly targetRole: RoleType | null;
+}
+
+/**
+ * The assassination, scored. Null if the game never reached one.
+ *
+ * POST-MORTEM ONLY, like every hidden-truth function in this file: it reads the
+ * deal, and no path leads from its output back into a prompt.
+ *
+ * "Known evil" is derived from the SIDE, not from a stored roster, because the
+ * three mutually aware villains and Oberon differ in what they were shown. That
+ * is a real distinction and it is preserved: `oberonTarget` says the Assassin
+ * killed a villain he was NOT shown, which is a different mistake — a wasted
+ * kill, but not one he had the information to avoid.
+ */
+export function assassinationError(
+  record: PublicRecord,
+  roles: RevealedRoles,
+): AssassinationError | null {
+  const a = record.assassination;
+  if (!a) return null;
+  const targetRole = roles.bySeat[a.target] ?? null;
+  const targetIsEvil = roles.sideOf[a.target] === "evil";
+  // Oberon is evil but the Assassin was never shown him. Naming him is a wasted
+  // kill, not an avoidable one, so it is not this error.
+  const wasShown = targetIsEvil && targetRole !== "oberon";
+  return {
+    assassin: a.assassin,
+    target: a.target,
+    atSequence: a.atSequence,
+    targetWasMerlin: targetRole === "merlin",
+    knownEvilAssassinationTarget: wasShown,
+    targetRole: targetIsEvil ? targetRole : null,
+  };
+}
+
 /* ── Shared ─────────────────────────────────────────────────────────────── */
 
 /**
@@ -541,6 +605,8 @@ export interface CoordinationReport {
   /** Present only when the caller supplied the reveal. */
   readonly leaderTruth: LeaderTruth | null;
   readonly coordination: readonly CoordinationOutcome[] | null;
+  /** Null when the reveal was not supplied, or the game had no assassination. */
+  readonly assassination: AssassinationError | null;
 }
 
 export function coordinationReport(
@@ -559,5 +625,6 @@ export function coordinationReport(
     publicRequests: publicRequestCounts(observations, record),
     leaderTruth: roles ? leaderTruth(observations, roles) : null,
     coordination: roles ? coordinationOutcomes(observations, record, roles) : null,
+    assassination: roles ? assassinationError(record, roles) : null,
   };
 }

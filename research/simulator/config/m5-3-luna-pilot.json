@@ -1,0 +1,80 @@
+{
+  "$comment": [
+    "M5.3 配对实验 · Luna 臂。",
+    "",
+    "和 m5-3-terra-pilot 是一对。**除了模型 id 和它对应的价目，两份文件必须完全一样** ——",
+    "config/paired-arms.test.ts 会把两边解析出来的配置做归一化 diff 并断言这一点，",
+    "还会断言在同一个脚本化局面上两边渲染出来的提示文本与 schema 逐字节相同。",
+    "",
+    "为什么两个值写死而不是继承：这一对的全部意义就是「只差模型」。",
+    "继承会让 diff 里出现 null，读的人得自己去推它解析成什么；写出来就不用推。",
+    "",
+    "seed / 发牌 / 首任队长 / 方向 / 座位映射都不在 profile 里 —— 它们由 seed 决定，",
+    "所以两条臂必须用**同一个 seed**（1）跑，命令写在 cognition/README-M5.3.md 里。",
+    "",
+    "**这份 profile 一次都没有跑过。**"
+  ],
+
+  "promptVersion": "prompt-0.5.0",
+
+  "model": {
+    "$comment": ["Luna 臂。价目见下面的 pricing，两者必须指向同一个 model id。"],
+    "id": "gpt-5.6-luna",
+    "reasoningEffort": "high"
+  },
+
+  "pricing": {
+    "$comment": [
+      "和 model/price-lists.ts 里的 LUNA_PRICING 逐字段相同，由测试断言。",
+      "官方价目，读于 2026-08-27。每一项都是 Terra 的十分之一 ——",
+      "**但便宜和打得一样好是两件事，而后者正是这个配对实验要问的问题。**"
+    ],
+    "configured": true,
+    "modelId": "gpt-5.6-luna",
+    "sourceUrl": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+    "verifiedOn": "2026-08-27",
+    "pricingVersion": "gpt-5.6-luna@2026-08-27",
+    "uncachedInputUsdPerMTok": 0.2,
+    "cachedInputUsdPerMTok": 0.02,
+    "outputUsdPerMTok": 1.2
+  },
+
+  "cognition": {
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "stages": {
+    "$comment": [
+      "规划者 high / 12,000；发言者 medium / 3,000。",
+      "3,000 是 2026-08-27 由人定的（原来我推的是 1,600）。",
+      "maxPublicMessageRepairs = 1：初次 + 1 次重发，之后 disclosure_invalid 停下。"
+    ],
+    "planner": { "model": "gpt-5.6-luna", "reasoningEffort": "high", "maxOutputTokens": 12000 },
+    "spokesperson": { "model": "gpt-5.6-luna", "reasoningEffort": "medium", "maxOutputTokens": 3000 },
+    "maxPublicMessageRepairs": 1
+  },
+
+  "limits": {
+    "maxStandardInputTokens": 250000,
+    "maxOutputTokens": 12000,
+    "speechCharLimit": 220,
+    "maxActionsPerGame": 4000,
+    "maxLiveCallsPerGame": 600
+  },
+
+  "budget": {
+    "costWarningPerGameUsd": 12,
+    "hardCostLimitPerGameUsd": 25,
+    "hardBatchCostLimitUsd": 100
+  },
+
+  "experiment": {
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-disclosure-safe"
+  },
+
+  "run": { "concurrency": 1, "maxRetries": 2 }
+}

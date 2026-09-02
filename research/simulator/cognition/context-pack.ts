@@ -45,7 +45,7 @@
 
 import type { PublicEvent } from "../core/events";
 import { deepFreeze } from "../core/freeze";
-import type { Observation } from "../core/observation";
+import type { Observation, PositionView } from "../core/observation";
 import { pessimisticTokenEstimate } from "../model/pricing";
 import type { Seat } from "../core/types";
 import { claimContestFrom, renderClaimContest } from "./claim-contest";
@@ -58,6 +58,7 @@ import type {
 import {
   CURRENT_STATE_ID,
   FACT_ID_LEGEND,
+  FACT_ID_LEGEND_PUBLIC,
   PRIVATE_IDS,
   failComparisonId,
   failConstraintId,
@@ -149,6 +150,22 @@ const seatList = (seats: readonly Seat[]) => seats.join("、");
  */
 export interface FactTableOptions {
   readonly withIds?: boolean;
+  /**
+   * Render the revealed evil roster. `prompt-0.6.0` only.
+   *
+   * It has never been rendered before, in any version — see
+   * `capabilities.evilRosterRendered`. Gated rather than simply added, because
+   * four completed games' prompts must stay rebuildable byte for byte.
+   */
+  readonly withEvilRoster?: boolean;
+  /**
+   * Which legend to print above the tables.
+   *
+   * Absent means the premise legend the four frozen stacks print, byte for
+   * byte. `"public"` prints the three-prefix version for the spokesperson,
+   * which has no private ids and no `premiseIds` field to fill.
+   */
+  readonly legend?: "premise" | "public";
 }
 
 /** ``[id]`` as it appears in front of a line. */
@@ -169,13 +186,16 @@ const tag = (id: string) => `\`[${id}]\``;
 export function renderFactTables(
   facts: readonly PublicHardFact[],
   claims: readonly PublicClaim[],
-  observation: Observation,
+  // Narrowed from `Observation` to the one field it reads. Byte-identical
+  // output, and it is what lets the public spokesperson render the same tables
+  // from a view that carries no role, no knowledge and no Lady results at all.
+  observation: { readonly position: PositionView },
   options: FactTableOptions = {},
 ): string {
   const ids = options.withIds === true;
   const p = observation.position;
   const lines: string[] = ["## 硬事实（裁判记录，不可改写）"];
-  if (ids) lines.push("", FACT_ID_LEGEND);
+  if (ids) lines.push("", options.legend === "public" ? FACT_ID_LEGEND_PUBLIC : FACT_ID_LEGEND);
 
   lines.push(
     "",
@@ -356,6 +376,24 @@ export function renderOwnPrivateFacts(
         `- ${ids ? `${tag(ladyResultId(r.missionNumber))} ` : ""}第 ${r.missionNumber} 轮后，你验 ${r.target}号，真实是 ${r.trueSide}`,
       );
     }
+  }
+  // THE ROSTER. Rendered only under `prompt-0.6.0`; before that the line simply
+  // did not exist, while the task layer claimed it did and the registry minted
+  // `p.roster` for it. Gated on the seat's own side as well as on the roster
+  // being present — the same second lock the discussion below uses.
+  if (
+    options.withEvilRoster === true &&
+    observation.side === "evil" &&
+    observation.evilRoster
+  ) {
+    lines.push(
+      "",
+      `${ids ? `${tag(PRIVATE_IDS.evilRoster)} ` : ""}坏人这一边的确切身份（规则在刺杀环节公开给你的）：` +
+        observation.evilRoster
+          .map((entry) => `${entry.seat}号 ${entry.role}`)
+          .join("，") +
+        "。**奥伯伦也在里面** —— 之前你不认识他。",
+    );
   }
   // Gated on the seat's OWN side rather than on the array being non-empty.
   // `observationFor` already guarantees a good seat receives none — this is the

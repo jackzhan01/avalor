@@ -40,14 +40,28 @@ export interface CognitiveClientOptions {
  * because nothing offline was reading what the model was shown.
  */
 function renderedIds(request: ModelRequest): string[] {
+  // ONLY THE FACT LAYERS. Everything from the `cognition` instruction onward is
+  // cut away before scraping, because that instruction teaches the notation by
+  // SHOWING it — 「`[f12]`、`[f.fail1]`、`[c33:role]`、`[p.pair]` 这样的」 — at the
+  // head of its own line, in the exact shape a real citable row uses.
+  //
+  // `[p.pair]` is not a placeholder. It is Percival's real pair id, and any
+  // seat that copies it is citing a private id it does not hold. The double
+  // did exactly that for four milestones; nothing failed, because an
+  // unresolvable premise was silently unverified. 0.7.0 refuses it, the double
+  // stopped being able to play, and that is how this was found.
+  //
+  // The prompt-side hazard is REPORTED, not fixed here: making the examples
+  // unmistakable changes a frozen prompt, and that is a human decision.
+  const cut = request.user.indexOf("### 除了动作，还要填一个 `cognition` 对象");
+  const body = cut === -1 ? request.user : request.user.slice(0, cut);
+
   const ids: string[] = [];
-  for (const match of request.user.matchAll(/`\[([^\]]+)\]`/g)) {
+  for (const match of body.matchAll(/`\[([^\]]+)\]`/g)) {
     const id = match[1];
-    // The legend itself is written in this notation — `[f…]`, `[c…]`, `[p…]` —
-    // and its placeholders are not ids. A real id is ASCII; the ellipsis is
-    // what tells the two apart. A model reading the legend would make exactly
-    // this mistake, and the first offline run did.
-    if (!/^[\x21-\x7e]+$/.test(id)) continue;
+    // The legend's own placeholders — `[f…]`, `[c…]` — are not ids. A real id
+    // is ASCII; the ellipsis is what tells the two apart.
+    if (!/^[!-~]+$/.test(id)) continue;
     if (!ids.includes(id)) ids.push(id);
   }
   return ids;
@@ -124,7 +138,15 @@ function seatOf(request: ModelRequest): number {
   return match ? Number(match[1]) : 1;
 }
 
-function baseCognition(request: ModelRequest): Record<string, unknown> {
+/**
+ * A structurally legal cognition block for a given request.
+ *
+ * EXPORTED for tests that need a valid block to fold, and only for that. Every
+ * required field of every version is present, so a test about ONE field does
+ * not have to hand-maintain the other forty — which is how a fixture drifts
+ * out of sync with the parser and starts testing the fixture.
+ */
+export function baseCognition(request: ModelRequest): Record<string, unknown> {
   const facts = factIdsFrom(request);
   const claims = claimIdsFrom(request);
   const privates = privateIdsFrom(request);
@@ -450,4 +472,276 @@ export function contestingClient(options: ContestingClientOptions = {}): ModelCl
       return { ...base, text: JSON.stringify(body) };
     },
   };
+}
+
+
+/* ── The 0.6.0 vote analysis ────────────────────────────────────────────── */
+
+/**
+ * A structurally legal `voteAnalysis`, read out of the rendered prompt.
+ *
+ * READ FROM THE PROMPT, not from game state the double does not have. That is
+ * the same discipline `renderedIds` follows: if the tables ever stop printing
+ * what a real model would need, the double stops being able to answer and the
+ * tests go red — which is the failure mode worth catching.
+ */
+function voteAnalysisFor(request: ModelRequest): Record<string, unknown> {
+  const user = request.user;
+
+  const streakMatch = /连否 (\d+) 次/.exec(user);
+  const rejectionStreak = streakMatch ? Number(streakMatch[1]) : 0;
+  // Detected the same way the checker detects it: a mission_result line in
+  // the referee's own table. A negative check on the placeholder text would be
+  // one rendering change away from disagreeing with the check it must match.
+  const resolved = /第 \d+ 轮 (?:成功|失败)/.test(user);
+
+  // The mission and attempt currently on the table, and the team proposed for
+  // it — both printed in the referee's own fact tables.
+  const nowMatch = /第 (\d+) 轮，第 (\d+) 次点车/.exec(user);
+  const mission = nowMatch ? nowMatch[1] : "1";
+  const attempt = nowMatch ? nowMatch[2] : "1";
+  const proposal = new RegExp(`R${mission}#${attempt} \\\\d+号发车 ([\\\\d、]+)号`).exec(user);
+  const proposed = proposal ? proposal[1].split("、").map(Number).sort((a, b) => a - b) : [];
+
+  // The most recent failed mission's team, so a repeat can be named as one.
+  let lastFailed: number[] = [];
+  for (const m of user.matchAll(/第 (\d+) 轮 失败　上车 ([\d、]+)号/g)) {
+    lastFailed = m[2].split("、").map(Number).sort((a, b) => a - b);
+  }
+
+  const repeats =
+    lastFailed.length > 0 &&
+    lastFailed.length === proposed.length &&
+    lastFailed.every((x, i) => x === proposed[i]);
+
+  const fit = !resolved ? "no-constraint-yet" : repeats ? "repeats-failed-team" : "avoids";
+
+  return {
+    newConstraint: resolved ? "上一轮挂掉的车里至少有一个坏人，这条约束还没被拆开" : "",
+    constraintFit: fit,
+    implicatedRiders: [],
+    leaderExplanation: "",
+    informationFromApproving: "放过去可以用结果检验这几个人",
+    rejectionStreak,
+    hammerRisk:
+      rejectionStreak >= 3 ? "再否下去这一轮会直接判坏人赢，代价太大" : "",
+    // The action half is produced by the legal-move double; this is filled in
+    // to match it by `disclosureClient` below.
+    choice: "approve",
+    reason: "按公开记录，这辆车目前没有比它更该过的替代车",
+    evidenceIds: [],
+  };
+}
+
+/* ── A two-stage double, for `prompt-0.5.0` ─────────────────────────────── */
+
+export interface DisclosureClientOptions extends CognitiveClientOptions {
+  /**
+   * Seats whose PLANNER tries to publish the pair through the envelope.
+   *
+   * The point of the test is not that a planner would do this by accident. It
+   * is that the envelope is model-written, so an adversarial or confused
+   * planner is a case the firewall has to survive rather than assume away.
+   */
+  readonly leakingPlannerSeats?: readonly number[];
+  /**
+   * Seats whose SPOKESPERSON emits the forbidden sentence anyway.
+   *
+   * Impossible through the real path — the wording model never receives the
+   * pair — so the payload is passed in. It exercises the message gate, the
+   * byte-identical retry and the terminal `disclosure_invalid` state.
+   */
+  readonly leakingSpokespersonSeats?: readonly number[];
+  /** The literal payload a leaking stage writes. */
+  readonly payload?: string;
+  /** Seats that claim Percival at their first speech. */
+  readonly claimSeats?: readonly number[];
+  /** Fired with every spokesperson request, so a test can read the prompt. */
+  readonly onSpokespersonRequest?: (request: ModelRequest) => void;
+}
+
+/** Is this the wording leg? Decided by the schema name, which the builder owns. */
+export function isSpokespersonRequest(request: ModelRequest): boolean {
+  return request.format.name.startsWith("avalon_say_");
+}
+
+/**
+ * A table that answers BOTH legs of a `prompt-0.5.0` speaking turn.
+ *
+ * Delegates the action half to the same legal-move double every other test
+ * uses, so a difference between the one-stage and two-stage paths is a
+ * difference in the split rather than in how the double plays.
+ */
+export function disclosureClient(options: DisclosureClientOptions = {}): ModelClient {
+  const leakingPlanners = new Set(options.leakingPlannerSeats ?? []);
+  const leakingSpokespersons = new Set(options.leakingSpokespersonSeats ?? []);
+  const claimSeats = new Set(options.claimSeats ?? []);
+  const payload = options.payload ?? "7、9一梅林一莫甘娜";
+  const spoken = new Map<number, number>();
+  const inner = answeringClient();
+
+  return {
+    name: "disclosure-double",
+    async complete(request: ModelRequest): Promise<ModelResponse> {
+      options.onRequest?.(request);
+
+      if (isSpokespersonRequest(request)) {
+        options.onSpokespersonRequest?.(request);
+        const field = request.format.name.includes("evil_discuss")
+          ? "message"
+          : "publicMessage";
+        // The spokesperson has no seat number in its schema, so a leaking one
+        // is identified by the seat printed in the public view.
+        const me = spokespersonSeatOf(request);
+        const text = leakingSpokespersons.has(me)
+          ? payload
+          : "按公开记录，这辆车我反对，建议换成前面提过的那一组。";
+        return {
+          text: JSON.stringify({ [field]: text }),
+          usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, reasoningTokens: 0 },
+          latencyMs: 0,
+          cached: false,
+          modelReturned: "disclosure-double",
+          status: "completed",
+        };
+      }
+
+      const base = await inner.complete(request);
+      const action = JSON.parse(extractJson(base.text)) as Record<string, unknown>;
+      const me = seatOf(request);
+      const schemaText = JSON.stringify(request.format.schema);
+      const wantsIntent = /"communicationIntent"/.test(schemaText);
+
+      // 0.6.0 asks for a six-question vote analysis alongside the vote.
+      if (/"voteAnalysis"/.test(schemaText) && typeof action.choice === "string") {
+        action.voteAnalysis = { ...voteAnalysisFor(request), choice: action.choice };
+      }
+      // …a bounded candidate ranking alongside an assassination target.
+      if (/"assassination"/.test(schemaText) && typeof action.target === "number") {
+        // The roster is rendered in this phase, so the double reads it rather
+        // than guessing. Naming somebody on it is LEGAL and would be recorded
+        // as a strategic error; the double simply plays the game properly.
+        const rosterLine = /坏人这一边的确切身份[^：]*：([^。]*)/.exec(request.user);
+        const known = new Set<number>([me]);
+        for (const m of (rosterLine?.[1] ?? "").matchAll(/(\d+)号/g)) known.add(Number(m[1]));
+        // The legal-move double picks any seat but itself; a seat this Assassin
+        // already knows is evil is legal by the rules and a losing move. Under
+        // 0.6.0 the roster is rendered, so the double plays it properly.
+        const legal = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((x) => !known.has(x));
+        const target = legal.includes(action.target as number)
+          ? (action.target as number)
+          : (legal[0] ?? (action.target as number));
+        action.target = target;
+        const other = legal.find((x) => x !== target);
+        // 0.7.0 requires the Lady analysis for anybody who announced a result.
+        // The double reads WHO announced out of the rendered public log rather
+        // than guessing, which is the same source `assassinationProblems` uses.
+        // Matched against the line the fact table actually prints:
+        // 「- 9号 验了 1号，**公开宣称**「good」…」. A looser pattern missed it
+        // and the double then answered `heldLady: false` for a seat that had
+        // announced — refused by the very check this milestone added, which is
+        // the check working.
+        const announcers = new Set<number>();
+        for (const m of request.user.matchAll(/(\d+)号 验了 \d+号/g)) {
+          announcers.add(Number(m[1]));
+        }
+        const wantsLady = /"accurateBeforeLady"/.test(schemaText);
+        const one = (seat: number) => ({
+          seat,
+          signals: ["accurate-rejection"],
+          evidence: ["公开票型上多次避开了后来挂掉的车"],
+          // Never "he had Lady information" alone — that is the one shape
+          // 0.7.0 refuses, and the double must not model the mistake.
+          counterEvidence: ["他这些判断在拿到女神之前也没有更早出现过"],
+          evidenceIds: [],
+          ...(wantsLady
+            ? {
+                lady: {
+                  heldLady: announcers.has(seat),
+                  announced: announcers.has(seat),
+                  accurateBeforeLady: [],
+                  explainedByLady: [],
+                  beyondLadyResult: [],
+                  convenientCover: announcers.has(seat),
+                  contradictsRoster: false,
+                },
+              }
+            : {}),
+          confidence: seat === target ? 0.6 : 0.4,
+        });
+        action.assassination = {
+          candidates: [one(target), one(other ?? (target === 1 ? 2 : 1))],
+          target,
+          why: "公开记录上他比第二名更早给出正确排除方向",
+          whatWouldChangeIt: "如果他后来支持过一辆挂掉的车，就换人",
+        };
+      }
+      // …and a bounded coordination record alongside a mission card.
+      if (/"coordination"/.test(schemaText) && typeof action.card === "string") {
+        const designated = /\*\*← 指定出牌人\*\*/.test(request.user)
+          ? request.user.includes("你是这一轮的指定出牌人")
+          : false;
+        const failsMatch = /需要 \*\*(\d+) 张失败票\*\*/.exec(request.user);
+        action.coordination = {
+          designated,
+          failsRequired: failsMatch ? Number(failsMatch[1]) : 1,
+          card: action.card,
+          intent: action.card === "fail" ? "sabotage" : "conceal",
+          evidenceIds: [],
+        };
+      }
+
+      if (wantsIntent) {
+        const isSpeech = "claim" in action;
+        let claiming = false;
+        if (isSpeech) {
+          const turns = (spoken.get(me) ?? 0) + 1;
+          spoken.set(me, turns);
+          claiming = claimSeats.has(me) && turns === 1;
+        }
+        // The planner's schema has no message field under 0.5.0. Removing it
+        // here mirrors what the provider's strict schema would do.
+        delete action.publicMessage;
+        delete action.message;
+        if (isSpeech) action.claim = claiming ? "percival" : null;
+        // 0.7.0 asks WHY a claim is being made. The double claims once and
+        // never repeats, so the only honest answer is `first-claim` — and null
+        // whenever it is not claiming at all.
+        if (isSpeech && /"claimPurpose"/.test(schemaText)) {
+          action.claimPurpose = claiming ? "first-claim" : null;
+        }
+        // 0.7.0 also asks WHICH public events made a standing claim ambiguous.
+        // The double never re-claims, so the honest answer is always null.
+        if (isSpeech && /"ambiguityEventIds"/.test(schemaText)) {
+          action.ambiguityEventIds = null;
+        }
+
+        const leaking = leakingPlanners.has(me);
+        action.communicationIntent = {
+          channel: "table-public",
+          publicGoal: leaking ? payload : "让牌桌换一辆车",
+          targetSeats: [],
+          selectedClaimAction: claiming ? "claim-percival" : "stay-hidden",
+          requestedTeam: null,
+          requestedVote: "none",
+          publicBasisIds: leaking ? ["p.pair", "p.self"] : [],
+          publicProposition: leaking
+            ? payload
+            : "现在还没有任何一辆车拿到过可以核对的安全依据",
+          desiredTableEffect: leaking ? payload : "先把比较办法定下来",
+        };
+      }
+
+      const generated = baseCognition(request);
+      const cognition = options.mutate ? options.mutate(generated, request) : generated;
+      const body = cognition === null ? action : { ...action, cognition };
+      return { ...base, text: JSON.stringify(body) };
+    },
+  };
+}
+
+/** The seat a spokesperson prompt is speaking for. Public, and printed. */
+function spokespersonSeatOf(request: ModelRequest): number {
+  const match = /## 你是 (\d+)号的发言/.exec(request.user);
+  return match ? Number(match[1]) : 0;
 }

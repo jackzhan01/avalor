@@ -29,6 +29,8 @@ import {
   CONFIDENCE_VALUES,
   activeCommitments,
   applyCognitionUpdate,
+  commitmentId,
+  withCommitmentIds,
   emptyDossier,
   type Confidence,
   type EpistemicLedger,
@@ -112,7 +114,13 @@ export interface FusedCognition {
    * a number it has to count, and a miscount would silently close the wrong
    * promise. An unmatched string is reported, never guessed at.
    */
-  readonly closedCommitments?: readonly { readonly text: string; readonly resolution: "fulfilled" | "obsolete" | "withdrawn" }[];
+  readonly closedCommitments?: readonly {
+    /** `prompt-0.5.0`: the stable id. Absent on the two frozen stacks. */
+    readonly id?: string;
+    /** `prompt-0.3.1` / `0.4.0`: the exact text. Kept so those stay byte-identical. */
+    readonly text?: string;
+    readonly resolution: "fulfilled" | "obsolete" | "withdrawn";
+  }[];
   /** The bounded social model. `prompt-0.3.1` only; absent on the 0.3.0 path. */
   readonly social?: SocialWire;
   /** The claim contest. `prompt-0.4.0` only. */
@@ -135,6 +143,14 @@ export interface FragmentOptions {
   readonly withSocial?: boolean;
   /** `prompt-0.4.0` adds the claim contest on top of that. */
   readonly withContest?: boolean;
+  /**
+   * `prompt-0.5.0` closes commitments by ID rather than by exact text.
+   *
+   * A separate flag rather than being folded into `withContest`, because the
+   * two frozen stacks must keep sending the `text` shape byte for byte — the
+   * completed pilot's schema is part of its record.
+   */
+  readonly withCommitmentIds?: boolean;
 }
 
 export function cognitionFragment(
@@ -143,6 +159,7 @@ export function cognitionFragment(
 ): Fragment {
   const withSocial = options.withSocial === true;
   const withContest = options.withContest === true;
+  const withIds = options.withCommitmentIds === true;
   const required = [
     "factsUsed",
     "claimsReliedOn",
@@ -270,11 +287,18 @@ export function cognitionFragment(
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["text", "resolution"],
-        properties: {
-          text: { type: "string", minLength: 1 },
-          resolution: { type: "string", enum: ["fulfilled", "obsolete", "withdrawn"] },
-        },
+        // 0.5.0 asks for the id; the two frozen stacks keep asking for the
+        // exact text, which is what their recorded schemas say.
+        required: withIds ? ["id", "resolution"] : ["text", "resolution"],
+        properties: withIds
+          ? {
+              id: { type: "string", minLength: 1 },
+              resolution: { type: "string", enum: ["fulfilled", "obsolete", "withdrawn"] },
+            }
+          : {
+              text: { type: "string", minLength: 1 },
+              resolution: { type: "string", enum: ["fulfilled", "obsolete", "withdrawn"] },
+            },
       },
     };
     properties.social = socialFragment(limits);
@@ -318,6 +342,8 @@ export interface ParseOptions {
   readonly withSocial?: boolean;
   /** `prompt-0.4.0` requires the claim-contest block as well. */
   readonly withContest?: boolean;
+  /** `prompt-0.5.0` closes commitments by id, and refuses a bare text. */
+  readonly withCommitmentIds?: boolean;
 }
 
 export function parseCognition(
@@ -327,6 +353,7 @@ export function parseCognition(
   const limits = options.limits ?? (L as unknown as CognitionLimitsV3);
   const withSocial = options.withSocial === true;
   const withContest = options.withContest === true;
+  const withCommitmentIds = options.withCommitmentIds === true;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return { ok: false, error: "缺少 cognition 对象" };
   }
@@ -445,21 +472,42 @@ export function parseCognition(
     if (!Array.isArray(c.closedCommitments)) {
       return fail("cognition.closedCommitments 必须是数组（没有要关的就给空数组）");
     }
-    const closed: { text: string; resolution: "fulfilled" | "obsolete" | "withdrawn" }[] = [];
+    // Accepts BOTH shapes. 0.5.0 sends `id`; the two frozen stacks send `text`,
+    // and a checkpoint resumed across the boundary can carry either.
+    const closed: {
+      id?: string;
+      text?: string;
+      resolution: "fulfilled" | "obsolete" | "withdrawn";
+    }[] = [];
     for (const [i, item] of (c.closedCommitments as unknown[]).entries()) {
       if (!item || typeof item !== "object") {
         return fail(`cognition.closedCommitments[${i}] 不是对象`);
       }
       const k = item as Record<string, unknown>;
+      const id = str(k.id);
       const text = str(k.text);
       const resolution = str(k.resolution);
-      if (!text) return fail(`cognition.closedCommitments[${i}].text 不能为空`);
+      if (!id && !text) {
+        return fail(
+          `cognition.closedCommitments[${i}] 要么给 id（0.5.0），要么给 text（旧版本），不能都空`,
+        );
+      }
+      if (withCommitmentIds && !id) {
+        return fail(
+          `cognition.closedCommitments[${i}].id 不能为空 —— ` +
+            `0.5.0 用承诺 id 关闭，不再靠原文匹配（每条承诺前面的方括号就是它的 id）`,
+        );
+      }
       if (!resolution || !["fulfilled", "obsolete", "withdrawn"].includes(resolution)) {
         return fail(
           `cognition.closedCommitments[${i}].resolution 必须是 fulfilled / obsolete / withdrawn`,
         );
       }
-      closed.push({ text, resolution: resolution as "fulfilled" | "obsolete" | "withdrawn" });
+      closed.push({
+        ...(id ? { id } : {}),
+        ...(text ? { text } : {}),
+        resolution: resolution as "fulfilled" | "obsolete" | "withdrawn",
+      });
     }
     closedCommitments = closed;
 
@@ -727,15 +775,23 @@ export function applyFusedUpdate(
    * and the cap now drops the oldest STILL-LIVE promise as a last resort.
    */
   let unmatchedClosures = 0;
-  const closing = new Map<string, "fulfilled" | "obsolete" | "withdrawn">();
+  // Keyed by id where the answer gave one, by text where it did not. Matching
+  // by id is the M5.3 repair: text equality produced three unmatched closures
+  // in one M5.2 game, each one a promise the seat believed it had discharged
+  // and the ledger kept holding it to.
+  const byId = new Map<string, "fulfilled" | "obsolete" | "withdrawn">();
+  const byText = new Map<string, "fulfilled" | "obsolete" | "withdrawn">();
   for (const entry of cognition.closedCommitments ?? []) {
-    closing.set(entry.text, entry.resolution);
+    if (entry.id) byId.set(entry.id, entry.resolution);
+    else if (entry.text) byText.set(entry.text, entry.resolution);
   }
-  const carried: PublicCommitment[] = previous.self.publicCommitments.map((c) => {
-    const resolution = closing.get(c.text);
+  const existing = withCommitmentIds(previous.self.publicCommitments);
+  const carried: PublicCommitment[] = existing.map((c) => {
+    const resolution = byId.get(c.id) ?? byText.get(c.text);
     const live = c.withdrawnAtSequence === null && (c.resolvedAtSequence ?? null) === null;
     if (!resolution || !live) return c;
-    closing.delete(c.text);
+    byId.delete(c.id);
+    byText.delete(c.text);
     return {
       ...c,
       resolvedAtSequence: atSequence,
@@ -743,11 +799,12 @@ export function applyFusedUpdate(
       withdrawnAtSequence: resolution === "withdrawn" ? atSequence : c.withdrawnAtSequence,
     };
   });
-  unmatchedClosures = closing.size;
+  unmatchedClosures = byId.size + byText.size;
 
   const commitments: PublicCommitment[] = [
     ...carried,
-    ...cognition.newCommitments.map((text) => ({
+    ...cognition.newCommitments.map((text, i) => ({
+      id: commitmentId(atSequence, i),
       text,
       atSequence,
       withdrawnAtSequence: null,

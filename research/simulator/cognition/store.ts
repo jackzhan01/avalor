@@ -25,6 +25,7 @@ import {
   applyCognitionUpdate,
   emptyDossier,
   ledgerFrom,
+  withCommitmentIds,
   type ClaimAssessment,
   type DerivedConstraint,
   type EpistemicLedger,
@@ -44,13 +45,24 @@ import type { SocialModel } from "./social";
  * never had a social model to lose. Refusing would strand a real artifact to
  * enforce a distinction that does not exist for it.
  */
-export const LEDGER_STATE_SCHEMA = "avalon-ledger-state@3";
+/**
+ * Bumped to @4 for stable commitment ids.
+ *
+ * Older shapes are still accepted and UPGRADED on read: `withCommitmentIds`
+ * backfills a deterministic id for every stored promise, using the same
+ * numbering a live run would have produced. Refusing them would strand a paused
+ * game to enforce a distinction that game never had.
+ */
+export const LEDGER_STATE_SCHEMA = "avalon-ledger-state@4";
+/** What earlier checkpoints say. Accepted, and upgraded on read. */
+export const LEDGER_STATE_SCHEMA_V3 = "avalon-ledger-state@3";
 /** What earlier checkpoints say. Accepted, and upgraded on read. */
 export const LEDGER_STATE_SCHEMA_V1 = "avalon-ledger-state@1";
 export const LEDGER_STATE_SCHEMA_V2 = "avalon-ledger-state@2";
 /** Every shape this version will restore from. */
 export const ACCEPTED_LEDGER_SCHEMAS: readonly string[] = [
   LEDGER_STATE_SCHEMA,
+  LEDGER_STATE_SCHEMA_V3,
   LEDGER_STATE_SCHEMA_V2,
   LEDGER_STATE_SCHEMA_V1,
 ];
@@ -165,6 +177,13 @@ export class CognitionStore {
           seat: entry.seat,
           social: entry.social ?? null,
           contest: entry.contest ?? null,
+          // @1-@3 stored commitments with no id. Backfilled with the same
+          // deterministic numbering a live run mints, so an id written into a
+          // later `closedCommitments` still resolves after a resume.
+          self: {
+            ...entry.self,
+            publicCommitments: withCommitmentIds(entry.self.publicCommitments),
+          },
         }),
       );
     }

@@ -19,6 +19,10 @@
 
 import { GOOD_ROLES, EVIL_ROLES } from "@/lib/types/game";
 import type { SchemaField, TaskSchema } from "../prompts/tasks";
+import { COGNITION_LIMITS_V3 } from "../cognition/limits";
+import { voteAnalysisFragment } from "../cognition/vote-discipline";
+import { assassinationFragment } from "../cognition/assassination";
+import { CLAIM_PURPOSES } from "../cognition/claim-persistence";
 
 export type Fragment = Readonly<Record<string, unknown>>;
 
@@ -91,13 +95,55 @@ const FRAGMENTS: Readonly<Record<string, Fragment>> = {
   retractClaim: { type: ["boolean", "null"] },
   choice: { type: "string", enum: ["approve", "reject"] },
   card: { type: "string", enum: ["success", "fail"] },
+  /**
+   * The `prompt-0.6.0` mission-card coordination record.
+   *
+   * BOUNDED CONCLUSIONS ONLY — a designation, a count, a card, an intent, and
+   * public evidence ids. Deliberately no free-form field: the point is a record
+   * a reviewer can group by, not a place to narrate.
+   */
+  /** `prompt-0.6.0`: the Assassin's bounded candidate ranking. */
+  assassination: assassinationFragment(COGNITION_LIMITS_V3),
+  /** `prompt-0.6.0`: the six-question vote analysis. See `vote-discipline.ts`. */
+  voteAnalysis: voteAnalysisFragment(COGNITION_LIMITS_V3),
+  coordination: {
+    type: "object",
+    additionalProperties: false,
+    required: ["designated", "failsRequired", "card", "intent", "evidenceIds"],
+    properties: {
+      designated: { type: "boolean" },
+      failsRequired: { type: "integer", minimum: 1, maximum: 2 },
+      card: { type: "string", enum: ["success", "fail"] },
+      intent: { type: "string", enum: ["sabotage", "conceal"] },
+      evidenceIds: { type: "array", items: { type: "string" }, maxItems: 4 },
+    },
+  },
   announced: { type: "string", enum: ["good", "evil"] },
+  /** `prompt-0.7.0`: why this claim is being made now. See `claim-persistence`. */
+  claimPurpose: {
+    type: ["string", "null"],
+    enum: [...CLAIM_PURPOSES, null],
+  },
+  /**
+   * `prompt-0.7.0`: which public events made a standing claim ambiguous.
+   *
+   * PRIVATE. It sits in the planner's answer, never in a public field, and the
+   * spokesperson's schema has no slot it could reach.
+   */
+  ambiguityEventIds: {
+    type: ["array", "null"],
+    items: { type: "integer", minimum: 0 },
+    maxItems: 4,
+  },
   target: SEAT,
   memoryPatch: MEMORY_PATCH_OR_NULL,
   rationale: { type: ["string", "null"], maxLength: 300 },
 };
 
 export function fragmentFor(field: SchemaField): Fragment {
+  // An explicit override wins. Used where the shape differs BY VERSION under
+  // one field name — see `SchemaField.fragment`.
+  if (field.fragment) return field.fragment;
   const fragment = FRAGMENTS[field.name];
   if (!fragment) {
     throw new Error(

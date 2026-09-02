@@ -219,7 +219,17 @@ export type CognitionLimitsV3 = {
  * every read site.
  */
 export function limitsFor(promptVersion: string): CognitionLimitsV3 {
-  if (promptVersion === "prompt-0.4.0") return COGNITION_LIMITS_V3;
+  // 0.5.0 keeps every cognition bound 0.4.0 set. M5.3 moved where the public
+  // sentence is written, not how much the ledger may hold, and moving a limit
+  // with no measurement behind it is what put `maxOutputTokens` at 20,000.
+  if (
+    promptVersion === "prompt-0.7.0" ||
+    promptVersion === "prompt-0.6.0" ||
+    promptVersion === "prompt-0.5.0" ||
+    promptVersion === "prompt-0.4.0"
+  ) {
+    return COGNITION_LIMITS_V3;
+  }
   if (promptVersion === "prompt-0.3.1") {
     return { ...COGNITION_LIMITS_V3, ...COGNITION_LIMITS_V2 };
   }

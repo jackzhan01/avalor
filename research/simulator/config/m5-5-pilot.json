@@ -1,0 +1,80 @@
+{
+  "$comment": [
+    "M5.5 试点 profile —— 在 M5.4 之上的真实性与正确性补丁。**Terra 专用。**",
+    "",
+    "第七个新文件，理由和前六次一样：default.json 与五份历史 profile 是已完成对局的",
+    "可复现基线，一个字节都不动。m5-4-pilot 现在也在这一类里 —— 它跑过一局实盘",
+    "（g-4a461bf1，seed 1，好人胜 / assassin_missed，$11.5167）。",
+    "",
+    "**这份 profile 一次都没有跑过。**",
+    "",
+    "相对 m5-4-pilot 变的只有一处：",
+    "  promptVersion   prompt-0.6.0 → prompt-0.7.0",
+    "模型、思考强度、输出上限、重发上限、策略档全部不变 —— 这次改的是提示与校验，",
+    "不是模型设定，也不是策略文本（expert-disciplined 指纹一字节没动）。",
+    "",
+    "用法：",
+    "  ... run-live-game.ts -- --profile m5-5-pilot --seed 1 --dry-run"
+  ],
+  "promptVersion": "prompt-0.7.0",
+  "model": {
+    "id": "gpt-5.6-terra",
+    "reasoningEffort": "high"
+  },
+  "pricing": {
+    "$comment": [
+      "和 model/price-lists.ts 的 TERRA_PRICING 逐字段相同，由测试断言。"
+    ],
+    "configured": true,
+    "modelId": "gpt-5.6-terra",
+    "sourceUrl": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+    "verifiedOn": "2026-08-23",
+    "pricingVersion": "gpt-5.6-terra@2026-08-23",
+    "uncachedInputUsdPerMTok": 2.0,
+    "cachedInputUsdPerMTok": 0.2,
+    "outputUsdPerMTok": 12.0
+  },
+  "cognition": {
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+  "stages": {
+    "$comment": [
+      "和 M5.4 完全一致。M5.4 实测：发言者单次输出峰值 489 / 3,000，",
+      "规划者峰值 8,130 / 12,000，两边都没撞顶，191 次请求 $11.5167。"
+    ],
+    "planner": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high",
+      "maxOutputTokens": 12000
+    },
+    "spokesperson": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "medium",
+      "maxOutputTokens": 3000
+    },
+    "maxPublicMessageRepairs": 1
+  },
+  "limits": {
+    "maxStandardInputTokens": 250000,
+    "maxOutputTokens": 12000,
+    "speechCharLimit": 220,
+    "maxActionsPerGame": 4000,
+    "maxLiveCallsPerGame": 600
+  },
+  "budget": {
+    "costWarningPerGameUsd": 12,
+    "hardCostLimitPerGameUsd": 25,
+    "hardBatchCostLimitUsd": 100
+  },
+  "experiment": {
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-disciplined"
+  },
+  "run": {
+    "concurrency": 1,
+    "maxRetries": 2
+  }
+}

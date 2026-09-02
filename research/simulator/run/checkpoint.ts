@@ -75,6 +75,22 @@ export interface PrivateCheckpoint {
   readonly strategyId: StrategyId;
   readonly customStrategyText: string | null;
   /**
+   * The named profile this game was started under, or null for `default.json`.
+   *
+   * ADDED AFTER A NEAR MISS. Resuming the M5.2 pilot without `--profile` made
+   * the CLI fall back to `default.json`, which is `prompt-0.2.0`; the version
+   * gate caught it before a single request left, and only because the
+   * checkpoint happened to be a cognitive one. A `prompt-0.2.0` checkpoint
+   * resumed the same way would have matched, and half a game would have
+   * quietly continued under a different arm.
+   *
+   * A checkpoint written before this field existed has `null` here, and
+   * `null` is INDISTINGUISHABLE from "started under default.json". So the CLI
+   * refuses a resume without `--profile` when this is null rather than
+   * guessing which of the two it means.
+   */
+  readonly profile: string | null;
+  /**
    * The effective output cap. An arm, not a detail.
    *
    * Two halves of one game played at 2000 and at 6000 are two experiments:
@@ -124,6 +140,8 @@ export interface BuildCheckpointInput {
   readonly personaAssignment: Readonly<Record<Seat, { readonly id: string }>>;
   readonly strategyId: StrategyId;
   readonly customStrategyText?: string;
+  /** The named profile, or absent for `default.json`. */
+  readonly profile?: string;
   readonly maxOutputTokens: number;
   readonly cognition?: CognitionStoreState;
   readonly cognitionConfig?: CognitionConfig;
@@ -155,6 +173,7 @@ export function buildCheckpoint(input: BuildCheckpointInput): PrivateCheckpoint 
     })),
     strategyId: input.strategyId,
     customStrategyText: input.customStrategyText ?? null,
+    profile: input.profile ?? null,
     maxOutputTokens: input.maxOutputTokens,
     cognition: input.cognition ?? null,
     cognitionConfig: input.cognitionConfig ?? null,

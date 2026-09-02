@@ -1,0 +1,76 @@
+{
+  "$comment": [
+    "M5.4 试点 profile —— 折叠修复 + 四项打法改进。**Terra 专用。**",
+    "",
+    "第六个新文件，理由和前五次一样：default.json 与四份历史 profile 是已完成对局的",
+    "可复现基线，一个字节都不动。Luna 的 profile 保留在原地供复现，但这个里程碑不优化它、",
+    "也不跑它 —— 后续实盘研究只用 Terra。",
+    "",
+    "**这份 profile 一次都没有跑过。**",
+    "",
+    "相对 m5-3-terra-pilot 变的是：",
+    "  promptVersion   prompt-0.5.0 → prompt-0.6.0",
+    "  strategyProfile expert-disclosure-safe → expert-disciplined",
+    "两段的模型、思考强度、输出上限、重发上限全部不变。",
+    "",
+    "用法：",
+    "  ... run-live-game.ts -- --profile m5-4-pilot --seed 1 --dry-run"
+  ],
+
+  "promptVersion": "prompt-0.6.0",
+
+  "model": {
+    "id": "gpt-5.6-terra",
+    "reasoningEffort": "high"
+  },
+
+  "pricing": {
+    "$comment": ["和 model/price-lists.ts 的 TERRA_PRICING 逐字段相同，由测试断言。"],
+    "configured": true,
+    "modelId": "gpt-5.6-terra",
+    "sourceUrl": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+    "verifiedOn": "2026-08-23",
+    "pricingVersion": "gpt-5.6-terra@2026-08-23",
+    "uncachedInputUsdPerMTok": 2.0,
+    "cachedInputUsdPerMTok": 0.2,
+    "outputUsdPerMTok": 12.0
+  },
+
+  "cognition": {
+    "enabled": true,
+    "mode": "fused",
+    "maxCognitionRepairs": 2,
+    "telemetry": true
+  },
+
+  "stages": {
+    "$comment": [
+      "和 M5.3 Terra 臂完全一致 —— 这一次改的是提示内容与打法，不是两段的模型设定。",
+      "M5.3 实测：发言者单次输出峰值 613 / 3,000，规划者峰值 9,645 / 12,000，两边都没撞顶。"
+    ],
+    "planner": { "model": "gpt-5.6-terra", "reasoningEffort": "high", "maxOutputTokens": 12000 },
+    "spokesperson": { "model": "gpt-5.6-terra", "reasoningEffort": "medium", "maxOutputTokens": 3000 },
+    "maxPublicMessageRepairs": 1
+  },
+
+  "limits": {
+    "maxStandardInputTokens": 250000,
+    "maxOutputTokens": 12000,
+    "speechCharLimit": 220,
+    "maxActionsPerGame": 4000,
+    "maxLiveCallsPerGame": 600
+  },
+
+  "budget": {
+    "costWarningPerGameUsd": 12,
+    "hardCostLimitPerGameUsd": 25,
+    "hardBatchCostLimitUsd": 100
+  },
+
+  "experiment": {
+    "personaMode": "heterogeneous-rotated",
+    "strategyProfile": "expert-disciplined"
+  },
+
+  "run": { "concurrency": 1, "maxRetries": 2 }
+}

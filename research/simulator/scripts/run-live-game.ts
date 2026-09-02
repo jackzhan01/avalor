@@ -31,8 +31,11 @@ import {
   isProfileName,
   loadConfig,
   loadProfile,
+  resolveProfileForResume,
+  resolveStage,
   PROFILE_NAMES,
 } from "../config/load";
+import { capabilitiesFor } from "../prompts/capabilities";
 import { BatchAccount } from "../model/client";
 import { openAiResponsesClient, type FetchLike } from "../model/openai-responses";
 import { PERSONA_MODES, type PersonaMode } from "../prompts/personas";
@@ -106,9 +109,17 @@ if (resumePath) {
 /**
  * Named profile, or the legacy default.
  *
- * No `--profile` means `default.json` and therefore the seven-layer
- * `prompt-0.2.0` path — every command that worked before this flag existed
- * still resolves to exactly what it resolved to then.
+ * On a FRESH run, no `--profile` means `default.json` and therefore the
+ * seven-layer `prompt-0.2.0` path — every command that worked before this flag
+ * existed still resolves to exactly what it resolved to then.
+ *
+ * ON A RESUME IT IS DIFFERENT, and this is the defect the M5.2 pilot exposed.
+ * A resume without `--profile` used to fall silently back to `default.json`;
+ * that game survived only because its checkpoint was cognitive and the version
+ * gate refused it before a request left. A `prompt-0.2.0` checkpoint resumed
+ * the same way would have MATCHED, and half a game would have continued under
+ * an arm nobody chose. So a resume now either derives the profile from the
+ * checkpoint or refuses. It never guesses.
  */
 const profileArg = value("--profile");
 if (profileArg !== undefined && !isProfileName(profileArg)) {
@@ -116,14 +127,27 @@ if (profileArg !== undefined && !isProfileName(profileArg)) {
 }
 // `die` never returns, but its signature does not say so where the narrowing
 // happens, so the name is re-derived here rather than asserted away.
-const profileName = profileArg !== undefined && isProfileName(profileArg) ? profileArg : null;
+const flagProfile = profileArg !== undefined && isProfileName(profileArg) ? profileArg : null;
+
+const resolved = resolveProfileForResume({
+  flag: flagProfile,
+  checkpoint: resumeFrom ? { profile: resumeFrom.profile ?? null } : null,
+  allowDefault: has("--profile-default"),
+});
+if (!resolved.ok) die(resolved.error, 2);
+// `die` never returns, but its signature does not narrow the union here.
+const profileName = resolved.ok ? resolved.profile : null;
 const config = profileName ? loadProfile(profileName) : loadConfig();
+if (resumeFrom && resolved.ok && resolved.derived) {
+  say(`（--profile 没给；从检查点里读到 profile ${profileName}，按它续跑）`);
+}
 
 let ready;
 try {
   ready = preflight({
     seed: resumeFrom ? resumeFrom.seed : seed,
     ...(resumeFrom ? { resumeFrom } : {}),
+    ...(profileName ? { profile: profileName } : {}),
     ...(gameId ? { gameId } : {}),
     ...(personaMode ? { personaMode } : {}),
     ...(strategyProfile ? { strategyProfile } : {}),
@@ -152,6 +176,23 @@ say(
 );
 say(`模型         ${config.model.id}   reasoning effort=${config.model.reasoningEffort}`);
 say(`输出上限     ${ready.projection.maxOutputTokens.toLocaleString()} token/次（含 reasoning，来自 limits.maxOutputTokens）`);
+// 0.5.0 splits a speaking turn into two requests with independently
+// configurable models. A banner that showed only the top-level model would
+// hide half of what the operator is authorising.
+if (capabilitiesFor(config.promptVersion).twoStageSpeech) {
+  const planner = resolveStage(config, "planner");
+  const spokesperson = resolveStage(config, "spokesperson");
+  say(
+    `私有规划者   ${planner.model} / effort=${planner.reasoningEffort} / ` +
+      `${planner.maxOutputTokens.toLocaleString()} token`,
+  );
+  say(
+    `公开发言者   ${spokesperson.model} / effort=${spokesperson.reasoningEffort} / ` +
+      `${spokesperson.maxOutputTokens.toLocaleString()} token　` +
+      `（拿不到身份、候选对、视野、名单、验人结果、推理记录）`,
+  );
+  say(`发言重发上限 ${config.stages.maxPublicMessageRepairs} 次，之后 disclosure_invalid 停下`);
+}
 say(`价目         输入 $${config.pricing.uncachedInputUsdPerMTok}/M（缓存 $${config.pricing.cachedInputUsdPerMTok}/M），输出 $${config.pricing.outputUsdPerMTok}/M`);
 say(`             来源 ${config.pricing.sourceUrl}（${config.pricing.verifiedOn}，${config.pricing.pricingVersion}）`);
 say(`seed         ${ready.seed}`);
@@ -252,6 +293,7 @@ const result = await runLiveGame(
   {
     seed: ready.seed,
     ...(resumeFrom ? { resumeFrom } : {}),
+    ...(profileName ? { profile: profileName } : {}),
     ...(gameId ? { gameId } : {}),
     ...(personaMode ? { personaMode } : {}),
     ...(strategyProfile ? { strategyProfile } : {}),
@@ -285,7 +327,12 @@ if (result.publicPath) say(`公开回放     ${result.publicPath}`);
 if (result.privatePath) say(`私有轨迹     ${result.privatePath}（含发牌与种子，不要分发）`);
 if (result.checkpointPath) {
   say(`检查点       ${result.checkpointPath}`);
-  say(`续跑         ... -- --live --resume ${result.checkpointPath}`);
+  // The profile is named explicitly, because a resume without it is now
+  // REFUSED rather than silently falling back to `default.json`.
+  say(
+    `续跑         ... -- --live${profileName ? ` --profile ${profileName}` : ""}` +
+      ` --resume ${result.checkpointPath}`,
+  );
 } else if (result.status !== "completed") {
   say("这次中断不可续跑（永久性错误），没有写检查点。");
 }
