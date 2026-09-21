@@ -1,0 +1,202 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "yuanzhuo-gold-1080p-v1",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Measured on BV1kr876AEE1 (1080p HEVC stream) with scripts/probe_layout.py. This is a THIRD layout, not either earlier one: the subtitle bar sits at y=900 like the first offline source but starts at x=468 like the online source, and the label box is the wide 381 px variant.",
+    "The right column carries two different surfaces stacked: a compact scrolling history board at the top and a spectator roster at the bottom. The roster shows every seat's nickname AND ROLE for the whole upload, so it is private.",
+    "The speaker label box again carries the role ('10号 凡哥 梅林', '9号 Jeremy 忠臣'), so the same keep_first_ink_run redaction is applied: only the leading '<n>号' token survives OCR, diffing, cache keys and saved crops.",
+    "The board text matches the original offline board grammar ('<n>号队长 → a·b·c', '第X/3次组队', 'x:y → 否决组队', '◆ 第N轮任务 · 需要M名队员 ◆', '任务成功'), so board.py parses it; only the cell geometry differs and is fitted per row from the digit boxes.",
+    "Presence thresholds were measured on this source, not copied: subtitle edge-band fraction 0.58-0.94 with a bar vs 0.001 without; label box 0.998-1.000 vs 0.042.",
+    "Board rect re-measured 2026-09-20: the panel is append-only and reaches y=594 by the end of the upload; the roster below it stays at a fixed position, and the expanded rect was OCR-scanned at 11 timestamps for role words and nicknames with zero hits.",
+    "Vote cells are encoded in the CELL BACKGROUND on this board, not in the seat digit: reject bg H 9-13 S 130-148, approve bg H 27-34 S 64-80, no-vote neutral grey H 3-7 or ~177 S 59-68. Cell pitch is 36.76 px starting at x=43.97, strip 23.8 px under its header — none of which matches the pilot board."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        484,
+        908,
+        870,
+        60
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          90,
+          170
+        ],
+        "hsv_hi": [
+          38,
+          255,
+          255
+        ],
+        "min_fraction": 0.35,
+        "edge_band_px": 6
+      },
+      "why": "Burned-in subtitle on the yellow bar. This source's bar is much less saturated than the other two: measured edge-band fraction is 0.58-0.94 with a bar and 0.001 without, so the gate is 0.35, not the 0.8 the other layouts use. Copying 0.8 here would have rejected most captions."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        478,
+        900,
+        950,
+        74
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.01,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Caption band fallback for bar-less / low-saturation subtitle styles. Starts right of the label box (which ends at x~468) so label text cannot bleed in."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        100,
+        910,
+        355,
+        56
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 120,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "min_fraction": 0.8,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "White box holding '<seat>号 <nickname> <role>'. Only the leading seat token survives redaction."
+    },
+    {
+      "id": "board",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1496,
+        2,
+        418,
+        592
+      ],
+      "guard_period_s": 10.0,
+      "ocr_mode": "page2x",
+      "diff": {
+        "thumb_scale": 1.0,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.0008
+      },
+      "why": "Append-only history board: proposals, per-seat vote cells, mission results with the executing team and each mission card. It GROWS DOWNWARD as the game goes on, so the rect must cover the final height (y 2..594) — the earlier 225 px rect cut the record off after three rows and made a 4-mission game look like it stalled in round 1. Mission 1's own header is clipped above the frame top, which _leading_mission handles.",
+      "cells": {
+        "method": "cell_background",
+        "seat1_x": 43.97,
+        "cell_dx": 36.76,
+        "strip_dy": 23.8,
+        "half_w": 13,
+        "half_h": 8,
+        "bg_value_max": 110,
+        "min_pixels": 20,
+        "approve_hue": [
+          20,
+          45
+        ],
+        "reject_sat_min": 115,
+        "warm_hue_max": 19,
+        "warm_hue_min": 160
+      }
+    },
+    {
+      "id": "roster",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        1470,
+        598,
+        450,
+        482
+      ],
+      "why": "Spectator roster: seat badge, nickname and ROLE for every seat, on screen for the whole upload at a fixed position below the board. Answer-bearing."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        40,
+        1450,
+        860
+      ],
+      "why": "Camera feed and editorial overlays."
+    },
+    {
+      "id": "camera_top",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1450,
+        40
+      ],
+      "why": "Top strip with the 投票回顾 control."
+    },
+    {
+      "id": "camera_bottom",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        975,
+        1450,
+        105
+      ],
+      "why": "Strip below the subtitle band."
+    }
+  ]
+}

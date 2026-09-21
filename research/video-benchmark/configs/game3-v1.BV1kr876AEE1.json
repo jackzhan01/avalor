@@ -1,0 +1,159 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game3-v1",
+  "source": {
+    "key": "BV1kr876AEE1-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1kr876AEE1/?p=1",
+    "bvid": "BV1kr876AEE1",
+    "part": 1,
+    "title": "阿瓦隆忘记表水，自有大儒为我辩经",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30077",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV1kr876AEE1.video.hevc.mp4",
+    "audio_file": "sources/raw/BV1kr876AEE1.audio.m4a"
+  },
+  "layout": "configs/layout.yuanzhuo-gold-1080p-v1.json",
+  "interval": {
+    "start": 247.0,
+    "end": 1810.0,
+    "rationale": "Full feature. 0-247 s is a teaser ('本期导视' + '正片跳转至4分07秒' = 247 s) replaying later clips. The client's own caption at 1797.4 s reads '任务成功，2号刺客决定发动刺杀' — it names the assassin — and from 1802 s the speaker label reads 刺杀梅林讨论 (the evil team picking a target), then 赛后. live_game_interval therefore ends at 1797.3 s, just after the bare '任务成功' caption (on screen 1796.0-1797.2 s) and before the leaked variant. Extraction runs to 1810 s so a reviewer can see the switch in the evidence instead of taking the boundary on trust. Media is the verified 1080p HEVC stream (sources/verify.BV1kr876AEE1.hevc.json)."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2.0,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4,
+      5
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "lady_of_the_lake": null,
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "board vote strips run 1-10; roster panel lists seats 1-10",
+      "mission_team_sizes": "board headers state 第2轮·需要4名队员, 第3轮·需要4名队员, 第4轮·需要5名队员. Mission 1's own header is clipped above the frame top, but both of its proposals and the team that executed it are 3 seats, so 3 is read off the rows themselves. Mission 5 was never reached and its size is NOT stated anywhere, so it is not listed.",
+      "proposal_limit": "board rows read '第1/3次组队', '第2/3次组队'",
+      "final_proposal_forced": "observed: mission 2's third row reads '必做轮组队 / 必做轮' and carries no vote strip at all",
+      "fails_required": "PARTLY observed and therefore NOT asserted to a model. Mission 3 failed with exactly 1 fail card out of 4, so round 3's threshold is 1; rounds 1, 2 and 4 each ran with 0 fail cards, which says nothing about their threshold. The listed [1,1,1,2] is the standard 10-player rule and is listed in `unverified` so the rendered input omits it.",
+      "lady_of_the_lake": "no 湖中仙女/湖中女神 row or caption anywhere in the feature; re-checked on the full extraction",
+      "role_composition": "from the private spectator roster, which lists 莫德雷德/莫甘娜/刺客/奥伯伦 as the four evil roles plus 梅林, 派西维尔 and 4 忠臣 — the standard 10-player set with Oberon. Composition is common knowledge at the table; who holds what is not, and stays private."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-3",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 attempt 2 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 2,
+          "proposal_index": 2
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4.0,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  }
+}

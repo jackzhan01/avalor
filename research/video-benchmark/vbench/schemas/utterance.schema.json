@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:utterance",
+  "type": "object",
+  "required": [
+    "schema", "utterance_id", "caption", "speaker", "asr", "alignment", "verbatim",
+    "flags", "eligibility", "availability", "review_status", "provenance"
+  ],
+  "properties": {
+    "schema": { "const": "vbench.utterance/1" },
+    "utterance_id": { "type": "string", "pattern": "^utt-[0-9a-f]{16}$" },
+    "caption": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["caption_segment_id", "text", "alternatives", "display_start", "display_end", "timing"],
+          "properties": {
+            "caption_segment_id": { "type": "string" },
+            "text": { "type": "string" },
+            "alternatives": { "type": "array", "items": { "type": "string" } },
+            "display_start": { "$ref": "vbench:common#/$defs/seconds" },
+            "display_end": { "$ref": "vbench:common#/$defs/seconds" },
+            "timing": { "$ref": "vbench:common#/$defs/timing" },
+            "crop": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "speaker": {
+      "type": "object",
+      "required": ["seat", "label_text", "attribution", "evidence_refs"],
+      "properties": {
+        "seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+        "label_text": { "type": ["string", "null"] },
+        "attribution": { "enum": ["label_stable", "label_transition", "no_label", "reviewed"] },
+        "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } },
+        "labels_seen": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label_text", "seat", "overlap_s"],
+            "properties": {
+              "label_text": { "type": ["string", "null"] },
+              "seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+              "overlap_s": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "asr": {
+      "type": "object",
+      "required": ["mode", "text", "audio_start", "audio_end", "segment_refs"],
+      "properties": {
+        "mode": { "enum": ["faster-whisper", "unavailable", "fake"] },
+        "text": { "type": ["string", "null"] },
+        "audio_start": { "$ref": "vbench:common#/$defs/seconds_or_null" },
+        "audio_end": { "$ref": "vbench:common#/$defs/seconds_or_null" },
+        "segment_refs": { "type": "array", "items": { "type": "string" } },
+        "min_word_probability": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "alignment": {
+      "type": "object",
+      "required": ["status", "cer", "reasons"],
+      "properties": {
+        "status": { "enum": ["agree", "minor_diff", "disagree", "no_asr_overlap", "asr_unavailable", "asr_only"] },
+        "cer": { "type": ["number", "null"], "minimum": 0 },
+        "reasons": {
+          "type": "array",
+          "items": { "enum": ["numeral_mismatch", "negation_mismatch", "length_mismatch"] }
+        }
+      },
+      "additionalProperties": false
+    },
+    "verbatim": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["text", "verified_by", "method"],
+          "properties": {
+            "text": { "type": "string" },
+            "verified_by": { "type": "string" },
+            "method": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "overlap_suspected", "uncertain_numeral", "uncertain_negation", "caption_only",
+          "asr_only", "label_transition", "guard_mismatch", "short", "low_score", "inaudible"
+        ]
+      }
+    },
+    "eligibility": { "enum": ["in_game_speech", "editorial", "replay", "intro", "unknown"] },
+    "availability": {
+      "type": "object",
+      "required": ["status", "public_at", "basis"],
+      "properties": {
+        "status": { "enum": ["anchored", "unanchored"] },
+        "public_at": { "$ref": "vbench:common#/$defs/seconds_or_null" },
+        "basis": { "type": "string" },
+        "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } }
+      },
+      "additionalProperties": false
+    },
+    "review_status": { "$ref": "vbench:common#/$defs/review_status" },
+    "provenance": { "$ref": "vbench:common#/$defs/provenance" },
+    "sequence": { "type": ["integer", "null"], "minimum": 1 },
+    "ordering": { "type": "object" },
+    "applied_corrections": { "type": "array", "items": { "type": "string" } },
+    "machine_content_sha256": { "$ref": "vbench:common#/$defs/sha256" },
+    "origin": { "enum": ["machine", "correction"] }
+  },
+  "additionalProperties": false
+}

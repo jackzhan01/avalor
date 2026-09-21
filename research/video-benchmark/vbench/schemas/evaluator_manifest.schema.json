@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:evaluator_manifest",
+  "type": "object",
+  "required": [
+    "schema",
+    "games",
+    "samples"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.evaluator_manifest/1"
+    },
+    "games": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "game_id",
+          "group_id",
+          "split",
+          "source"
+        ],
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "pattern": "^game-[0-9a-f]{10}$"
+          },
+          "group_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "split": {
+            "enum": [
+              "dev",
+              "test",
+              "train"
+            ]
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "source_id",
+              "video_sha256"
+            ],
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "pattern": "^src-[0-9a-f]{12}$"
+              },
+              "video_sha256": {
+                "$ref": "vbench:common#/$defs/sha256"
+              },
+              "audio_sha256": {
+                "anyOf": [
+                  {
+                    "$ref": "vbench:common#/$defs/sha256"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sample_id",
+          "game_id",
+          "group_id",
+          "split",
+          "dataset",
+          "cutoff_sequence",
+          "cutoff_label",
+          "perspective",
+          "x_sha256",
+          "y_sha256"
+        ],
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          },
+          "game_id": {
+            "type": "string"
+          },
+          "group_id": {
+            "type": "string"
+          },
+          "split": {
+            "enum": [
+              "dev",
+              "test",
+              "train"
+            ]
+          },
+          "dataset": {
+            "enum": [
+              "accepted",
+              "draft"
+            ]
+          },
+          "cutoff_sequence": {
+            "type": "integer"
+          },
+          "cutoff_label": {
+            "type": "string"
+          },
+          "cutoff_public_at": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "perspective": {
+            "type": "string"
+          },
+          "x_sha256": {
+            "$ref": "vbench:common#/$defs/sha256"
+          },
+          "y_sha256": {
+            "$ref": "vbench:common#/$defs/sha256"
+          },
+          "history_items": {
+            "type": "integer"
+          },
+          "format": {
+            "enum": [
+              "x1",
+              "x2"
+            ]
+          },
+          "run_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

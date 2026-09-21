@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:private_roster",
+  "type": "object",
+  "required": [
+    "schema",
+    "game_id",
+    "player_count",
+    "composition",
+    "seats",
+    "end_of_video_reveal",
+    "notes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.private_roster/2"
+    },
+    "game_id": {
+      "type": "string",
+      "pattern": "^game-[0-9a-f]{10}$"
+    },
+    "player_count": {
+      "type": "integer"
+    },
+    "composition": {
+      "type": "object"
+    },
+    "seats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "seat",
+          "role",
+          "side",
+          "verification",
+          "sources",
+          "consistency"
+        ],
+        "properties": {
+          "seat": {
+            "$ref": "vbench:common#/$defs/seat"
+          },
+          "role": {
+            "enum": [
+              "merlin",
+              "percival",
+              "loyal",
+              "morgana",
+              "mordred",
+              "assassin",
+              "oberon",
+              "minion",
+              "unknown"
+            ]
+          },
+          "side": {
+            "enum": [
+              "good",
+              "evil",
+              "unknown"
+            ]
+          },
+          "verification": {
+            "enum": [
+              "verified",
+              "candidate",
+              "unknown",
+              "needs_review"
+            ]
+          },
+          "sources": {
+            "type": "array"
+          },
+          "consistency": {
+            "type": "object",
+            "required": [
+              "checked_times",
+              "agree"
+            ],
+            "properties": {
+              "checked_times": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "agree": {
+                "type": "boolean"
+              },
+              "disagreements": {
+                "type": "array"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "end_of_video_reveal": {
+      "type": "object",
+      "required": [
+        "available",
+        "note"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "checked_interval": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string"
+        },
+        "agrees_with_roster": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "final_outcome": {
+      "type": "object",
+      "description": "Endgame facts, filled only from a public reveal in the source (a client banner, a reveal screen). Anything not shown stays null.",
+      "required": [
+        "winning_side",
+        "assassin_seat",
+        "assassination_target_seat",
+        "assassination_hit",
+        "basis"
+      ],
+      "properties": {
+        "winning_side": {
+          "enum": [
+            "good",
+            "evil",
+            null
+          ]
+        },
+        "assassin_seat": {
+          "$ref": "vbench:common#/$defs/seat_or_null"
+        },
+        "assassination_target_seat": {
+          "$ref": "vbench:common#/$defs/seat_or_null"
+        },
+        "assassination_hit": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "basis": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

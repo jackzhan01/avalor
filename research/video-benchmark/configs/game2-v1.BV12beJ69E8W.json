@@ -1,0 +1,151 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game2-v1",
+  "source": {
+    "key": "BV12beJ69E8W-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV12beJ69E8W/",
+    "bvid": "BV12beJ69E8W",
+    "part": 1,
+    "title": "阿瓦隆线上赛第一名来踢馆，教你玩派西维尔如何速通",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30080",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV12beJ69E8W.video.mp4",
+    "audio_file": "sources/raw/BV12beJ69E8W.audio.m4a"
+  },
+  "layout": "configs/layout.yuanzhuo-online-1080p-v1.json",
+  "interval": {
+    "start": 238.0,
+    "end": 1290.0,
+    "rationale": "Usable window of this upload. 0-238 s is a teaser ('正片跳转至3分58秒' burned into the first frames) replaying later clips out of order. From ~1273 s the edit switches to '狼人盘刀' (the evil team choosing an assassination target) and then '赛后'; both are answer-bearing and are excluded by live_game_interval rather than by the extraction interval, so the boundary itself stays visible in the evidence. The extraction runs 12 s past the switch so the reviewer can see where it happens."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2.0,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {
+      "observed": true
+    },
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "basis": {
+      "player_count": "client seat strip shows seats 1-10; panel header reads 已入座 10/10",
+      "mission_team_sizes": "client panel: 第1轮·需3人, 第2轮·需4人, 第3轮·需4人. Missions 4-5 were never reached in this upload and their sizes are NOT stated anywhere, so they are not listed.",
+      "proposal_limit": "mission 1 shows three proposals and the third is marked 必做轮 and resolved as 自动通过 (no vote)",
+      "final_proposal_forced": "the third proposal of mission 1 auto-passed with no vote chips",
+      "fails_required": "not shown by this client for any mission; the listed 1/1/1 is the standard rule for missions 1-3 of a 10-player game and is NOT observed here.",
+      "lady_of_the_lake": "In play in this game. Corroborated INSIDE the usable window by public speech (seat 5 says 我可是出身高贵的仙女牌; seat 9 says 你是尊贵的湖仙; seat 3 discusses 湖仙 藏票). The client's own 湖中仙女 row — which names the holder, the target AND the resulting role — first appears at 1270.02 s, OUTSIDE live_game_interval, so neither the check nor its result is in the record, and the timing of the check is not asserted.",
+      "role_composition": "end-of-video seat strip reveals 莫德雷德/莫甘娜/奥伯伦/刺客 as the four evil roles, leaving merlin+percival+4 loyal; matches the standard 10-player set with Oberon"
+    },
+    "unverified": [
+      "fails_required"
+    ]
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-2",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 attempt 2 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 2
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 2,
+          "proposal_index": 1
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4.0,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  }
+}

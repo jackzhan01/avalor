@@ -1,0 +1,151 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "pilot-cycle1",
+  "source": {
+    "key": "BV19D7565EZg-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV19D7565EZg/",
+    "bvid": "BV19D7565EZg",
+    "aid": "116815779071505",
+    "cid": "39424953454",
+    "part": 1,
+    "title": "阿瓦隆高配局莫甘娜打法教学，这波谁分得清啊",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30080",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV19D7565EZg.video.mp4",
+    "audio_file": "sources/raw/BV19D7565EZg.audio.m4a"
+  },
+  "layout": "configs/layout.yuanzhuo-1080p-v1.json",
+  "interval": {
+    "start": 0,
+    "end": 637.0,
+    "rationale": "First mission cycle as edited: discussion of proposals 1-2 (0-576.5 s), their vote reveals (board tallies at ~239 s and ~574 s), the edit cut that omits proposal 3 (forced 2-4-6) and mission 1 execution, the board bulk update showing mission 1 success (~579 s), and the opening of mission-2 discussion up to 637.0 s, where players publicly reference the mission-1 result (606-632 s). Ends before seat 10 starts at 637.3 s."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2.0,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1
+  },
+  "ocr": {
+    "engine": "rapidocr"
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4,
+      5,
+      5
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1,
+      2,
+      1
+    ],
+    "lady_of_the_lake": null,
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "basis": {
+      "player_count": "10 seat labels 1-10 observed in speaker labels and board strips",
+      "mission_team_sizes": "board headers show mission 1 needs 3 and mission 2 needs 4; missions 3-5 assume the standard 10-player table (unverified in pilot)",
+      "proposal_limit": "board rows read '第1/3次组队', '第2/3次组队' and the third row is '必做轮' with no vote",
+      "fails_required": "standard 10-player rule (two fails on mission 4); not observed in pilot",
+      "lady_of_the_lake": "not observed in pilot interval; null = unknown",
+      "role_composition": "standard 10-player set with Oberon; confirmed from the authoring (private) roster view, which is public game-setup knowledge for players but was NOT observed through a public channel in the edit"
+    }
+  },
+  "split": {
+    "group_id": "grp-pilot-1",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "after mission 1 proposal 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "after mission 1 proposal 2 team selection",
+      "after": {
+        "event": {
+          "type": "team_selection",
+          "mission": 1,
+          "proposal_index": 2
+        }
+      }
+    },
+    {
+      "label": "after mission 1 proposal 2 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 2
+        }
+      }
+    },
+    {
+      "label": "after mission 1 outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    }
+  ],
+  "private": {
+    "roster_times": [
+      30.0,
+      300.0,
+      600.0
+    ]
+  },
+  "speech_events": {
+    "enabled": true
+  }
+}

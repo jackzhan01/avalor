@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:board_snapshot",
+  "type": "object",
+  "required": [
+    "schema",
+    "snapshot_id",
+    "start",
+    "end",
+    "ocr_refs",
+    "crop_sha256",
+    "missions",
+    "warnings"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.board_snapshot/1"
+    },
+    "snapshot_id": {
+      "type": "string",
+      "pattern": "^brd-[0-9a-f]{16}$"
+    },
+    "start": {
+      "$ref": "vbench:common#/$defs/seconds"
+    },
+    "end": {
+      "$ref": "vbench:common#/$defs/seconds"
+    },
+    "ocr_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "crop_sha256": {
+      "$ref": "vbench:common#/$defs/sha256"
+    },
+    "crop_path": {
+      "type": "string"
+    },
+    "missions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "mission",
+          "team_size",
+          "proposals",
+          "result"
+        ],
+        "properties": {
+          "mission": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "team_size": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "row_order",
+                "proposal_index",
+                "proposal_limit",
+                "leader_seat",
+                "team_seats",
+                "tally",
+                "result_text",
+                "forced",
+                "cells",
+                "raw_text"
+              ],
+              "properties": {
+                "row_order": {
+                  "type": "integer"
+                },
+                "proposal_index": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "proposal_limit": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "leader_seat": {
+                  "$ref": "vbench:common#/$defs/seat_or_null"
+                },
+                "team_seats": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "vbench:common#/$defs/seat"
+                  }
+                },
+                "tally": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  ]
+                },
+                "result_text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "forced": {
+                  "type": "boolean"
+                },
+                "cells": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": [
+                      "color",
+                      "outlined"
+                    ],
+                    "properties": {
+                      "color": {
+                        "enum": [
+                          "approve",
+                          "reject",
+                          "none",
+                          "unclear"
+                        ]
+                      },
+                      "outlined": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      },
+                      "hue": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "saturation": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "raw_text": {
+                  "type": "string"
+                },
+                "team_from_mission_row": {
+                  "type": "boolean",
+                  "description": "The team text was unreadable (overlay) and was taken from this mission's own result row, which names the seats that ran it."
+                },
+                "index_from_row_order": {
+                  "type": "boolean",
+                  "description": "'第N/M次组队' was unreadable; the number came from this mission's row order on the board, and only when every stated number matched its position."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "result",
+                  "card_texts",
+                  "raw_text"
+                ],
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "success",
+                      "fail",
+                      "unclear"
+                    ]
+                  },
+                  "card_texts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "raw_text": {
+                    "type": "string"
+                  },
+                  "team_seats": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "vbench:common#/$defs/seat"
+                    },
+                    "description": "Seats the mission result row names as having run the mission."
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

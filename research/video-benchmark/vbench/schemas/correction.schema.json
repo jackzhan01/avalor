@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:correction",
+  "type": "object",
+  "required": ["schema", "correction_id", "revision", "reviewer", "target", "op", "path", "value", "note", "supersedes"],
+  "properties": {
+    "schema": { "const": "vbench.correction/1" },
+    "correction_id": { "type": "string", "pattern": "^cor-[0-9a-f]{16}$" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "target": {
+      "type": "object",
+      "required": ["kind", "id", "content_sha256"],
+      "properties": {
+        "kind": { "enum": ["utterance", "public_event"] },
+        "id": { "type": "string", "minLength": 1 },
+        "content_sha256": {
+          "anyOf": [{ "$ref": "vbench:common#/$defs/sha256" }, { "type": "null" }],
+          "description": "Hash of the machine record the reviewer looked at. null only for op=add."
+        }
+      },
+      "additionalProperties": false
+    },
+    "op": { "enum": ["set", "accept", "reject", "add", "anchor"] },
+    "path": { "type": ["string", "null"] },
+    "value": {},
+    "note": { "type": "string" },
+    "supersedes": { "type": ["string", "null"] },
+    "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "op": { "const": "set" } } },
+      "then": { "properties": { "path": { "type": "string", "minLength": 1 } } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "add" } } },
+      "then": { "properties": { "value": { "type": "object" }, "target": { "properties": { "content_sha256": { "type": "null" } } } } }
+    },
+    {
+      "if": { "properties": { "op": { "enum": ["set", "accept", "reject", "anchor"] } } },
+      "then": { "properties": { "target": { "properties": { "content_sha256": { "$ref": "vbench:common#/$defs/sha256" } } } } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "anchor" } } },
+      "then": {
+        "properties": {
+          "value": {
+            "type": "object",
+            "required": ["public_at", "basis"],
+            "properties": {
+              "public_at": { "type": "number", "minimum": 0 },
+              "basis": { "type": "string", "minLength": 1 },
+              "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

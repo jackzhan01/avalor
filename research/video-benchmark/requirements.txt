@@ -1,0 +1,20 @@
+# Direct dependencies of research/video-benchmark (Python 3.11, Windows x64 tested).
+# Full transitive pins: requirements.lock.txt. Install into an isolated venv, never globally.
+numpy==1.26.4
+opencv-python==4.11.0.86
+av==13.1.0
+rapidocr_onnxruntime==1.4.4
+onnxruntime==1.30.0
+faster-whisper==1.1.1
+ctranslate2==4.8.2
+jsonschema==4.23.0
+referencing==0.37.0
+yt-dlp==2026.8.19
+requests==2.32.3
+psutil==6.1.0
+pytest==8.3.4
+pillow==11.0.0
+# Only needed by scripts/run_api_trial.py (the one paid API trial) and its token estimate.
+# Nothing in the extraction/annotation pipeline imports these.
+openai==3.16.2
+tiktoken==0.14.0

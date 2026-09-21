@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:turn_boundary_correction",
+  "type": "object",
+  "required": [
+    "schema",
+    "correction_id",
+    "revision",
+    "reviewer",
+    "before_segment",
+    "after_segment",
+    "decision",
+    "note",
+    "supersedes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.turn_boundary_correction/1"
+    },
+    "correction_id": {
+      "type": "string",
+      "pattern": "^tbc-[0-9a-f]{16}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "before_segment": {
+      "type": "object",
+      "required": [
+        "id",
+        "content_sha256"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "content_sha256": {
+          "$ref": "vbench:common#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "after_segment": {
+      "type": "object",
+      "required": [
+        "id",
+        "content_sha256"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "content_sha256": {
+          "$ref": "vbench:common#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "enum": [
+        "break",
+        "join"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:agent_blocks",
+  "description": "Sanitized per-proposal blocks. This is the only input render_input() accepts, so anything absent here cannot reach the model-facing document.",
+  "type": "object",
+  "required": ["schema", "rules", "blocks"],
+  "properties": {
+    "schema": { "const": "vbench.agent_blocks/1" },
+    "rules": {
+      "type": "object",
+      "required": ["player_count", "mission_team_sizes", "proposal_limit", "final_proposal_forced"],
+      "properties": {
+        "player_count": { "type": "integer", "minimum": 5 },
+        "mission_team_sizes": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "proposal_limit": { "type": ["integer", "null"], "minimum": 1 },
+        "final_proposal_forced": { "type": "boolean" },
+        "fails_required": { "type": ["array", "null"], "items": { "type": "integer", "minimum": 1 } },
+        "lady_of_the_lake": { "type": ["object", "null"] },
+        "role_composition": { "type": ["object", "null"], "additionalProperties": { "type": "integer", "minimum": 0 } }
+      },
+      "additionalProperties": false
+    },
+    "rules_unverified": {
+      "type": "array",
+      "description": "Rule keys whose value is a standard-rule assumption rather than something this video showed. They stay in `rules` because the internal checks need them; the rendered input omits exactly these.",
+      "items": { "enum": ["player_count", "mission_team_sizes", "proposal_limit", "final_proposal_forced", "fails_required", "lady_of_the_lake", "role_composition"] },
+      "uniqueItems": true
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["block_id", "mission", "attempt", "forced", "speech", "speech_recorded", "leader_seat",
+                     "team_seats", "votes", "tally_text", "outcome", "mission_ran", "mission_result", "fail_count"],
+        "properties": {
+          "block_id": { "type": "string", "pattern": "^b[0-9]+-[0-9]+$" },
+          "mission": { "type": "integer", "minimum": 1 },
+          "attempt": { "type": "integer", "minimum": 1 },
+          "forced": { "type": "boolean" },
+          "speech": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["seat", "text"],
+              "properties": {
+                "seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+                "text": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "speech_recorded": {
+            "enum": ["full", "partial", "none", "empty"],
+            "description": "'none'/'partial' mean an edit cut removed speech from this block; 'empty' means no speech was recorded and no cut explains it."
+          },
+          "leader_seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+          "team_seats": {
+            "anyOf": [{ "type": "null" }, { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" } }]
+          },
+          "votes": {
+            "anyOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "required": ["approve", "reject", "unclear", "unrecorded"],
+                "properties": {
+                  "approve": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" } },
+                  "reject": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" } },
+                  "unclear": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" } },
+                  "unrecorded": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" } }
+                },
+                "additionalProperties": false
+              }
+            ],
+            "description": "null = no vote record at all. 'unclear' = seen but unreadable; 'unrecorded' = never observed. Never inferred from the tally."
+          },
+          "tally_text": { "type": ["string", "null"] },
+          "outcome": { "enum": ["passed", "rejected", null] },
+          "mission_ran": { "type": "boolean" },
+          "mission_result": { "enum": ["success", "fail", null] },
+          "fail_count": { "type": ["integer", "null"], "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

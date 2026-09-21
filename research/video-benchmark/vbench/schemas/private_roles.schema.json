@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:private_roles",
+  "type": "object",
+  "required": ["schema", "game_id", "player_count", "composition", "composition_basis", "seats"],
+  "properties": {
+    "schema": { "const": "vbench.private_roles/1" },
+    "game_id": { "type": "string", "pattern": "^game-[0-9a-f]{10}$" },
+    "player_count": { "type": "integer", "minimum": 5, "maximum": 10 },
+    "composition": {
+      "type": "object",
+      "propertyNames": { "enum": ["merlin", "percival", "loyal", "morgana", "mordred", "assassin", "oberon", "minion"] },
+      "additionalProperties": { "type": "integer", "minimum": 1 }
+    },
+    "composition_basis": { "type": "string", "minLength": 1 },
+    "seats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["seat", "role", "verification", "evidence"],
+        "properties": {
+          "seat": { "$ref": "vbench:common#/$defs/seat" },
+          "role": { "enum": ["merlin", "percival", "loyal", "morgana", "mordred", "assassin", "oberon", "minion", "unknown"] },
+          "verification": { "enum": ["verified", "candidate", "unknown"] },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["kind", "video_time", "observed_text"],
+              "properties": {
+                "kind": { "enum": ["roster_crop", "roster_ocr", "manual_video_check", "speaker_label_join"] },
+                "video_time": { "$ref": "vbench:common#/$defs/seconds" },
+                "crop_sha256": { "anyOf": [{ "$ref": "vbench:common#/$defs/sha256" }, { "type": "null" }] },
+                "observed_text": { "type": "string" },
+                "note": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

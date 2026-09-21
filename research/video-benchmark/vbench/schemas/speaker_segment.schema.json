@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:speaker_segment",
+  "type": "object",
+  "required": ["schema", "speaker_segment_id", "start", "end", "label_text", "seat", "name", "ocr_refs", "flags"],
+  "properties": {
+    "schema": { "const": "vbench.speaker_segment/1" },
+    "speaker_segment_id": { "type": "string", "pattern": "^spk-[0-9a-f]{16}$" },
+    "start": { "$ref": "vbench:common#/$defs/seconds" },
+    "end": { "$ref": "vbench:common#/$defs/seconds" },
+    "label_text": { "type": ["string", "null"] },
+    "seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+    "name": { "type": ["string", "null"] },
+    "ocr_refs": { "type": "array", "items": { "type": "string" } },
+    "flags": { "type": "array", "items": { "enum": ["unparsed_label", "guard_mismatch", "short"] } },
+    "representative_crop": { "type": "string" }
+  },
+  "additionalProperties": false
+}

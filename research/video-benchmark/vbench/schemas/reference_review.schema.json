@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:reference_review",
+  "type": "object",
+  "required": [
+    "schema",
+    "reviewer",
+    "method",
+    "status",
+    "interval",
+    "captions",
+    "events",
+    "dense_checks"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.reference_review/1"
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "provisional_self_review",
+        "independent_review",
+        "accepted_by_owner"
+      ]
+    },
+    "interval": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "captions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref_id",
+          "time",
+          "text",
+          "label_text"
+        ],
+        "properties": {
+          "ref_id": {
+            "type": "string"
+          },
+          "time": {
+            "type": "number",
+            "description": "A moment the caption is visible (reviewer-inspected frame)."
+          },
+          "text": {
+            "type": "string"
+          },
+          "label_text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "seat": {
+            "$ref": "vbench:common#/$defs/seat_or_null"
+          },
+          "eligibility": {
+            "enum": [
+              "in_game_speech",
+              "editorial",
+              "replay",
+              "intro",
+              "unknown"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref_id",
+          "type",
+          "payload"
+        ],
+        "properties": {
+          "ref_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "public_at": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "utterance_text": {
+            "type": "string",
+            "description": "Caption text (or a substring) the statement was made in; used to match speech events."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "dense_checks": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

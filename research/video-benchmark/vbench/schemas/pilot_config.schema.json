@@ -1,0 +1,356 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:pilot_config",
+  "type": "object",
+  "required": [
+    "schema",
+    "run_id",
+    "source",
+    "layout",
+    "interval",
+    "sampling",
+    "captions",
+    "ocr",
+    "asr",
+    "rules",
+    "split",
+    "cutoffs"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.pilot_config/1"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "key",
+        "video_file"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "bvid": {
+          "type": "string"
+        },
+        "aid": {
+          "type": "string"
+        },
+        "cid": {
+          "type": "string"
+        },
+        "part": {
+          "type": "integer"
+        },
+        "download_formats": {
+          "type": "object"
+        },
+        "video_file": {
+          "type": "string",
+          "description": "Relative to the data root."
+        },
+        "audio_file": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "uploader": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "layout": {
+      "type": "string"
+    },
+    "interval": {
+      "type": "object",
+      "required": [
+        "start",
+        "end",
+        "rationale"
+      ],
+      "properties": {
+        "start": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rationale": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sampling": {
+      "type": "object",
+      "required": [
+        "coarse_step_frames",
+        "guard_period_s",
+        "diff_pixel_threshold",
+        "diff_fraction_threshold",
+        "thumb_scale",
+        "reservoir_size"
+      ],
+      "properties": {
+        "coarse_step_frames": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "guard_period_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "diff_pixel_threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255
+        },
+        "diff_fraction_threshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "thumb_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "reservoir_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_ocr_frames": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "captions": {
+      "type": "object",
+      "required": [
+        "merge_gap_s",
+        "jitter_cer",
+        "short_s",
+        "low_score"
+      ],
+      "properties": {
+        "merge_gap_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "jitter_cer": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "short_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "low_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "clean_sample_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "merge_policy": {
+          "enum": [
+            "fuzzy_v1",
+            "short_part_v2"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ocr": {
+      "type": "object",
+      "required": [
+        "engine"
+      ],
+      "properties": {
+        "engine": {
+          "enum": [
+            "rapidocr",
+            "fake"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "asr": {
+      "type": "object",
+      "required": [
+        "backend"
+      ],
+      "properties": {
+        "backend": {
+          "enum": [
+            "faster-whisper",
+            "none"
+          ]
+        },
+        "model": {
+          "type": "string"
+        },
+        "device": {
+          "type": "string"
+        },
+        "compute_type": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "beam_size": {
+          "type": "integer"
+        },
+        "vad_filter": {
+          "type": "boolean"
+        },
+        "initial_prompt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agree_cer": {
+          "type": "number"
+        },
+        "minor_cer": {
+          "type": "number"
+        },
+        "pad_s": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object"
+    },
+    "split": {
+      "type": "object",
+      "required": [
+        "group_id",
+        "split"
+      ],
+      "properties": {
+        "group_id": {
+          "type": "string"
+        },
+        "split": {
+          "enum": [
+            "dev",
+            "test",
+            "train"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "cutoffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "after"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "after": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "private": {
+      "type": "object",
+      "properties": {
+        "roster_times": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "speech_events": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Legacy semantic statement extraction (v1 pilot only). Default off."
+    },
+    "turns": {
+      "type": "object",
+      "properties": {
+        "max_gap_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "review_pause_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "corrections": {
+      "type": "object",
+      "properties": {
+        "inherit_shared": {
+          "type": "boolean"
+        },
+        "run_scoped": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "description": "inherit_shared: apply annotations/<source>/corrections.jsonl (v1 pilot). run_scoped: also apply corrections.<run_id>.jsonl."
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "coverage_file": {
+          "type": "string"
+        },
+        "roster_file": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

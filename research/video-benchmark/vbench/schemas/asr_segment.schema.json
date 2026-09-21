@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:asr_segment",
+  "type": "object",
+  "required": ["schema", "asr_segment_id", "audio_start", "audio_end", "text", "words", "engine"],
+  "properties": {
+    "schema": { "const": "vbench.asr_segment/1" },
+    "asr_segment_id": { "type": "string", "pattern": "^asr-[0-9a-f]{16}$" },
+    "audio_start": { "$ref": "vbench:common#/$defs/seconds" },
+    "audio_end": { "$ref": "vbench:common#/$defs/seconds" },
+    "text": { "type": "string" },
+    "avg_logprob": { "type": ["number", "null"] },
+    "no_speech_prob": { "type": ["number", "null"] },
+    "words": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["start", "end", "word", "probability"],
+        "properties": {
+          "start": { "type": "number" },
+          "end": { "type": "number" },
+          "word": { "type": "string" },
+          "probability": { "type": ["number", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "engine": {
+      "type": "object",
+      "required": ["name", "version_key"],
+      "properties": { "name": { "type": "string" }, "version_key": { "type": "string" } },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

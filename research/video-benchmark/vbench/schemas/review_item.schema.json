@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:review_item",
+  "type": "object",
+  "required": ["schema", "review_id", "target", "reasons", "video_start", "video_end", "timecode", "crops", "candidate", "details"],
+  "properties": {
+    "schema": { "const": "vbench.review_item/1" },
+    "review_id": { "type": "string", "pattern": "^rev-[0-9a-f]{16}$" },
+    "target": {
+      "type": "object",
+      "required": ["kind", "id", "content_sha256"],
+      "properties": {
+        "kind": { "enum": ["utterance", "public_event", "correction"] },
+        "id": { "type": "string" },
+        "content_sha256": { "anyOf": [{ "$ref": "vbench:common#/$defs/sha256" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "guard_mismatch", "label_transition", "no_label", "ocr_asr_disagree", "numeral_mismatch",
+          "negation_mismatch", "unresolved_quote", "no_first_person_marker", "board_conflict",
+          "tally_vector_conflict", "unanchored", "asr_only", "low_score", "short",
+          "speech_event_candidate", "clean_sample", "stale_correction", "correction_conflict"
+        ]
+      }
+    },
+    "video_start": { "type": ["number", "null"] },
+    "video_end": { "type": ["number", "null"] },
+    "timecode": { "type": "string" },
+    "crops": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Public-region crops only. Never full frames or roster crops."
+    },
+    "candidate": { "type": "object" },
+    "details": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

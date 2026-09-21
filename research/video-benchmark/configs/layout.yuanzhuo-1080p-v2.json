@@ -1,0 +1,179 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "yuanzhuo-1080p-v2",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Measured on 1920x1080 frames at 0/30/90/180/300/420/700 s of the pilot source (see HANDOFF.md).",
+    "Caption and speaker-label rects sit strictly inside their opaque overlays; when an overlay is absent the rect shows camera pixels, so presence gates block OCR.",
+    "The roster lists nickname + role for every seat: answer-bearing, private only.",
+    "The camera area contains seat paddles and editorial overlays (花字, crowns, transition cards): excluded from everything.",
+    "Label rect starts at x=156: the white box's left edge sits at x~146-150 and camera pixels bleed in left of it; label ink starts at x>=167.",
+    "Board diff runs at full resolution with a 0.2% pixel threshold: at 1/4 scale a new 12 px text row (e.g. '投票中' at ~231-237 s) stayed under the default 2% threshold and was only caught by a guard OCR.",
+    "v2 adds 'subtitle_plain': the edit sometimes shows subtitles as white outlined text with no yellow bar and no speaker label (e.g. 315.9 s, 2020.8 s). v1 missed them; in the pilot they surfaced only as short 'ASR-only' fragments.",
+    "v2 label gate accepts either subtitle style (requires_any): the white label box stays on screen for bar-less subtitles, so those captions can be attributed too."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        420,
+        908,
+        940,
+        68
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          90,
+          170
+        ],
+        "hsv_hi": [
+          38,
+          255,
+          255
+        ],
+        "min_fraction": 0.8,
+        "edge_band_px": 6
+      },
+      "why": "Burned-in subtitle on the yellow bar."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        415,
+        908,
+        1065,
+        68
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.01,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Bar-less burned-in subtitles (white text, dark outline), right of the label box. Only while the yellow bar is absent."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        156,
+        910,
+        248,
+        64
+      ],
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "min_fraction": 0.8,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "White box with '<seat> <nickname>' of the featured speaker."
+    },
+    {
+      "id": "board",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1512,
+        46,
+        390,
+        582
+      ],
+      "guard_period_s": 10.0,
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          0
+        ],
+        "hsv_hi": [
+          180,
+          255,
+          60
+        ],
+        "min_fraction": 0.5
+      },
+      "why": "Operator screen recording of the public history board. Snapshots only; timing is NOT trustworthy (bulk updates, rows ahead of the narrative).",
+      "diff": {
+        "thumb_scale": 1.0,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.002
+      }
+    },
+    {
+      "id": "roster",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        1540,
+        632,
+        380,
+        448
+      ],
+      "why": "Spectator roster: avatar seat badge, nickname and ROLE for every seat."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        22,
+        46,
+        1470,
+        858
+      ],
+      "why": "Camera feed: seat paddles, reaction shots, editorial captions and transition cards."
+    },
+    {
+      "id": "camera_bottom",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        22,
+        980,
+        1470,
+        56
+      ],
+      "why": "Camera strip below the subtitle bar."
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:common",
+  "$defs": {
+    "seat": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "seat_or_null": { "anyOf": [{ "$ref": "#/$defs/seat" }, { "type": "null" }] },
+    "seconds": { "type": "number", "minimum": 0 },
+    "seconds_or_null": { "anyOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }] },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "rect": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "[x, y, width, height] in source pixels"
+    },
+    "review_status": {
+      "enum": ["machine_candidate", "needs_review", "accepted", "rejected"]
+    },
+    "evidence_ref": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "ocr_observation",
+            "caption_segment",
+            "speaker_segment",
+            "asr_segment",
+            "board_snapshot",
+            "utterance",
+            "correction",
+            "video_moment"
+          ]
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "video_time": { "$ref": "#/$defs/seconds" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["stage", "stage_version", "tool"],
+      "properties": {
+        "stage": { "type": "string" },
+        "stage_version": { "type": "string" },
+        "tool": { "type": "string" },
+        "tool_version": { "type": "string" },
+        "config_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": true
+    },
+    "holder": {
+      "type": "object",
+      "required": ["kind", "seat"],
+      "properties": {
+        "kind": { "enum": ["speaker", "quoted", "unresolved"] },
+        "seat": { "$ref": "#/$defs/seat_or_null" },
+        "basis": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "timing": {
+      "type": "object",
+      "required": ["method", "start_precision_s", "end_precision_s"],
+      "properties": {
+        "method": { "type": "string" },
+        "start_precision_s": { "type": "number", "minimum": 0 },
+        "end_precision_s": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

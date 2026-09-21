@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:coverage",
+  "type": "object",
+  "required": [
+    "schema",
+    "reviewer",
+    "status",
+    "gaps"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.coverage/1"
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "provisional_self_review",
+        "independent_review"
+      ]
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "gap_id",
+          "kind",
+          "start",
+          "end",
+          "description",
+          "omitted",
+          "late_reported_event_keys",
+          "evidence"
+        ],
+        "properties": {
+          "gap_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+$"
+          },
+          "kind": {
+            "enum": [
+              "edit_cut",
+              "no_caption_interval",
+              "montage",
+              "postgame",
+              "intro"
+            ]
+          },
+          "start": {
+            "$ref": "vbench:common#/$defs/seconds"
+          },
+          "end": {
+            "$ref": "vbench:common#/$defs/seconds"
+          },
+          "description": {
+            "type": "string"
+          },
+          "omitted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "late_reported_event_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "live_game_interval": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

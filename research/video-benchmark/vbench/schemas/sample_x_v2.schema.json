@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:sample_x_v2",
+  "type": "object",
+  "required": [
+    "schema",
+    "sample_id",
+    "draft",
+    "perspective",
+    "cutoff",
+    "rules",
+    "seats",
+    "timeline"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.sample_x/2"
+    },
+    "sample_id": {
+      "type": "string",
+      "pattern": "^x2-[0-9a-f]{16}$"
+    },
+    "draft": {
+      "type": "boolean"
+    },
+    "perspective": {
+      "const": "public_observer"
+    },
+    "cutoff": {
+      "type": "object",
+      "required": [
+        "sequence"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object"
+    },
+    "seats": {
+      "type": "array",
+      "items": {
+        "$ref": "vbench:common#/$defs/seat"
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "turn",
+              "part",
+              "continues_turn",
+              "seat",
+              "speaker_uncertain",
+              "text"
+            ],
+            "properties": {
+              "kind": {
+                "const": "speech"
+              },
+              "turn": {
+                "type": "string",
+                "pattern": "^t-[0-9a-f]{12}$"
+              },
+              "part": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "continues_turn": {
+                "type": "boolean"
+              },
+              "seat": {
+                "$ref": "vbench:common#/$defs/seat_or_null"
+              },
+              "speaker_uncertain": {
+                "type": "boolean"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "open_at_cutoff": {
+                "const": true
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "type",
+              "payload",
+              "reported_late"
+            ],
+            "properties": {
+              "kind": {
+                "const": "event"
+              },
+              "type": {
+                "enum": [
+                  "team_selection",
+                  "vote_observation",
+                  "vote_outcome",
+                  "mission_outcome",
+                  "lady_transfer",
+                  "assassination"
+                ]
+              },
+              "payload": {
+                "type": "object"
+              },
+              "reported_late": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "note"
+            ],
+            "properties": {
+              "kind": {
+                "const": "coverage_gap"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

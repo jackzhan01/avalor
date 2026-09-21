@@ -1,0 +1,190 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "full-v2b",
+  "source": {
+    "key": "BV19D7565EZg-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV19D7565EZg/",
+    "bvid": "BV19D7565EZg",
+    "aid": "116815779071505",
+    "cid": "39424953454",
+    "part": 1,
+    "title": "阿瓦隆高配局莫甘娜打法教学，这波谁分得清啊",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30080",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV19D7565EZg.video.mp4",
+    "audio_file": "sources/raw/BV19D7565EZg.audio.m4a"
+  },
+  "layout": "configs/layout.yuanzhuo-1080p-v2.json",
+  "interval": {
+    "start": 0,
+    "end": 2043.67,
+    "rationale": "Whole downloaded upload (part 1, 2043.67 s). Timeline revision run: v2 OCR empty-line fallback and short-part merge policy. The upload ends during mission 3 (third, forced team) with no post-game reveal. Run full-v2b supersedes full-v2 by adding bar-less subtitle capture (layout v2); full-v2 is kept as an intermediate run."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2.0,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4,
+      5,
+      5
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1,
+      2,
+      1
+    ],
+    "lady_of_the_lake": null,
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "basis": {
+      "player_count": "10 seat labels 1-10 observed in speaker labels and board strips",
+      "mission_team_sizes": "board headers show mission 1 needs 3, missions 2 and 3 need 4; missions 4-5 assume the standard 10-player table (not reached in this upload)",
+      "proposal_limit": "board rows read '第1/3次组队', '第2/3次组队' and the third row of missions 1 and 3 is '必做轮' with no vote",
+      "fails_required": "standard 10-player rule (two fails on mission 4); not observed in pilot",
+      "lady_of_the_lake": "not observed in pilot interval; null = unknown",
+      "role_composition": "standard 10-player set with Oberon; confirmed from the authoring (private) roster view, which is public game-setup knowledge for players but was NOT observed through a public channel in the edit"
+    }
+  },
+  "split": {
+    "group_id": "grp-pilot-1",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 attempt 2 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 2
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 2,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m2 attempt 2 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 2,
+          "proposal_index": 2
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 3,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m3 attempt 3 forced team",
+      "after": {
+        "event": {
+          "type": "team_selection",
+          "mission": 3,
+          "proposal_index": 3
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4.0,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  }
+}

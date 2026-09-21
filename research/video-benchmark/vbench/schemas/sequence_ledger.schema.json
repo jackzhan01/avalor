@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:sequence_ledger",
+  "type": "object",
+  "required": ["schema", "next_sequence", "entries"],
+  "properties": {
+    "schema": { "const": "vbench.sequence_ledger/1" },
+    "next_sequence": { "type": "integer", "minimum": 1 },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sequence", "record_kind", "record_id", "order_key", "ordering", "allocation_round"],
+        "properties": {
+          "sequence": { "type": "integer", "minimum": 1 },
+          "record_kind": { "enum": ["utterance", "public_event"] },
+          "record_id": { "type": "string" },
+          "order_key": {
+            "type": "array",
+            "prefixItems": [{ "type": "number" }, { "type": "integer" }, { "type": "string" }],
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "ordering": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {
+              "status": { "enum": ["in_sequence", "out_of_sequence", "unresolved"] },
+              "belongs_before_sequence": { "type": "integer" },
+              "tied_with": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          },
+          "allocation_round": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

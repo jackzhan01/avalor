@@ -1,0 +1,592 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:game_record",
+  "description": "Canonical public game record: one ordered timeline of original speech parts, objective public events and coverage gaps. Archival (source-side audit fields allowed); X is a sanitized projection of the same assembly.",
+  "type": "object",
+  "required": [
+    "schema",
+    "record_id",
+    "dataset",
+    "draft",
+    "order_semantics",
+    "text_join",
+    "rules",
+    "rules_basis",
+    "coverage",
+    "source_audit",
+    "timeline"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.game_record/1"
+    },
+    "record_id": {
+      "type": "string",
+      "pattern": "^rec-[0-9a-f]{16}$"
+    },
+    "dataset": {
+      "enum": [
+        "accepted",
+        "draft"
+      ]
+    },
+    "draft": {
+      "type": "boolean"
+    },
+    "order_semantics": {
+      "type": "string"
+    },
+    "text_join": {
+      "type": "string"
+    },
+    "rules": {
+      "type": "object"
+    },
+    "rules_basis": {
+      "type": "object"
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "interval",
+        "reviewed_intervals",
+        "unreviewed_intervals",
+        "gaps",
+        "counts",
+        "notes"
+      ],
+      "properties": {
+        "interval": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "reviewed_intervals": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "unreviewed_intervals": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "gaps": {
+          "type": "array"
+        },
+        "counts": {
+          "type": "object"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_audit": {
+      "type": "object"
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "order",
+              "item_id",
+              "turn_id",
+              "part_index",
+              "continues_turn",
+              "seat",
+              "speaker_basis",
+              "text",
+              "segments",
+              "start",
+              "end",
+              "public_at",
+              "time_basis",
+              "boundary_before",
+              "flags",
+              "context"
+            ],
+            "properties": {
+              "kind": {
+                "const": "speech"
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "item_id": {
+                "type": "string",
+                "pattern": "^part-[0-9a-f]{16}$"
+              },
+              "turn_id": {
+                "type": "string",
+                "pattern": "^turn-[0-9a-f]{16}$"
+              },
+              "part_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "continues_turn": {
+                "type": "boolean"
+              },
+              "seat": {
+                "$ref": "vbench:common#/$defs/seat_or_null"
+              },
+              "speaker_basis": {
+                "enum": [
+                  "label_stable",
+                  "label_transition",
+                  "no_label",
+                  "reviewed"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "segments": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "segment_id",
+                    "source",
+                    "text",
+                    "text_origin",
+                    "machine_text",
+                    "start",
+                    "end",
+                    "public_at",
+                    "source_sequence",
+                    "review_status",
+                    "gap_before_s",
+                    "flags"
+                  ],
+                  "properties": {
+                    "segment_id": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "enum": [
+                        "caption",
+                        "asr_only"
+                      ]
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "text_origin": {
+                      "enum": [
+                        "machine_ocr",
+                        "reviewed_caption_confirmed",
+                        "reviewed_caption_corrected",
+                        "reviewer_added_caption",
+                        "machine_asr"
+                      ]
+                    },
+                    "machine_text": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "start": {
+                      "$ref": "vbench:common#/$defs/seconds"
+                    },
+                    "end": {
+                      "$ref": "vbench:common#/$defs/seconds"
+                    },
+                    "public_at": {
+                      "$ref": "vbench:common#/$defs/seconds"
+                    },
+                    "source_sequence": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "review_status": {
+                      "$ref": "vbench:common#/$defs/review_status"
+                    },
+                    "gap_before_s": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "asr_text": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "flags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "start": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "end": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "public_at": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "time_basis": {
+                "const": "edited_video_caption_display"
+              },
+              "boundary_before": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "reasons",
+                  "source"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "start",
+                      "new_turn",
+                      "new_part"
+                    ]
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "start",
+                        "speaker_change",
+                        "unknown_speaker",
+                        "long_gap",
+                        "coverage_gap",
+                        "objective_event",
+                        "reviewed_break",
+                        "excluded_segment_between"
+                      ]
+                    }
+                  },
+                  "source": {
+                    "enum": [
+                      "rule",
+                      "reviewed_correction"
+                    ]
+                  },
+                  "gap_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "flags": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "long_pause",
+                    "speaker_unknown",
+                    "speaker_transition",
+                    "overlap_suspected",
+                    "asr_only_segment",
+                    "unreviewed_segment",
+                    "reviewed_join"
+                  ]
+                }
+              },
+              "context": {
+                "type": "object",
+                "required": [
+                  "mission",
+                  "attempt",
+                  "basis"
+                ],
+                "properties": {
+                  "mission": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "attempt": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  },
+                  "phase": {
+                    "enum": [
+                      "discussion",
+                      "after_team_selection",
+                      "after_vote",
+                      "after_mission",
+                      "unknown"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "order",
+              "item_id",
+              "event_id",
+              "type",
+              "payload",
+              "source_sequence",
+              "public_at",
+              "observed_at",
+              "reporting",
+              "review_status",
+              "context"
+            ],
+            "properties": {
+              "kind": {
+                "const": "event"
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "item_id": {
+                "type": "string",
+                "pattern": "^ev-[0-9a-f]{16}$"
+              },
+              "event_id": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "team_selection",
+                  "vote_observation",
+                  "vote_outcome",
+                  "mission_outcome",
+                  "lady_transfer",
+                  "assassination"
+                ]
+              },
+              "payload": {
+                "type": "object"
+              },
+              "source_sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "public_at": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "observed_at": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "availability_basis": {
+                "type": "string"
+              },
+              "reporting": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "live",
+                      "retrospective"
+                    ]
+                  },
+                  "gap_id": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "review_status": {
+                "$ref": "vbench:common#/$defs/review_status"
+              },
+              "flags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "context": {
+                "type": "object",
+                "required": [
+                  "mission",
+                  "attempt",
+                  "basis"
+                ],
+                "properties": {
+                  "mission": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "attempt": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  },
+                  "phase": {
+                    "enum": [
+                      "discussion",
+                      "after_team_selection",
+                      "after_vote",
+                      "after_mission",
+                      "unknown"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "order",
+              "item_id",
+              "gap_id",
+              "start",
+              "end",
+              "public_at",
+              "description",
+              "omitted",
+              "context"
+            ],
+            "properties": {
+              "kind": {
+                "const": "coverage_gap"
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "item_id": {
+                "type": "string",
+                "pattern": "^gap-[0-9a-f]{16}$"
+              },
+              "gap_id": {
+                "type": "string"
+              },
+              "start": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "end": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "public_at": {
+                "$ref": "vbench:common#/$defs/seconds"
+              },
+              "gap_kind": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "omitted": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "context": {
+                "type": "object",
+                "required": [
+                  "mission",
+                  "attempt",
+                  "basis"
+                ],
+                "properties": {
+                  "mission": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "attempt": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  },
+                  "phase": {
+                    "enum": [
+                      "discussion",
+                      "after_team_selection",
+                      "after_vote",
+                      "after_mission",
+                      "unknown"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

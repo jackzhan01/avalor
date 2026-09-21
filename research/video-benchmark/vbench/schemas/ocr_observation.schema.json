@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:ocr_observation",
+  "type": "object",
+  "required": [
+    "schema", "ocr_id", "evidence_id", "region_id", "frame_index", "video_time",
+    "crop_rect", "crop_sha256", "role", "engine", "boxes", "text", "cache_hit"
+  ],
+  "properties": {
+    "schema": { "const": "vbench.ocr_observation/1" },
+    "ocr_id": { "type": "string", "pattern": "^ocr-[0-9a-f]{16}$" },
+    "evidence_id": { "type": "string", "pattern": "^ev-[0-9a-f]{16}$" },
+    "region_id": { "type": "string" },
+    "segment_id": { "type": "string" },
+    "frame_index": { "type": "integer", "minimum": 0 },
+    "video_time": { "$ref": "vbench:common#/$defs/seconds" },
+    "crop_rect": { "$ref": "vbench:common#/$defs/rect" },
+    "crop_sha256": { "$ref": "vbench:common#/$defs/sha256" },
+    "crop_path": { "type": "string" },
+    "role": { "enum": ["representative", "guard", "dense"] },
+    "engine": {
+      "type": "object",
+      "required": ["name", "version_key"],
+      "properties": {
+        "name": { "type": "string" },
+        "version_key": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "boxes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["text", "box", "score"],
+        "properties": {
+          "text": { "type": "string" },
+          "box": {
+            "type": "array",
+            "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+          },
+          "score": { "type": ["number", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "text": { "type": "string", "description": "Boxes joined in reading order; exact OCR characters, no normalization." },
+    "cache_hit": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

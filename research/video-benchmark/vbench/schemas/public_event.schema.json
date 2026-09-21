@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:public_event",
+  "type": "object",
+  "required": [
+    "schema", "event_id", "stable_key", "type", "source", "payload", "observation",
+    "availability", "interpretations", "flags", "review_status", "provenance"
+  ],
+  "properties": {
+    "schema": { "const": "vbench.public_event/1" },
+    "event_id": { "type": "string", "pattern": "^evt-[0-9a-f]{16}$" },
+    "stable_key": { "type": "string" },
+    "type": {
+      "enum": [
+        "team_selection", "intended_team", "vote_observation", "vote_outcome",
+        "mission_outcome", "role_claim", "stance", "lady_announcement"
+      ]
+    },
+    "source": { "enum": ["board", "speech", "manual"] },
+    "payload": { "type": "object" },
+    "observation": {
+      "type": "object",
+      "required": ["video_start", "video_end", "evidence_refs"],
+      "properties": {
+        "video_start": { "$ref": "vbench:common#/$defs/seconds" },
+        "video_end": { "$ref": "vbench:common#/$defs/seconds" },
+        "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } },
+        "row_order": { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+    "availability": {
+      "type": "object",
+      "required": ["status", "public_at", "basis"],
+      "properties": {
+        "status": { "enum": ["anchored", "unanchored"] },
+        "public_at": { "$ref": "vbench:common#/$defs/seconds_or_null" },
+        "basis": { "type": "string" },
+        "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } }
+      },
+      "additionalProperties": false
+    },
+    "interpretations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["payload", "evidence_refs", "note"],
+        "properties": {
+          "payload": { "type": "object" },
+          "evidence_refs": { "type": "array", "items": { "$ref": "vbench:common#/$defs/evidence_ref" } },
+          "note": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "board_conflict", "tally_vector_conflict", "partial_votes", "unresolved_quote",
+          "hedged", "negated", "no_first_person_marker", "team_size_mismatch", "parser_rule"
+        ]
+      }
+    },
+    "review_status": { "$ref": "vbench:common#/$defs/review_status" },
+    "provenance": { "$ref": "vbench:common#/$defs/provenance" },
+    "sequence": { "type": ["integer", "null"], "minimum": 1 },
+    "ordering": { "type": "object" },
+    "applied_corrections": { "type": "array", "items": { "type": "string" } },
+    "machine_content_sha256": { "$ref": "vbench:common#/$defs/sha256" },
+    "origin": { "enum": ["machine", "correction"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "team_selection" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["mission", "proposal_index", "leader_seat", "team_seats", "forced"],
+            "properties": {
+              "mission": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "proposal_index": { "type": ["integer", "null"], "minimum": 1 },
+              "leader_seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+              "team_seats": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" }, "uniqueItems": true },
+              "forced": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "intended_team" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["holder", "team_seats", "utterance_id"],
+            "properties": {
+              "holder": { "$ref": "vbench:common#/$defs/holder" },
+              "team_seats": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" }, "uniqueItems": true },
+              "utterance_id": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "vote_observation" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["mission", "proposal_index", "votes"],
+            "properties": {
+              "mission": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "proposal_index": { "type": ["integer", "null"], "minimum": 1 },
+              "votes": {
+                "type": "object",
+                "propertyNames": { "pattern": "^(10|[1-9])$" },
+                "additionalProperties": { "enum": ["approve", "reject", "unknown"] }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "vote_outcome" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["mission", "proposal_index", "result", "tally_text", "explicit"],
+            "properties": {
+              "mission": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "proposal_index": { "type": ["integer", "null"], "minimum": 1 },
+              "result": { "enum": ["passed", "rejected"] },
+              "tally_text": { "type": ["string", "null"] },
+              "explicit": { "const": true }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "mission_outcome" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["mission", "result", "fail_count"],
+            "properties": {
+              "mission": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "result": { "enum": ["success", "fail"] },
+              "fail_count": { "type": ["integer", "null"], "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "role_claim" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["holder", "role", "claimed", "utterance_id"],
+            "properties": {
+              "holder": { "$ref": "vbench:common#/$defs/holder" },
+              "role": { "enum": ["merlin", "percival", "loyal", "good", "morgana", "mordred", "assassin", "oberon", "minion", "evil"] },
+              "claimed": { "type": "boolean" },
+              "utterance_id": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "stance" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["holder", "target_seat", "polarity", "hedged", "negated", "cue", "utterance_id"],
+            "properties": {
+              "holder": { "$ref": "vbench:common#/$defs/holder" },
+              "target_seat": { "$ref": "vbench:common#/$defs/seat" },
+              "polarity": { "enum": ["positive", "negative"] },
+              "hedged": { "type": "boolean" },
+              "negated": { "type": "boolean" },
+              "cue": { "type": "string" },
+              "utterance_id": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "lady_announcement" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["holder_seat", "target_seat", "announced", "utterance_id"],
+            "properties": {
+              "holder_seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+              "target_seat": { "$ref": "vbench:common#/$defs/seat" },
+              "announced": { "enum": ["good", "evil", "unknown"] },
+              "utterance_id": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

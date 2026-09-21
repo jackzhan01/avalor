@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:agent_pair_manifest",
+  "description": "Evaluator-side index of input/label pairs. Stays with the evaluator; never sent with an input.",
+  "type": "object",
+  "required": ["schema", "run_id", "generated_from", "instruction_file", "pairs"],
+  "properties": {
+    "schema": { "const": "vbench.agent_pair_manifest/1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "generated_from": {
+      "type": "object",
+      "required": ["source_id", "game_id", "group_id", "split"],
+      "properties": {
+        "source_id": { "type": "string", "pattern": "^src-[0-9a-f]{12}$" },
+        "game_id": { "type": "string", "pattern": "^game-[0-9a-f]{10}$" },
+        "group_id": { "type": "string" },
+        "split": { "enum": ["dev", "test", "train"] },
+        "views_sha256": { "type": "string" },
+        "roster_file": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "instruction_file": { "type": "string" },
+    "revision": {
+      "type": ["string", "null"],
+      "description": "Revision tag. Empty/absent is the original agent_pairs_v3 export; a tag writes to agent_pairs_v3_<tag> and enters the sample_id key, so a revised sample can never collide with the one it replaces."
+    },
+    "revision_of": {
+      "type": ["object", "null"],
+      "required": ["dir", "reason", "sample_id_map"],
+      "properties": {
+        "dir": { "type": "string" },
+        "reason": { "type": "array", "items": { "type": "string" } },
+        "sample_id_map": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "new_sample_id", "new_input_sha256"],
+            "properties": {
+              "kind": { "type": "string" },
+              "cutoff_label": { "type": ["string", "null"] },
+              "old_sample_id": { "type": ["string", "null"] },
+              "new_sample_id": { "type": "string" },
+              "old_input_sha256": { "type": ["string", "null"] },
+              "new_input_sha256": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sample_id", "dataset", "kind", "input_path", "label_path", "blocks_path", "audit_path",
+                     "cutoff_sequence", "cutoff_label", "input_sha256", "label_sha256", "size"],
+        "properties": {
+          "sample_id": { "type": "string", "minLength": 1 },
+          "dataset": { "enum": ["accepted", "draft"] },
+          "kind": { "enum": ["full", "cutoff"] },
+          "input_path": { "type": "string" },
+          "label_path": { "type": "string" },
+          "blocks_path": { "type": "string" },
+          "audit_path": { "type": "string" },
+          "cutoff_sequence": { "type": ["integer", "null"] },
+          "cutoff_label": { "type": ["string", "null"] },
+          "cutoff_public_at": { "type": ["number", "null"] },
+          "input_sha256": { "$ref": "vbench:common#/$defs/sha256" },
+          "label_sha256": { "$ref": "vbench:common#/$defs/sha256" },
+          "size": {
+            "type": "object",
+            "required": ["characters", "utf8_bytes", "blocks", "speech_lines", "tokens", "tokenizer"],
+            "properties": {
+              "characters": { "type": "integer", "minimum": 0 },
+              "utf8_bytes": { "type": "integer", "minimum": 0 },
+              "blocks": { "type": "integer", "minimum": 0 },
+              "speech_lines": { "type": "integer", "minimum": 0 },
+              "tokens": { "type": ["integer", "null"], "description": "null = no offline tokenizer for the target model was available; character counts are NOT tokens." },
+              "tokenizer": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

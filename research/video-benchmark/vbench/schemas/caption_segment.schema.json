@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:caption_segment",
+  "type": "object",
+  "required": [
+    "schema",
+    "caption_segment_id",
+    "region_id",
+    "display_start",
+    "display_end",
+    "timing",
+    "text",
+    "alternatives",
+    "ocr_refs",
+    "parts",
+    "flags",
+    "min_score"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vbench.caption_segment/1"
+    },
+    "caption_segment_id": {
+      "type": "string",
+      "pattern": "^cap-[0-9a-f]{16}$"
+    },
+    "region_id": {
+      "type": "string"
+    },
+    "display_start": {
+      "$ref": "vbench:common#/$defs/seconds"
+    },
+    "display_end": {
+      "$ref": "vbench:common#/$defs/seconds"
+    },
+    "timing": {
+      "$ref": "vbench:common#/$defs/timing"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ocr_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "segment_id",
+          "start",
+          "end",
+          "text"
+        ],
+        "properties": {
+          "segment_id": {
+            "type": "string"
+          },
+          "start": {
+            "type": "number"
+          },
+          "end": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "guard_mismatch",
+          "short",
+          "merged_jitter",
+          "low_score",
+          "coarse_boundary",
+          "similar_neighbor"
+        ]
+      }
+    },
+    "min_score": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "representative_crop": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

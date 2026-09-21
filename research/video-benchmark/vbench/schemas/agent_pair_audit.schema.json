@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:agent_pair_audit",
+  "description": "Side-channel map from each block back to the records it came from, plus what was left out and why. Never part of an input.",
+  "type": "object",
+  "required": ["schema", "sample_id", "dataset", "input_sha256", "blocks", "excluded", "open_questions"],
+  "properties": {
+    "schema": { "const": "vbench.agent_pair_audit/1" },
+    "sample_id": { "type": "string", "minLength": 1 },
+    "dataset": { "enum": ["accepted", "draft"] },
+    "run_id": { "type": "string" },
+    "record_id": { "type": "string" },
+    "cutoff": {
+      "type": ["object", "null"],
+      "properties": {
+        "sequence": { "type": "integer" },
+        "label": { "type": "string" },
+        "public_at": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "input_sha256": { "$ref": "vbench:common#/$defs/sha256" },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["block_id", "mission", "attempt", "paragraphs", "events", "gaps", "conflicts"],
+        "properties": {
+          "block_id": { "type": "string" },
+          "mission": { "type": "integer" },
+          "attempt": { "type": "integer" },
+          "forced": { "type": "boolean" },
+          "forced_basis": { "type": "string" },
+          "paragraphs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["line", "seat", "item_ids", "segment_ids"],
+              "properties": {
+                "line": { "type": "integer", "minimum": 1 },
+                "seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+                "item_ids": { "type": "array", "items": { "type": "string" } },
+                "segment_ids": { "type": "array", "items": { "type": "string" } },
+                "source_sequences": { "type": "array", "items": { "type": "integer" } }
+              },
+              "additionalProperties": false
+            }
+          },
+          "events": { "type": "array" },
+          "gaps": { "type": "array", "items": { "type": "string" } },
+          "conflicts": { "type": "array" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "description": "Records inside the run interval that no block carries, each with the reason.",
+      "items": {
+        "type": "object",
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": { "type": "string" },
+          "count": { "type": "integer", "minimum": 0 },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rules_assumed": {
+      "type": "array",
+      "description": "Rules carried in the config but never observed in this video, kept here with their stated basis because the input omits them.",
+      "items": {
+        "type": "object",
+        "required": ["key", "value", "basis"],
+        "properties": {
+          "key": { "type": "string" },
+          "value": {},
+          "basis": { "type": "string" },
+          "omitted_from_input": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "coverage_statement": {
+      "type": ["string", "null"],
+      "description": "The coverage sentence this sample's input carries, derived from its own blocks."
+    },
+    "open_questions": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

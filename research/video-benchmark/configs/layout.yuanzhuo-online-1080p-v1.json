@@ -1,0 +1,174 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "yuanzhuo-online-1080p-v1",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Measured on BV12beJ69E8W (online-client game), NOT copied from the offline round-table layout: the subtitle bar sits 58 px higher (y=842 vs 900) and the label box is wider (382 vs 256 px). See scripts/probe_layout.py output under runs/_layout_probe/.",
+    "This edit is a teaching video and prints answer-bearing text in three places. Two are handled here; the third is handled by the run interval.",
+    "(1) The speaker label box carries the protagonist's ROLE and the Percival thumb-card marker: '9号 陈述句 派西维尔', '6号 Nancy 拇指牌'. The box is centre-aligned, so no fixed sub-rect isolates the seat. `redact: keep_first_ink_run` keeps only the leading '<n>号' token; the nickname and role are blanked before OCR, diffing, cache keys and saved crops.",
+    "(2) The bottom seat strip shows every seat's role from the assassination phase onward, so it is private, never public.",
+    "(3) Full-screen editorial cards ('派西维尔', '拇指牌为2号和6号') live in the camera area, which is excluded. Bar-less outlined subtitles in the caption band can still restate them, so subtitle_plain captions need review before they count as in-game speech.",
+    "The right column is the game client, not a physical board: it prints '<n>号队长提名 → a·b·c', '否决组队 x:y', '通过组队 x:y', '自动通过' (the forced proposal), per-seat vote chips, '任务投票: 成功 m · 失败 n', the Lady of the Lake result and the end-of-game banner. It is parsed by vbench/client_log.py, not by board.py.",
+    "subtitle_plain caught 84 of 623 captions (13.5%) in BV12beJ69E8W — real speech in a pale-bar/outlined style the strict yellow gate misses. Measuring only the main bar would have silently dropped all of them."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        480,
+        850,
+        880,
+        62
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          90,
+          170
+        ],
+        "hsv_hi": [
+          38,
+          255,
+          255
+        ],
+        "min_fraction": 0.8,
+        "edge_band_px": 6
+      },
+      "why": "Burned-in subtitle on the yellow bar."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        470,
+        845,
+        950,
+        72
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.01,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Caption band fallback: bar-less white outlined text AND the pale-yellow bar style whose saturation is below the strict `subtitle` gate. Left edge starts right of the speaker-label box (which ends at x~464): at x=420 it captured the tail of '派西维尔' from the label and prefixed seat 9's captions with '尔'."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        100,
+        852,
+        352,
+        56
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 120,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "min_fraction": 0.8,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "White box holding '<seat>号 <nickname> [<role>]'. Only the leading seat token survives redaction; it also carries the editorial markers 系统 / 狼人盘刀 / 赛后, which mark non-speech segments."
+    },
+    {
+      "id": "client_log",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1432,
+        100,
+        470,
+        645
+      ],
+      "guard_period_s": 10.0,
+      "diff": {
+        "thumb_scale": 1.0,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.002
+      },
+      "why": "Game client history panel: proposals, per-seat votes, mission results. Always on screen, so no presence gate.",
+      "parser": "client_log",
+      "ocr_mode": "page2x"
+    },
+    {
+      "id": "seat_strip",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        0,
+        945,
+        1920,
+        135
+      ],
+      "why": "Seat cards for all 10 seats with nickname and, from the assassination phase onward, ROLE. Spans the full frame width: seats 9-10 sit to the right of x=1420. Answer-bearing, private."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1420,
+        842
+      ],
+      "why": "Camera feed plus full-screen editorial cards that reveal the protagonist's role and thumb cards."
+    },
+    {
+      "id": "camera_gap",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        920,
+        1420,
+        25
+      ],
+      "why": "Strip between the subtitle band and the seat strip."
+    }
+  ]
+}

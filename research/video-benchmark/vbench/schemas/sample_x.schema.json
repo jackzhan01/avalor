@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vbench:sample_x",
+  "type": "object",
+  "required": ["schema", "sample_id", "draft", "perspective", "cutoff", "rules", "seats", "history"],
+  "properties": {
+    "schema": { "const": "vbench.sample_x/1" },
+    "sample_id": { "type": "string", "pattern": "^x-[0-9a-f]{16}$" },
+    "draft": { "type": "boolean" },
+    "perspective": { "const": "public_observer" },
+    "cutoff": {
+      "type": "object",
+      "required": ["sequence"],
+      "properties": { "sequence": { "type": "integer", "minimum": 1 } },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object",
+      "required": ["player_count", "mission_team_sizes", "proposal_limit", "final_proposal_forced", "fails_required", "lady_of_the_lake", "role_composition"],
+      "properties": {
+        "player_count": { "type": "integer", "minimum": 5, "maximum": 10 },
+        "mission_team_sizes": { "type": "array", "items": { "type": "integer" }, "minItems": 5, "maxItems": 5 },
+        "proposal_limit": { "type": "integer", "minimum": 1 },
+        "final_proposal_forced": { "type": "boolean" },
+        "fails_required": { "type": "array", "items": { "type": "integer" }, "minItems": 5, "maxItems": 5 },
+        "lady_of_the_lake": { "type": ["boolean", "null"] },
+        "role_composition": { "type": "object", "additionalProperties": { "type": "integer" } }
+      },
+      "additionalProperties": false
+    },
+    "seats": { "type": "array", "items": { "$ref": "vbench:common#/$defs/seat" } },
+    "history": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["sequence", "kind", "seat", "attribution", "text"],
+            "properties": {
+              "sequence": { "type": "integer", "minimum": 1 },
+              "kind": { "const": "utterance" },
+              "seat": { "$ref": "vbench:common#/$defs/seat_or_null" },
+              "attribution": { "enum": ["label_stable", "label_transition", "no_label", "reviewed"] },
+              "text": { "type": "string" }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["sequence", "kind", "type", "payload"],
+            "properties": {
+              "sequence": { "type": "integer", "minimum": 1 },
+              "kind": { "const": "event" },
+              "type": { "type": "string" },
+              "payload": { "type": "object" }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}
