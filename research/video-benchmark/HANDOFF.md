@@ -1,5 +1,7 @@
 # 交接给 Codex：提前截止点 + 输入消融实验（第三局 m3）
 
+> 2026-09-21 后续工程交接见文末 §8。以下 §1–§7 保留实验当时的记录；其中“未提交、未推送”和 197 测试是历史状态，不是当前仓库状态。
+
 任务书：`docs/claude-code-video-agent-pair-revision.md` 的呈现契约（每次组队一个 block）继续有效。语义与文件契约见 [SPEC.md](./SPEC.md)，命令见 [README.md](./README.md)。
 
 历史交接全部保留：[HANDOFF.v8-game3-trial.md](./HANDOFF.v8-game3-trial.md)（上一版，第三局完整局试跑）、[HANDOFF.v7-game3-pairs.md](./HANDOFF.v7-game3-pairs.md)、[HANDOFF.v6-game2-r1-trial.md](./HANDOFF.v6-game2-r1-trial.md)、[HANDOFF.v5-three-sources.md](./HANDOFF.v5-three-sources.md)、[HANDOFF.v4-two-videos-partial.md](./HANDOFF.v4-two-videos-partial.md)、[HANDOFF.v3-agent-pairs-game1.md](./HANDOFF.v3-agent-pairs-game1.md)、[HANDOFF.v2-timeline.md](./HANDOFF.v2-timeline.md)、[HANDOFF.v1-semantic-pilot.md](./HANDOFF.v1-semantic-pilot.md)。**每份里的数字只描述它那一版。**
@@ -113,3 +115,30 @@ $py = "..\data\video-benchmark\.venv\Scripts\python.exe"; $env:PYTHONIOENCODING 
       ..\data\video-benchmark\api_trials\2026-09-21-gpt6-astra-game3-m3-ablation\A-full\claims.json
 & $py -m pytest
 ```
+
+## 8. 批次流水线与服务器接力（2026-09-21）
+
+初步实验停止在上面的 A/B 结果，没有新 API 调用。研究基线已提交并推到 `origin/dev`：`a354bcb`（包含此前未入库的研究代码、规范、测试与历史交接）。产品代码和 `main` 没动；工作区其他人的 `eslint.config.mjs`、AGENTS 和未跟踪文档没有混入提交。
+
+### 已实现
+
+- `vbench/batch.py` 与 batch CLI：显式清单、CPU/int8 默认、冻结配置/布局/代码/schema/依赖文件/运行环境、run 预留、单 worker 锁、阶段落盘、显式失败重试。
+- `vbench/media_gate.py`：完整解码并绑定 SHA-256；下载 watchdog + `.download` 续传；完整校验后才晋升正式媒体名。常规 ASR 缺模型只报错，不隐式联网。
+- 两道人审关口：布局审核、标注审核。凭据绑定媒体/配置/证据字节。未审核、空数据、缺锚点、修正冲突、身份未核实、缺截止点均不能发布。
+- `vbench/publish.py`：先在临时目录生成完整 pair，再整体晋升。旧目录只允许字节相同的幂等结果，不覆盖旧版；已有版本变化需新 revision/run。
+- 修复公开时间边界：片头、跨越赛后边界的字幕卡不会因起点落在对局里而漏入 input；客观事件也检查上下界。保留全部旧产物，不重新导出以免切断已付费实验的哈希溯源。
+- 同局初筛缺文件/空证据时不再判“不同局”。阈值仍仅初筛，最终 group/split 需要审核。
+
+操作说明：[BATCH.md](./BATCH.md)。示例清单：`configs/batch.pilot3.json`。新增 29 个离线测试，总计 **226 passed**；覆盖媒体校验、下载晋升顺序、拒绝隐式 ASR 下载、冻结/互斥/重试、完整审核→full + 两个截止点发布、材料变更后重新审核、防覆盖与缺截止点时整套不发布。`tsc --noEmit` 和 `check:imports` 通过。发布全链路使用明确标为 synthetic 的离线夹具，不是真实新数据集。
+
+### 验证边界与未完成项
+
+真实媒体验收批次：`research/data/video-benchmark/batches/pilot3-cpu-v1/state.json`。三局全部完成完整视频/音频解码，分别为 61,310 / 44,673 / 56,323 视频帧，视频时长 2043.667 / 1489.100 / 1877.436 秒；与音频时长差均小于 0.11 秒。三任务均为 `layout / needs_review`，重跑 state 完全不变。**未自动批准布局，未重新 OCR/ASR，未发布新的真实 pair**。这次只实测了真实媒体阶段与暂停/恢复门槛，不冒充真实数据发布全链路验收。
+
+三个完整解码报告在 `research/data/video-benchmark/sources/verified/`，state 中 `jobs[].media` 保存同一份结果；口型同步明确为 `not_verified`。运行前后检查了三局所有 `agent_pairs_v3*` 目录及整个 `annotations/` 共 **200 个文件**，路径数量与逐文件 SHA-256 全部一致。没有覆盖旧 input/label、修正链或私有名单。本次新增付费调用为 0，未触发下载。
+
+这不是自动标注整位 UP 主的流水线。未知布局、事件真实公开锚点、字幕逐条审核、身份/刺杀核实和剪辑完整性判断仍需人审；不自动抓取 UP 主列表，没有后台付费推理。没有新增召回率结论，也没有完整听音频验真。
+
+Linux/服务器安装和吞吐未实测；本机验证是 Windows/Python 3.11。Git 不含 `research/data/video-benchmark/`，服务器需另行私有传输媒体、模型、缓存、标注和历史 pair；不要搬 Windows venv 或 key。新机器新建批次，不修改冻结 state 绕过环境检查。旧版命令尚未全部接入批次锁，不得并发写同一数据根/run。
+
+源级 coverage/roster 可以复用作证据，但新 run 不自动继承旧 accept；必须审核后才进入 release。剪辑完整性状态目前留在 release 的 `quality.json` 和审计问题中，不会自动改写历史 block 的 coverage 声明。

@@ -22,7 +22,7 @@ SCHEMA_NAMES = [
     "common", "layout", "ocr_observation", "caption_segment", "speaker_segment",
     "asr_segment", "utterance", "board_snapshot", "public_event", "correction",
     "review_item", "private_roles", "sample_x", "sample_y", "sequence_ledger",
-    "evaluator_manifest", "pilot_config", "reference_review",
+    "evaluator_manifest", "pilot_config", "reference_review", "batch",
     # Timeline revision contracts.
     "game_record", "sample_x_v2", "sample_y_v2", "turn_boundary_correction", "coverage", "private_roster",
     # Agent-pair contracts (per-proposal blocks -> input/label files).

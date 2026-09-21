@@ -18,6 +18,8 @@ $pairs = "..\data\video-benchmark\runs\full-v2b\agent_pairs_v3"
 - 旧版 README：[README.v1.md](./README.v1.md)
 - 不属于产品，不进 App 构建，不在 `npm test` 里跑。
 
+批次流水线与服务器迁移见 [BATCH.md](./BATCH.md)：显式清单、CPU 默认、断点恢复、两道人工审核、不可覆盖发布。历史数据不会随 Git 推送；初步实验已冻结，不自动继续付费调用。
+
 ## 目录
 
 | 路径 | 内容 | 进仓库 |
@@ -67,7 +69,7 @@ evaluator/                        manifest.json、sources/<source_id>.json
 cd research\video-benchmark
 python -m venv ..\data\video-benchmark\.venv
 $py = "..\data\video-benchmark\.venv\Scripts\python.exe"; $env:PYTHONIOENCODING = "utf-8"
-& $py -m pip install -r requirements.lock.txt
+& $py -m pip install -r requirements.lock.txt -r requirements.txt
 & $py -m vbench doctor
 & $py -m vbench doctor --fetch-asr-model large-v3    # 一次性联网下载 ~3 GB 权重
 ```
@@ -76,7 +78,7 @@ $py = "..\data\video-benchmark\.venv\Scripts\python.exe"; $env:PYTHONIOENCODING 
 
 ```powershell
 $cfg = "configs\full.BV19D7565EZg.json"
-& $py -m vbench acquire --config $cfg                 # 已下载则跳过
+& $py -m vbench acquire --config $cfg                 # 已下载也须通过媒体完整性校验
 & $py -m vbench extract --config $cfg                 # 证据层；OCR/ASR 走内容寻址缓存
 & $py -m vbench migrate-corrections --config $cfg --from-config configs\pilot.BV19D7565EZg.json
 & $py -m vbench build --config $cfg --dry-run         # 预览视图（不写账本）

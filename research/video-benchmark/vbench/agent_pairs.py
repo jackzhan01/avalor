@@ -92,7 +92,7 @@ def build_document(pub: dict, cfg: dict, dataset: str, cutoff_sequence: int | No
     """Blocks + rendered text for the whole record, or for a cutoff prefix."""
     coverage = pub["coverage"]
     live = (coverage or {}).get("live_game_interval")
-    atoms, sel = select_atoms(pub["utterances"], pub["events"], dataset, live[1] if live else None)
+    atoms, sel = select_atoms(pub["utterances"], pub["events"], dataset, live[1] if live else None, live[0] if live else None)
     gaps = [g for g in (coverage or {}).get("gaps", []) if cfg["interval"]["start"] <= g["start"] < cfg["interval"]["end"]]
     t_cut = None
     if cutoff_sequence is not None:
@@ -133,8 +133,9 @@ def excluded_records(pub: dict, cfg: dict, dataset: str, kept_segments: set[str]
         why = []
         if u["review_status"] == "rejected":
             why.append("审阅拒绝：重复显示或动画残影，不是第二句话")
-        if live and start >= live[1]:
-            why.append("live_game_interval 之外：赛后交谈，不属于对局中的公开信息")
+        end = cap["display_end"] if cap else u["asr"].get("audio_end")
+        if live and (start < live[0] or start >= live[1] or end is None or end > live[1]):
+            why.append("live_game_interval 之外或跨越边界：片头、赛后或无法安全拆分的字幕卡")
         if u["eligibility"] != "in_game_speech" and not (dataset == "draft" and u["eligibility"] == "unknown"):
             why.append(f"资格为 {u['eligibility']}：不是对局中的发言")
         if u["availability"]["status"] != "anchored" or u.get("sequence") is None:
@@ -150,6 +151,9 @@ def excluded_records(pub: dict, cfg: dict, dataset: str, kept_segments: set[str]
             why.append("审阅拒绝：板面淡入动画造出的半成品行，不是一次真实事件")
         if e["type"] not in OBJECTIVE_EVENT_TYPES:
             why.append("语义事件：本版范围之外，从不渲染")
+        at = e["availability"].get("public_at")
+        if live and at is not None and not live[0] <= at < live[1]:
+            why.append("live_game_interval 之外：不是本段对局中的公开事件")
         if e["availability"]["status"] != "anchored" or e.get("sequence") is None:
             why.append("没有锚定到公开时刻，无法定位在顺序里")
         if e["review_status"] not in ("rejected", "accepted"):
@@ -214,6 +218,22 @@ def build_agent_pairs(cfg: dict, source: dict, dataset: str = "accepted", root: 
                       perspective: str = "public_observer", roster_path: Path | None = None,
                       open_questions: list[str] | None = None, revision: str = "",
                       revision_reason: list[str] | None = None) -> dict:
+    from .publish import immutable_directory, safe_name
+
+    if revision:
+        safe_name(revision)
+    target = _pair_paths(cfg, dataset, root, revision)
+    with immutable_directory(target) as staging:
+        result = _build_agent_pairs(cfg, source, dataset, root, perspective, roster_path,
+                                    open_questions, revision, revision_reason, staging)
+    result.update(out_dir=str(target), manifest=str(target / "manifest.json"),
+                  instruction=str(target / "instruction.zh.txt"))
+    return result
+
+
+def _build_agent_pairs(cfg: dict, source: dict, dataset: str, root: Path | None,
+                       perspective: str, roster_path: Path | None, open_questions: list[str] | None,
+                       revision: str, revision_reason: list[str] | None, output_root: Path) -> dict:
     from .private_labels import build_label_v3, load_roster_v2
     from .source import load_manifest
 
@@ -231,7 +251,7 @@ def build_agent_pairs(cfg: dict, source: dict, dataset: str = "accepted", root: 
                  src_cfg.get("title"), src_cfg.get("uploader"), cfg["run_id"]]
     forbidden = [str(s) for s in forbidden if s]
 
-    out_root = _pair_paths(cfg, dataset, root, revision)
+    out_root = output_root
     questions = list(open_questions or [])
     pairs: list[dict] = []
     mentions: dict[str, list[str]] = {}

@@ -32,9 +32,13 @@ def _grams(texts: list[str], n: int = 5) -> set[str]:
 
 def run_fingerprint(run_id: str) -> dict:
     run = run_paths(run_id)
+    if not (run.public / "utterances.jsonl").is_file() or not (run.public / "events.jsonl").is_file():
+        raise ValueError(f"缺少抽取文件，不能判定是否同局：{run_id}")
     utts = read_jsonl(run.public / "utterances.jsonl")
     events = read_jsonl(run.public / "events.jsonl")
     texts = [(u["caption"] or {}).get("text") or "" for u in utts]
+    if not _grams(texts) or not events:
+        raise ValueError(f"抽取证据不足，不能判定是否同局：{run_id}")
     teams = sorted({
         (e["payload"].get("mission"), tuple(sorted(e["payload"].get("team_seats") or [])))
         for e in events if e["type"] == "team_selection" and e["payload"].get("team_seats")

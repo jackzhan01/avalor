@@ -21,7 +21,7 @@ def test_every_schema_is_valid_draft_2020_12_and_committed_configs_validate():
         _validator(name)  # check_schema raises on an invalid schema
     for cfg in (ROOT / "configs").glob("*.json"):
         doc = json.loads(cfg.read_text(encoding="utf-8"))
-        name = "layout" if doc["schema"] == "vbench.layout/1" else "pilot_config"
+        name = {"vbench.layout/1": "layout", "vbench.batch/1": "batch"}.get(doc["schema"], "pilot_config")
         assert not record_errors(doc, name), cfg.name
 
 

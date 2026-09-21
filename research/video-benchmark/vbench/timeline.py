@@ -60,7 +60,8 @@ def _status_ok(rec: dict, dataset: str) -> bool:
     return rec.get("review_status") != "rejected"
 
 
-def select_atoms(utterances: list[dict], events: list[dict], dataset: str, live_end: float | None = None) -> tuple[list[dict], dict]:
+def select_atoms(utterances: list[dict], events: list[dict], dataset: str, live_end: float | None = None,
+                 live_start: float | None = None) -> tuple[list[dict], dict]:
     """Eligible speech segments and objective events, in ledger order.
 
     Returns (atoms, exclusions). Exclusions are atoms that would be speech but are
@@ -77,7 +78,11 @@ def select_atoms(utterances: list[dict], events: list[dict], dataset: str, live_
             continue
         speechlike = u["eligibility"] == "in_game_speech" or (dataset == "draft" and u["eligibility"] == "unknown")
         start = u["caption"]["display_start"] if u.get("caption") else u["asr"]["audio_start"]
-        if live_end is not None and start >= live_end:
+        end = u["caption"]["display_end"] if u.get("caption") else u["asr"]["audio_end"]
+        # A card straddling a private boundary cannot safely be truncated as text.
+        if ((live_start is not None and (start is None or start < live_start))
+                or (live_end is not None and (end is None or end > live_end
+                                             or u["availability"]["public_at"] > live_end or start >= live_end))):
             stats["postgame_excluded"] += 1
             continue
         if speechlike and _status_ok(u, dataset):
@@ -92,7 +97,8 @@ def select_atoms(utterances: list[dict], events: list[dict], dataset: str, live_
         if e.get("sequence") is None or e["availability"]["status"] != "anchored":
             stats["unanchored_events"] += 1
             continue
-        if live_end is not None and e["availability"]["public_at"] >= live_end:
+        if ((live_end is not None and e["availability"]["public_at"] >= live_end)
+                or (live_start is not None and e["availability"]["public_at"] < live_start)):
             stats["postgame_excluded"] += 1
             continue
         if not _status_ok(e, dataset):
@@ -408,7 +414,7 @@ def build_game_record(
 ) -> tuple[dict, dict]:
     tcfg = TurnConfig.from_dict(cfg.get("turns"))
     live = (coverage or {}).get("live_game_interval")
-    atoms, sel = select_atoms(utterances, events, dataset, live[1] if live else None)
+    atoms, sel = select_atoms(utterances, events, dataset, live[1] if live else None, live[0] if live else None)
     gaps = [g for g in (coverage or {}).get("gaps", []) if cfg["interval"]["start"] <= g["start"] < cfg["interval"]["end"]]
     late = {k: g["gap_id"] for g in gaps for k in g["late_reported_event_keys"]}
     machine_text = {u["utterance_id"]: (u["caption"] or {}).get("text") for u in machine_utterances}

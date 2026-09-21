@@ -6,10 +6,7 @@ hashes) lives here and under `evaluator/`. Agent-facing X never reads it.
 
 from __future__ import annotations
 
-import os
 import secrets
-import subprocess
-import sys
 from pathlib import Path
 
 from .paths import data_root, evaluator_dir
@@ -25,7 +22,7 @@ def file_sha256_memo(path: Path, root: Path | None = None) -> str:
     memo_path = root / "cache" / _HASH_MEMO
     memo = read_json(memo_path) if memo_path.exists() else {}
     st = path.stat()
-    key = f"{path.resolve()}|{st.st_size}|{int(st.st_mtime)}"
+    key = f"{path.resolve()}|{st.st_size}|{st.st_mtime_ns}"
     if key not in memo:
         memo[key] = sha256_file(path)
         write_json(memo_path, memo)
@@ -53,6 +50,15 @@ def save_manifest(doc: dict, root: Path | None = None) -> None:
 
 
 def register_source(cfg: dict, root: Path | None = None) -> dict:
+    from filelock import FileLock
+
+    root = root or data_root()
+    root.mkdir(parents=True, exist_ok=True)
+    with FileLock(str(root / ".source-register.lock"), timeout=60):
+        return _register_source(cfg, root)
+
+
+def _register_source(cfg: dict, root: Path) -> dict:
     """Hash + probe the local media and ensure an opaque game id exists."""
     from .media import probe
 
@@ -111,20 +117,34 @@ def acquire(cfg: dict, root: Path | None = None) -> list[Path]:
     root = root or data_root()
     src = cfg["source"]
     formats = src.get("download_formats") or {}
+    from scripts.fetch_media import attempt
+    from .media_gate import verify_media
+
     out = []
+    pending = []
+    actual = {}
     for kind, rel in (("video", src["video_file"]), ("audio", src.get("audio_file"))):
-        if not rel or kind not in formats:
+        if not rel:
             continue
         target = root / rel
         if target.exists():
             out.append(target)
+            actual[kind] = target
             continue
+        if kind not in formats:
+            raise ValueError(f"缺少 {kind} 文件且未配置下载格式")
         target.parent.mkdir(parents=True, exist_ok=True)
-        cmd = [
-            sys.executable, "-m", "yt_dlp", "--no-warnings", "--no-write-info-json", "--no-part", "--no-mtime",
-            "-f", str(formats[kind]), "-o", str(target), src["url"],
-        ]
-        env = dict(os.environ)
-        subprocess.run(cmd, check=True, env=env)
+        partial = target.with_name(target.name + ".download")
+        rec = attempt(src["url"], str(formats[kind]), partial, stall_s=180, max_s=2700,
+                      socket_timeout=45, retries=3, chunk="2M")
+        if rec["returncode"] or rec["stalled_no_growth"] or rec["hit_max_seconds"]:
+            raise RuntimeError(f"下载未完成，保留断点文件：{partial}")
+        actual[kind] = partial
+        pending.append((partial, target))
         out.append(target)
+    verify_media(actual["video"], actual.get("audio"), root / "sources" / "verified")
+    for partial, target in pending:
+        if target.exists():
+            raise FileExistsError(f"下载目标被其他任务创建：{target}")
+        partial.rename(target)
     return out

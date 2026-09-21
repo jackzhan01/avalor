@@ -153,7 +153,7 @@ def build_x_v2(
 
     check_perspective(perspective)
     live = (coverage or {}).get("live_game_interval")
-    atoms, _ = select_atoms(utterances, events, dataset, live[1] if live else None)
+    atoms, _ = select_atoms(utterances, events, dataset, live[1] if live else None, live[0] if live else None)
     by_seq = {a["seq"]: a for a in atoms if a["kind"] != "excluded"}
     if cutoff_sequence not in by_seq:
         raise CutoffError(f"cutoff sequence {cutoff_sequence} is not an eligible {dataset} timeline record")

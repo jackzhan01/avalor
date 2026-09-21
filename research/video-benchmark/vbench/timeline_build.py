@@ -43,11 +43,12 @@ def check_render_consistency(record: dict, markdown: str) -> list[str]:
     return errs
 
 
-def segment_accounting(record: dict, utterances: list[dict], dataset: str, live_end: float | None = None) -> list[str]:
+def segment_accounting(record: dict, utterances: list[dict], dataset: str, live_end: float | None = None,
+                       live_start: float | None = None) -> list[str]:
     """Every eligible accepted segment appears exactly once; nothing else appears."""
     from .timeline import select_atoms
 
-    atoms, _ = select_atoms(utterances, [], dataset, live_end)
+    atoms, _ = select_atoms(utterances, [], dataset, live_end, live_start)
     expected = [a["rec"]["utterance_id"] for a in atoms if a["kind"] == "segment"]
     seen = [s["segment_id"] for it in record["timeline"] if it["kind"] == "speech" for s in it["segments"]]
     errs = []
@@ -92,7 +93,7 @@ def build_timeline(cfg: dict, source_id: str, datasets=("accepted", "draft"), ro
         md = render_markdown(record)
         errs += check_render_consistency(record, md)
         live = (coverage or {}).get("live_game_interval")
-        errs += segment_accounting(record, utterances, ds, live[1] if live else None)
+        errs += segment_accounting(record, utterances, ds, live[1] if live else None, live[0] if live else None)
         out = p["out"] / ds
         write_json(out / "game_record.json", record)
         write_bytes(out / "transcript.zh.md", md.encode("utf-8"))

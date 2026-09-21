@@ -1,0 +1,10 @@
+{
+  "schema": "vbench.batch/1",
+  "batch_id": "pilot3-cpu-v1",
+  "device": "cpu",
+  "jobs": [
+    {"config": "full.BV19D7565EZg.json", "run_id": "batch-game1-cpu-v1"},
+    {"config": "game2-v1.BV12beJ69E8W.json", "run_id": "batch-game2-cpu-v1"},
+    {"config": "game3-v1.BV1kr876AEE1.json", "run_id": "batch-game3-cpu-v1"}
+  ]
+}

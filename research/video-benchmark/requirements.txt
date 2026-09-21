@@ -13,7 +13,8 @@ yt-dlp==2026.8.19
 requests==2.32.3
 psutil==6.1.0
 pytest==8.3.4
-pillow==11.0.0
+pillow==12.3.0
+filelock==4.0.0
 # Only needed by scripts/run_api_trial.py (the one paid API trial) and its token estimate.
 # Nothing in the extraction/annotation pipeline imports these.
 openai==3.16.2

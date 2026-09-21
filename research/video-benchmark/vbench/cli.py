@@ -488,6 +488,21 @@ def main(argv=None) -> int:
     p.add_argument("--reviewer", default="unknown")
     p.add_argument("--skip-problems", action="store_true")
 
+    from .batch import cli as batch_cli
+
+    p = add("batch-init", batch_cli, config=False)
+    p.add_argument("--file", required=True, help="批次清单 JSON；冻结配置，拒绝复用历史 run_id")
+    for command in ("batch-status", "batch-run", "batch-approve", "batch-review-info"):
+        p = add(command, batch_cli, config=False)
+        p.add_argument("--batch", required=True)
+        if command == "batch-run":
+            p.add_argument("--download", action="store_true", help="显式允许公网媒体下载；不调用付费 API")
+            p.add_argument("--retry-failed", action="store_true", help="重试失败阶段，不重新执行已完成阶段")
+        elif command in ("batch-approve", "batch-review-info"):
+            p.add_argument("--run-id", required=True)
+            if command == "batch-approve":
+                p.add_argument("--kind", choices=["layout", "review"], required=True)
+                p.add_argument("--receipt", required=True, help="人工审核凭据；绑定配置、媒体和证据哈希")
     args = ap.parse_args(argv)
     rc = args.fn(args)
     return int(rc or 0)

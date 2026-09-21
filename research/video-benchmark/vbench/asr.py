@@ -59,7 +59,8 @@ def transcribe_interval(
         from .media import load_audio_mono16k
 
         audio = load_audio_mono16k(audio_path, start, end)
-        model = WhisperModel(cfg.model, device=cfg.device, compute_type=cfg.compute_type, download_root=str(models_dir))
+        model = WhisperModel(cfg.model, device=cfg.device, compute_type=cfg.compute_type,
+                             download_root=str(models_dir), local_files_only=True)
         segments, _info = model.transcribe(
             audio,
             language=cfg.language,
