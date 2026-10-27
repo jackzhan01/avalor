@@ -362,6 +362,75 @@ def _event(source_sha: str, stable_key: str, etype: str, payload: dict, snap: di
     }
 
 
+class SupplementConflict(Exception):
+    """A supplement names a row the board actually read. See `apply_supplements`."""
+
+
+def apply_supplements(events: list[dict], supplements: list[dict], source_sha: str,
+                      provenance: dict) -> list[dict]:
+    """Add events for board rows an overlay covered, from what the client said aloud.
+
+    The watermark on some uploads sits on the board and eats half a row. When it
+    eats the result phrase, the row leaves a team and a full vote vector behind
+    and no outcome — and reading the outcome back off the vector is exactly the
+    reconstruction this project refuses to do. What the client DID do is
+    announce the result in its own caption, in front of everyone, and that is an
+    observation like any other.
+
+    So a supplement is a human writing down what the announcement said and where
+    it is, in the run config. It is `source: "manual"`, it arrives
+    `needs_review` and unanchored like every board event, and it goes through
+    the same corrections gate before anything renders it.
+
+    It may only ADD. A supplement whose `stable_key` the board already read is a
+    config trying to overrule an observation, and raises.
+    """
+    have = {e["stable_key"]: e for e in events}
+    out = list(events)
+    for i, sup in enumerate(supplements):
+        key = sup["stable_key"]
+        seen = have.get(key)
+        if seen is not None and seen["source"] == "board":
+            raise SupplementConflict(
+                f"补录 {key} 与板面读到的事件重复：补录只能补板面没读到的行，不能覆盖观察结果")
+        if seen is not None:
+            # Applying the same supplement twice is a re-run, not a conflict —
+            # but a CHANGED payload on an already-applied key would silently
+            # rewrite a reviewed event, so that still stops.
+            if seen["payload"] != sup["payload"] or seen["type"] != sup["type"]:
+                raise SupplementConflict(
+                    f"补录 {key} 已经写入过，而这次的 payload 不同：改口要走修正链，不要改配置重跑")
+            continue
+        ann = sup["announcement"]
+        ev = {
+            "schema": "vbench.public_event/1",
+            "event_id": short_id("evt", source_sha, key),
+            "stable_key": key,
+            "type": sup["type"],
+            "source": "manual",
+            "payload": sup["payload"],
+            "observation": {
+                "video_start": float(ann["video_time"]),
+                "video_end": float(ann["video_time"]),
+                "evidence_refs": [{"kind": "video_moment", "id": f"announcement:{key}",
+                                   "video_time": round(float(ann["video_time"]), 4)}],
+                "row_order": 2000 + i,
+            },
+            "availability": {
+                "status": "unanchored",
+                "public_at": None,
+                "basis": "补录事件同样需要人审锚点：公告出现的时刻由审阅者确认",
+            },
+            "interpretations": [],
+            "flags": [],
+            "review_status": "needs_review",
+            "provenance": provenance,
+        }
+        out.append(ev)
+        have[key] = ev
+    return out
+
+
 def events_from_snapshots(snapshots: list[dict], source_sha: str, player_count: int, provenance: dict) -> list[dict]:
     """Diff stable snapshots into event candidates.
 

@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -97,9 +98,33 @@ class Pricing:
 
 
 def count_tokens(text: str, encoding: str = "o200k_base") -> int:
+    """Token count from the real BPE table.
+
+    `tiktoken.get_encoding` downloads the table when it is not already cached,
+    so on a machine without that cache this reaches the network. That is fine
+    before a paid call — the estimate has to be real — but it must never be a
+    hidden dependency of a unit test, which is why `budget_check` takes the
+    counter as a parameter.
+    """
     import tiktoken
 
-    return len(tiktoken.get_encoding(encoding).encode(text))
+    try:
+        enc = tiktoken.get_encoding(encoding)
+    except Exception as e:  # noqa: BLE001 — a bare socket error here reads as a test bug
+        raise RuntimeError(
+            f"tiktoken 编码 {encoding!r} 不在本机缓存里，取它需要联网："
+            f"先设 TIKTOKEN_CACHE_DIR 并预取，或给 budget_check 传入自己的 count。原始错误：{e}"
+        ) from e
+    return len(enc.encode(text))
+
+
+def tokenizer_available(encoding: str = "o200k_base") -> bool:
+    """Whether the real tokenizer can be loaded without reaching the network."""
+    try:
+        count_tokens("x", encoding)
+    except Exception:  # noqa: BLE001
+        return False
+    return True
 
 
 def build_request(*, game_text: str, instruction: str, model: str, max_output_tokens: int,
@@ -120,11 +145,19 @@ def build_request(*, game_text: str, instruction: str, model: str, max_output_to
     }
 
 
-def budget_check(req: dict, pricing: Pricing, budget_usd: float, context_window: int) -> dict:
-    """Refuse to send unless the worst case fits the budget and the context."""
-    instruction_tokens = count_tokens(req["input"][0]["content"])
-    game_tokens = count_tokens(req["input"][1]["content"])
-    schema_tokens = count_tokens(json.dumps(PREDICTION_SCHEMA))
+def budget_check(req: dict, pricing: Pricing, budget_usd: float, context_window: int,
+                 count: "Callable[[str], int] | None" = None) -> dict:
+    """Refuse to send unless the worst case fits the budget and the context.
+
+    `count` defaults to the real tokenizer, which is what a paid call must use.
+    Taking it as a parameter is what lets the arithmetic be tested against known
+    token counts, instead of against whatever a downloaded BPE table happens to
+    produce — the sums are the thing that decides whether money is spent.
+    """
+    count = count or count_tokens
+    instruction_tokens = count(req["input"][0]["content"])
+    game_tokens = count(req["input"][1]["content"])
+    schema_tokens = count(json.dumps(PREDICTION_SCHEMA))
     est_input = instruction_tokens + game_tokens + schema_tokens + 64  # message framing
     worst = pricing.worst_case_usd(est_input, req["max_output_tokens"])
     fits_context = est_input + req["max_output_tokens"] <= context_window
@@ -139,6 +172,7 @@ def budget_check(req: dict, pricing: Pricing, budget_usd: float, context_window:
         "context_window": context_window,
         "fits_context": fits_context,
         "may_send": worst <= budget_usd and fits_context,
+        "token_counter": getattr(count, "__name__", "custom"),
     }
 
 

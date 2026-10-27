@@ -115,18 +115,93 @@ def test_no_module_on_the_inference_path_imports_the_private_layer():
 # ── budget gate ────────────────────────────────────────────────────────────
 
 
+def fixed_counter(n):
+    """A tokenizer stub that returns a known count for every string.
+
+    The real one downloads a BPE table on a machine that has not cached it, which
+    made this test reach the network. Budget arithmetic is what decides whether
+    money gets spent, so it is tested against counts we chose — which also lets
+    the assertions be exact dollar figures instead of inequalities.
+    """
+
+    def count(text):
+        return n
+
+    count.__name__ = f"fixed_{n}"
+    return count
+
+
 def test_a_request_is_only_allowed_when_the_worst_case_fits_budget_and_context():
-    req = build_request(game_text=GAME * 200, instruction=instruction_text(), model="gpt-x",
+    req = build_request(game_text=GAME, instruction=instruction_text(), model="gpt-x",
                         max_output_tokens=16000, reasoning_effort="high")
-    ok = budget_check(req, PRICING, budget_usd=2.0, context_window=1_050_000)
-    assert ok["may_send"] and ok["worst_case_usd"] <= 2.0
-    # the worst case prices the whole output budget, because reasoning bills as output
-    assert ok["worst_case_usd"] >= 16000 / 1e6 * 75.0
+    # three counted strings at 1000 tokens each, plus the 64-token framing allowance
+    ok = budget_check(req, PRICING, budget_usd=2.0, context_window=1_050_000, count=fixed_counter(1000))
+    assert ok["estimated_input_tokens"] == 3064
+    assert ok["breakdown"] == {"instruction": 1000, "game_text": 1000, "json_schema": 1000,
+                               "framing_allowance": 64}
+    # long-context rates and the WHOLE output budget, because reasoning bills as output
+    # the field is rounded to 4 dp, so compare at that precision
+    assert ok["worst_case_usd"] == round(3064 / 1e6 * 20.0 + 16000 / 1e6 * 75.0, 4)
+    assert ok["worst_case_usd"] == 1.2613
+    assert ok["within_budget"] and ok["fits_context"] and ok["may_send"]
+    assert ok["token_counter"] == "fixed_1000"
+
+
+def test_the_budget_gate_refuses_a_greedy_output_budget():
     greedy = build_request(game_text=GAME, instruction=instruction_text(), model="gpt-x",
                            max_output_tokens=100_000, reasoning_effort="high")
-    assert not budget_check(greedy, PRICING, budget_usd=2.0, context_window=1_050_000)["may_send"]
-    cramped = budget_check(req, PRICING, budget_usd=2.0, context_window=1000)
+    chk = budget_check(greedy, PRICING, budget_usd=2.0, context_window=1_050_000, count=fixed_counter(10))
+    assert chk["worst_case_usd"] == round(94 / 1e6 * 20.0 + 100_000 / 1e6 * 75.0, 4)
+    assert not chk["within_budget"] and not chk["may_send"]
+    assert chk["fits_context"], "it is the price that blocks this one, not the context"
+
+
+def test_the_context_gate_refuses_independently_of_price():
+    req = build_request(game_text=GAME, instruction=instruction_text(), model="gpt-x",
+                        max_output_tokens=16000, reasoning_effort="high")
+    cramped = budget_check(req, PRICING, budget_usd=2.0, context_window=1000, count=fixed_counter(10))
+    assert cramped["within_budget"], "cheap enough; it is the window that does not fit"
     assert not cramped["fits_context"] and not cramped["may_send"]
+
+
+def test_the_budget_gate_counts_every_part_of_the_request():
+    """A counter that saw fewer strings would under-price the call."""
+    seen = []
+
+    def spy(text):
+        seen.append(text)
+        return 1
+
+    req = build_request(game_text=GAME, instruction=instruction_text(), model="gpt-x",
+                        max_output_tokens=16000, reasoning_effort="high")
+    budget_check(req, PRICING, budget_usd=2.0, context_window=1_050_000, count=spy)
+    assert seen == [instruction_text(), GAME, json.dumps(PREDICTION_SCHEMA)]
+
+
+def test_the_default_counter_is_the_real_tokenizer():
+    """The stub is a test affordance; a paid call must still use the real table."""
+    import inspect
+
+    from vbench.api_trial import count_tokens
+
+    assert inspect.signature(budget_check).parameters["count"].default is None
+    assert "count = count or count_tokens" in inspect.getsource(budget_check)
+    assert callable(count_tokens)
+
+
+def test_a_missing_tokenizer_cache_reports_itself_instead_of_dialling_out(monkeypatch):
+    """The failure a cacheless machine hits should name the cause, not surface as a socket error."""
+    import vbench.api_trial as mod
+
+    class FakeTiktoken:
+        @staticmethod
+        def get_encoding(name):
+            raise OSError("would download")
+
+    monkeypatch.setitem(__import__("sys").modules, "tiktoken", FakeTiktoken)
+    assert mod.tokenizer_available() is False
+    with pytest.raises(RuntimeError, match="TIKTOKEN_CACHE_DIR"):
+        mod.count_tokens("x")
 
 
 def test_actual_cost_prices_cached_input_and_reasoning_output():

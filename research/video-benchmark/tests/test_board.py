@@ -374,3 +374,72 @@ def test_the_end_of_video_reveal_note_is_not_baked_in_from_another_source():
     src = inspect.getsource(build_roster_v2)
     assert "第3轮第3次组队" not in src
     assert "reveal_note" in inspect.signature(build_roster_v2).parameters
+
+
+# ── announcement supplements ────────────────────────────────────────────────
+# A watermark that covers the result phrase leaves a row with a team, a full
+# vote vector and no outcome. The client announced that outcome out loud; these
+# tests are about taking it from the announcement and never from the vector.
+
+SUP = {
+    "stable_key": "board:m1:p2:vote_outcome",
+    "type": "vote_outcome",
+    "payload": {"mission": 1, "proposal_index": 2, "result": "rejected", "tally_text": None, "explicit": True},
+    "announcement": {"text": "同意票数未过半组队失败", "video_time": 709.8667},
+    "why": "板面这一行的结果短语被水印盖住",
+}
+
+
+def _occluded_run():
+    """m1 p1 reads normally; m1 p2's result phrase is gone."""
+    return events_from_snapshots([_snap("brd-0000000000000010", 1.0, 2.0, [
+        _proposal(1, 1, 10, [2, 9, 10], tally=[3, 7], result="否决组队", cells=_cells(approve=(2, 9, 10), reject=(1, 3, 4, 5, 6, 7, 8))),
+        _proposal(2, 2, 1, [1, 6, 7], result=None, cells=_cells(approve=(1,), reject=(2, 3, 4, 5, 6, 7, 8, 9, 10))),
+    ])], "a" * 64, 10, PROV)
+
+
+def test_the_occluded_row_has_a_full_vote_and_still_no_outcome_on_its_own():
+    evs = _by_key(_occluded_run())
+    assert "board:m1:p1:vote_outcome" in evs
+    assert "board:m1:p2:vote_outcome" not in evs          # never read back off the vector
+    assert len(evs["board:m1:p2:vote_observation"]["payload"]["votes"]) == 10
+
+
+def test_a_supplement_arrives_as_manual_unanchored_and_needing_review():
+    from vbench.board import apply_supplements
+
+    out = apply_supplements(_occluded_run(), [SUP], "a" * 64, PROV)
+    ev = _by_key(out)["board:m1:p2:vote_outcome"]
+    assert ev["source"] == "manual" and ev["review_status"] == "needs_review"
+    assert ev["availability"]["status"] == "unanchored" and ev["availability"]["public_at"] is None
+    assert ev["observation"]["evidence_refs"][0]["video_time"] == 709.8667
+    assert not record_errors(ev, "public_event")
+
+
+def test_a_supplement_may_not_sit_on_top_of_a_row_the_board_read():
+    from vbench.board import SupplementConflict, apply_supplements
+
+    onto_read = dict(SUP, stable_key="board:m1:p1:vote_outcome",
+                     payload=dict(SUP["payload"], proposal_index=1, result="passed"))
+    try:
+        apply_supplements(_occluded_run(), [onto_read], "a" * 64, PROV)
+    except SupplementConflict as e:
+        assert "不能覆盖观察结果" in str(e)
+    else:
+        raise AssertionError("补录盖住了板面读到的事件，却没有报错")
+
+
+def test_applying_the_same_supplement_twice_is_a_no_op_but_changing_it_is_not():
+    from vbench.board import SupplementConflict, apply_supplements
+
+    once = apply_supplements(_occluded_run(), [SUP], "a" * 64, PROV)
+    twice = apply_supplements(once, [SUP], "a" * 64, PROV)
+    assert [e["event_id"] for e in once] == [e["event_id"] for e in twice]
+
+    changed = dict(SUP, payload=dict(SUP["payload"], result="passed"))
+    try:
+        apply_supplements(once, [changed], "a" * 64, PROV)
+    except SupplementConflict as e:
+        assert "改口要走修正链" in str(e)
+    else:
+        raise AssertionError("补录改了结论却被静默接受")

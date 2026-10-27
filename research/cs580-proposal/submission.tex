@@ -1,0 +1,44 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\pagestyle{empty}
+\hypersetup{pdftitle={Strategic Communication under Hidden Roles: Theory and Evidence from Avalon},pdfauthor={wangjia Zhan}}
+\begin{document}
+\begin{center}
+{\large\bfseries Strategic Communication under Hidden Roles:\\
+Theory and Evidence from Avalon}\par
+\vspace{3pt}
+\textbf{Research Project} \quad | \quad CS 580, Fall 2026\\
+wangjia Zhan \quad (NetID: wnagjia2)
+\end{center}
+\vspace{-8pt}
+
+\textbf{Project summary and concrete goal.}
+% SUMMARY-BEGIN
+Public communication in The Resistance: Avalon creates a strategic tension: an informed good player, Merlin, can guide successful missions, but revealing Merlin's identity allows the assassin to overturn that success. This project asks when communication improves team decisions without exposing the informed teammate. It connects strategic information transmission~[1] with hidden-role game algorithms~[2] and language-model agents~[3], while making a finite Bayesian game the theoretical core.
+
+I will begin with a reduced final-mission game: two good speakers, one privately informed about a binary safe action, send public messages to a good decision-maker. An adversary observes the messages, chosen action, and mission outcome, then attempts to identify the informed speaker. Good players win only if the action succeeds and identification fails. The informed speaker's location is initially hidden from the decision-maker and adversary. Messages are nonbinding; good players share payoffs but retain separate information sets and private randomization.
+
+The concrete goal is to characterize a nontrivial special case of this game: construct and verify pooling or informative Bayesian Nash equilibria, and establish a payoff bound or counterexample clarifying the tradeoff between mission accuracy and final victory. I will start with binary messages, enumerate contingent strategies, and check candidate equilibria against unilateral deviations. A larger message alphabet or sequential reply is an optional extension. Numerical candidates will be distinguished from proved equilibria and accompanied by their maximum deviation gain.
+
+The existing Avalor repository supplies three research resources: action-based belief inference calibrated on human game logs, a multi-agent simulator with isolated role-specific observations and an evidence ledger, and a pipeline producing public-history/hidden-label pairs from human videos. The course contribution will be the new theoretical analysis and controlled evaluation; the deployed recording interface and cloud features are outside scope.
+
+Experiments will test predictions in the reduced game, followed by a small simulator study and matched video-input ablations with versus without public speech. Evaluation will separate mission success, final victory, assassin identification, belief calibration, and unsupported factual claims. Role labels and future events will remain outside model inputs. Data splits and uncertainty estimates will use complete games, with model settings and objective evidence held fixed across ablations. Existing single-game pilots motivate hypotheses but do not establish communication benefits. The final deliverables will be the formal model, a proof or carefully documented partial result, reproducible analysis, and an empirical account of where bounded agents depart from the theoretical predictions.
+% SUMMARY-END
+
+\vspace{2pt}
+\textbf{Relevant references}\par
+\begingroup
+\small
+\setlength{\parskip}{3pt}
+[1] V. P. Crawford and J. Sobel. \emph{Strategic Information Transmission}. Econometrica, 50(6):1431--1451, 1982. \href{https://doi.org/10.2307/1913390}{doi:10.2307/1913390}.
+
+[2] J. Serrino, M. Kleiman-Weiner, D. C. Parkes, and J. B. Tenenbaum. \emph{Finding Friend and Foe in Multi-Agent Games}. NeurIPS, 2019. \href{https://arxiv.org/abs/1906.02330}{arXiv:1906.02330}.
+
+[3] J. Light, M. Cai, S. Shen, and Z. Hu. \emph{AvalonBench: Evaluating LLMs Playing the Game of Avalon}. arXiv preprint, 2023. \href{https://arxiv.org/abs/2310.05036}{arXiv:2310.05036}.
+\endgroup
+\end{document}

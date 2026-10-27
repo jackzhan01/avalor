@@ -1,0 +1,204 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "yuanzhuo-gold-1080p-v2",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Measured on BV1dc8F6qE5K with scripts/probe_layout.py plus direct pixel measurement. This is a FOURTH layout: same uploader and same ten players as BV1kr876AEE1, but not the same game (seat 10 is 忠臣 here and 梅林 there), and none of the rects match the earlier sources.",
+    "Subtitle bar measured at [468,900,902,76] in 36 of 37 sampled frames; the third source's [484,908,870,60] does not fit. Edge-band fraction with a bar is 0.851-0.923 and without one 0.000-0.163, so the gate is 0.6 — measured here, not copied.",
+    "One sampled frame carried outlined caption text with no bar (outlined fraction 0.0338), so the bar-less fallback region is required for this source too.",
+    "The speaker label box states '<seat>号 <nickname> <role>' ('10号 凡哥 忠臣', '5号 可可 莫德雷德'), so keep_first_ink_run redaction applies: only the leading '<n>号' token survives OCR, diffing, cache keys and saved crops.",
+    "Board grammar matches the third source, so board.py reads it, but the cell pitch does not: seat1_x 48.07 / cell_dx 35.78 / strip_dy 23.1 here versus 43.97 / 36.76 / 23.8 there. Vote colours DO match and were re-verified: four tallies on this board (1:9, 7:3, 3:7, 3:7) are reproduced exactly by the cell_background method.",
+    "The board is append-only and reaches y~600 by the end of the upload; the rect covers that final height. It was OCR-scanned at 9 timestamps for role words and the ten nicknames: zero hits.",
+    "The bilibili watermark sits ON the board here and covers the first two rows' vote cells and tallies for the whole upload — worse than the third source. Those rows need the mission-result-row recovery and the client announcement captions.",
+    "subtitle_plain's rect starts at x=470 and the client centres these lines, so the two longest announcements in the upload overflow it and lose the left half of their first glyph: 请 read as 青, 本 read as 太. Both were corrected by review. The other 19 bar-less captions are short enough to fit; widening the rect would pull in the speaker-label box, which ends near x=464.",
+    "speaker_label's rect starts at x=124 and the label box is centred and grows with the nickname, so on long names the seat token falls outside it. Three spans of this upload lost the seat that way (the crop keeps a bare '号'), and because redaction runs before the diff, the label then looks unchanged across several speakers and they merge into one segment. 27 captions needed a reviewer."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        468,
+        900,
+        902,
+        76
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          60,
+          150
+        ],
+        "hsv_hi": [
+          40,
+          255,
+          255
+        ],
+        "min_fraction": 0.6,
+        "edge_band_px": 6
+      },
+      "why": "Burned-in subtitle on the yellow bar. Gate measured on this source: 0.851-0.923 with a bar, 0.000-0.163 without."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        470,
+        894,
+        962,
+        88
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.01,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Fallback for the bar-less caption style, which this source does use. Starts right of the label box (which ends near x=464) so label text cannot bleed in."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        124,
+        904,
+        332,
+        62
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 120,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          45,
+          255
+        ],
+        "min_fraction": 0.85,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "White box holding '<seat>号 <nickname> <role>'. Only the leading seat token survives redaction. Measured 1.000 with a caption present and 0.759-0.766 without, so it cannot gate on itself and requires a caption region."
+    },
+    {
+      "id": "board",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1498,
+        2,
+        404,
+        606
+      ],
+      "cells": {
+        "method": "cell_background",
+        "seat1_x": 48.07,
+        "cell_dx": 35.78,
+        "strip_dy": 23.1,
+        "half_w": 13,
+        "half_h": 8,
+        "bg_value_max": 110,
+        "min_pixels": 20,
+        "approve_hue": [
+          20,
+          45
+        ],
+        "reject_sat_min": 115,
+        "warm_hue_max": 19,
+        "warm_hue_min": 160
+      },
+      "guard_period_s": 10.0,
+      "ocr_mode": "page2x",
+      "diff": {
+        "thumb_scale": 1.0,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.0008
+      },
+      "why": "Append-only history board: proposals, per-seat vote cells, mission results with the executing team and each mission card. Measured colours on this board: reject bg H 9-12 S 130-162, approve bg H 24-30.5 S 65-94, no-vote neutral H 3-9 S 56-77."
+    },
+    {
+      "id": "roster",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        1490,
+        612,
+        430,
+        468
+      ],
+      "why": "Spectator roster: seat badge, nickname and ROLE for every seat, on screen for the whole upload. Answer-bearing."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        40,
+        1450,
+        850
+      ],
+      "why": "Camera feed and editorial overlays."
+    },
+    {
+      "id": "camera_top",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1450,
+        40
+      ],
+      "why": "Top strip with the 投票回顾 control."
+    },
+    {
+      "id": "camera_bottom",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        985,
+        1450,
+        95
+      ],
+      "why": "Strip below the subtitle band."
+    }
+  ]
+}

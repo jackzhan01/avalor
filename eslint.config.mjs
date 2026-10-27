@@ -15,6 +15,8 @@ const eslintConfig = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      // Alternate build output — a build product, not source.
+      ".next-build/**",
       "out/**",
       "build/**",
       "next-env.d.ts",

@@ -76,6 +76,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("bvid")
     ap.add_argument("--format", required=True)
+    ap.add_argument("--kind", choices=["video", "audio"], default="video",
+                    help="audio lands as <bvid>.audio.m4a; the default naming used to hand an "
+                         "audio-only stream a .video.mp4 name, which then has to be renamed by hand")
     ap.add_argument("--suffix", default=None, help="separate file name, e.g. 'hevc' -> <bvid>.video.hevc.mp4")
     ap.add_argument("--stall-s", type=float, default=180.0)
     ap.add_argument("--max-s", type=float, default=2700.0)
@@ -86,7 +89,9 @@ def main() -> int:
     args = ap.parse_args()
 
     root = data_root()
-    name = f"{args.bvid}.video{'.' + args.suffix if args.suffix else ''}.mp4"
+    part = f".{args.suffix}" if args.suffix else ""
+    ext = "m4a" if args.kind == "audio" else "mp4"
+    name = f"{args.bvid}.{args.kind}{part}.{ext}"
     target = root / "sources" / "raw" / name
     url = f"https://www.bilibili.com/video/{args.bvid}/"
 

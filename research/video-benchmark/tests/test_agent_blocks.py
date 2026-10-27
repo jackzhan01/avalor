@@ -478,3 +478,29 @@ def _run_pairs(tmp_path, roles_variant: int, fresh: bool = True):
                   "end_of_video_reveal": {"available": False, "note": "t"}, "notes": []}
         write_json(annotation_paths(SOURCE["source_id"]).root / "private" / "roster_v2.json", roster)
     return build_agent_pairs(cfg, SOURCE, "accepted")
+
+
+def test_an_attempt_whose_result_phrase_was_occluded_keeps_its_own_block():
+    """A watermark can eat the '否决组队' half of a board row, leaving an attempt
+    with a team and a full vote but no outcome. The next row then names a higher
+    attempt. Renumbering the open block onto it would fold two attempts into one
+    and — when the new number is the forced one — leave a forced block carrying
+    votes, which is not a thing that can happen at a table."""
+    utts = [seg(1, "这车我不上", 0.0, 1.0, 3), seg(4, "那就必做轮吧", 3.0, 3.8, 9)]
+    events = [
+        ts(2, 1, 2, 1, [1, 6, 7], 1.5),
+        vobs(3, 1, 2, ALL_REJECT, 2.0),          # complete vote, outcome never read
+        ts(5, 1, 3, 2, [2, 7, 8], 4.0, forced=True),
+    ]
+    blocks, doc, text, _ = build(utts, events)
+    assert [b["block_id"] for b in doc["blocks"]] == ["b1-2", "b1-3"]
+
+    stalled, forced = doc["blocks"]
+    assert stalled["team_seats"] == [1, 6, 7] and stalled["votes"]["reject"] == list(range(1, 11))
+    assert stalled["outcome"] is None and stalled["mission_ran"] is False
+    assert forced["forced"] is True and forced["votes"] is None and forced["team_seats"] == [2, 7, 8]
+
+    assert "结果：未记录" in text
+    first, second = blocks[0]["audit"]["conflicts"]
+    assert first["board"] == [1, 2] and "renumbered" in first["resolution"]  # b1-1 was empty
+    assert second["board"] == [1, 3] and "keeps its row and no outcome" in second["resolution"]

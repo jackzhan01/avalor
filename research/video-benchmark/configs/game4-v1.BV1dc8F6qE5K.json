@@ -1,0 +1,168 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game4-v1",
+  "source": {
+    "key": "BV1dc8F6qE5K-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1dc8F6qE5K/",
+    "bvid": "BV1dc8F6qE5K",
+    "part": 1,
+    "title": "阿瓦隆奥伯伦冲锋，莫甘娜倒钩，狂搅局炸两车后梅林心态崩了",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30077",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV1dc8F6qE5K.video.hevc.mp4",
+    "audio_file": "sources/raw/BV1dc8F6qE5K.audio.m4a"
+  },
+  "layout": "configs/layout.yuanzhuo-gold-1080p-v2.json",
+  "interval": {
+    "start": 238.0,
+    "end": 2190.0,
+    "rationale": "Full feature. 0-238 s is a teaser whose captions read out roles (t=70 s shows 忠臣忠臣刺客), so it is excluded entirely; the first in-game speech is at 240 s. The client caption reads 有一票破坏 through 2175.52 s and switches at 2175.75 s to 本场游戏莫德雷德的爪牙阵营胜利, which names the winning side and a role; from 2186 s the speaker label reads 赛后. live_game_interval therefore ends at 2175.75 s. Extraction runs to 2190 s so the switch stays visible in the evidence."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2.0,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": null,
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "board vote strips run 1-10; roster panel lists seats 1-10",
+      "mission_team_sizes": "board headers: 第1轮·需要3名队员, 第2轮·需要4名队员, 第3轮·需要4名队员. The game ended after mission 3 failed, so missions 4-5 never happened and their sizes are NOT stated anywhere.",
+      "proposal_limit": "board rows read 第1/3次组队, 第2/3次组队",
+      "final_proposal_forced": "observed: missions 1 and 3 each have a third row reading 必做轮组队 with no vote strip",
+      "fails_required": "PARTLY observed and therefore NOT asserted to a model. Missions 1, 2 and 3 each failed with exactly 1 fail card, so rounds 1-3 need 1; listed in `unverified` so the rendered input omits the rule sentence.",
+      "lady_of_the_lake": "no 湖中仙女/湖中女神 row or caption seen in the survey; re-check on the full run",
+      "role_composition": "from the private spectator roster: 莫德雷德/莫甘娜/刺客/奥伯伦 plus 梅林, 派西维尔 and 4 忠臣 — the standard 10-player set with Oberon."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-4",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 2,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4.0,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "board": {
+    "supplements": [
+      {
+        "stable_key": "board:m1:p2:vote_outcome",
+        "type": "vote_outcome",
+        "payload": {
+          "mission": 1,
+          "proposal_index": 2,
+          "result": "rejected",
+          "tally_text": null,
+          "explicit": true
+        },
+        "announcement": {
+          "text": "同意票数未过半组队失败",
+          "video_time": 709.8667
+        },
+        "why": "B 站水印压在板面上，把这一行的结果短语整段盖掉了——17 张快照没有一张读到 '否决组队' 或单独的 '否决'/'通过'。这一行因此有车主、车队和 10 个座位的完整票型，唯独没有结果。结果不从票型反推：客户端自己在 709.8667 s 用字幕播报了「同意票数未过半组队失败」，补录的就是这句公告。"
+      }
+    ]
+  }
+}

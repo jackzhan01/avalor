@@ -23,8 +23,12 @@ def setup_batch(tmp_path, monkeypatch, missing_cutoff=False):
     ]
     cfg_path = tmp_path / "pilot.json"
     write_json(cfg_path, cfg)
-    spec = {"schema": "vbench.batch/1", "batch_id": "test-batch", "jobs": [
-        {"config": "pilot.json", "run_id": "batch-test"}]}
+    # Synthetic fixtures need no resources; the real floors live in DEFAULT_LIMITS
+    # and are exercised by tests/test_runguard.py against readings we control.
+    spec = {"schema": "vbench.batch/1", "batch_id": "test-batch",
+            "limits": {"extract_memory_bytes": 0, "extract_vram_mib": 0,
+                       "download_need_bytes": 0, "download_headroom_bytes": 0},
+            "jobs": [{"config": "pilot.json", "run_id": "batch-test"}]}
     spec_path = tmp_path / "batch.json"
     write_json(spec_path, spec)
     state = batch.init_batch(spec_path)
@@ -69,6 +73,15 @@ def seeded_review(tmp_path, monkeypatch, missing_cutoff=False):
 
     monkeypatch.setattr("vbench.pipeline.run_extract", extract)
     monkeypatch.setattr("vbench.review.build_review_queue", lambda *a: None)
+
+    def in_process(cfg, root, job):
+        # Production runs this in a child process (see EXTRACT_RUNNER); these
+        # fixtures stub the extractor in-process, so the seam is swapped here.
+        from vbench.source import register_source
+        job["source_id"] = register_source(cfg, root)["source_id"]
+        return extract(cfg, register_source(cfg, root), root)
+
+    monkeypatch.setattr(batch, "EXTRACT_RUNNER", in_process)
     state = batch.run_batch("test-batch")
     assert state["jobs"][0]["stage"] == "review", state
     return state

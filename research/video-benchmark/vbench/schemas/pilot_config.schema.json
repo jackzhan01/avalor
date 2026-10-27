@@ -350,6 +350,65 @@
         }
       },
       "additionalProperties": false
+    },
+    "board": {
+      "type": "object",
+      "description": "Rows an overlay covered on the board, filled in from what the client announced out loud. Never from the vote vector — see board.apply_supplements.",
+      "properties": {
+        "supplements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "stable_key",
+              "type",
+              "payload",
+              "announcement",
+              "why"
+            ],
+            "properties": {
+              "stable_key": {
+                "type": "string",
+                "pattern": "^board:m[1-5]:"
+              },
+              "type": {
+                "enum": [
+                  "team_selection",
+                  "vote_observation",
+                  "vote_outcome",
+                  "mission_outcome"
+                ]
+              },
+              "payload": {
+                "type": "object"
+              },
+              "announcement": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "video_time"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "video_time": {
+                    "$ref": "vbench:common#/$defs/seconds"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "why": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

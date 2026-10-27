@@ -6,6 +6,13 @@ coverage it reports is measured rather than assumed, then checks seek accuracy
 at several points and compares the audio and video durations.
 
     python scripts/verify_media.py <video> [--audio <audio>] [--out report.json]
+
+Without --out the report used to be printed and thrown away, which is how a
+"verified" file ended up with no report on disk. The default is now
+`sources/verified/deep/<name>.json`; `--out -` keeps the old print-only
+behaviour. These live beside, not inside, the batch gate's own reports in
+`sources/verified/` — the two have different shapes and the gate keys its files
+by media hash.
 """
 
 from __future__ import annotations
@@ -20,7 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import av  # noqa: E402
 
 from vbench.media import probe  # noqa: E402
-from vbench.util import write_json  # noqa: E402
+from vbench.paths import data_root  # noqa: E402
+from vbench.util import sha256_file, write_json  # noqa: E402
 
 
 def decode_walk(path: Path) -> dict:
@@ -71,11 +79,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("video", type=Path)
     ap.add_argument("--audio", type=Path, default=None)
-    ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--out", default=None,
+                    help="默认写到 sources/verified/deep/<名字>.json；给 '-' 表示只打印不落盘")
     ap.add_argument("--tolerance-s", type=float, default=1.0)
     args = ap.parse_args()
 
-    rep: dict = {"video": str(args.video), "video_probe": probe(args.video)}
+    rep: dict = {"video": str(args.video), "video_sha256": sha256_file(args.video),
+                 "video_probe": probe(args.video)}
     vs = next(s for s in rep["video_probe"]["streams"] if s["type"] == "video")
     dur = rep["video_probe"]["container_duration_s"]
     rep["walk"] = decode_walk(args.video)
@@ -113,8 +123,10 @@ def main() -> int:
         and rep.get("av_sync", {}).get("within_tolerance", True)
     )
     rep["verdict"] = "ok" if ok else "PROBLEM"
-    if args.out:
-        write_json(args.out, rep)
+    if args.out != "-":
+        out = Path(args.out) if args.out else data_root() / "sources" / "verified" / "deep" / f"{args.video.name}.json"
+        write_json(out, rep)
+        rep["report_path"] = str(out)
     print(json.dumps({k: v for k, v in rep.items() if k != "video_probe"}, ensure_ascii=False, indent=2))
     return 0 if ok else 1
 

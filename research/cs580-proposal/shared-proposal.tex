@@ -1,0 +1,122 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[left=1in,right=1in,top=0.85in,bottom=0.85in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=3pt,parsep=0pt}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prb}{\mathbb{P}}
+\newcommand{\projectauthor}{wangjia Zhan \quad (NetID: wnagjia2)}
+\hypersetup{pdftitle={Strategic Communication under Hidden Roles: Theory and Evidence from Avalon}}
+
+\begin{document}
+\begin{center}
+{\Large\bfseries Strategic Communication under Hidden Roles:\\[3pt]
+Theory and Evidence from Avalon}\par
+\vspace{5pt}
+{\projectauthor}\par
+{CS 580: Algorithmic Game Theory \quad | \quad Fall 2026}\par
+{Research Project Proposal --- Detailed Working Version}
+\end{center}
+\vspace{-5pt}
+
+\section{Motivation and research question}
+In \emph{The Resistance: Avalon}, players cooperate within teams whose membership is initially hidden. Public discussion can help identify trustworthy teammates, but it also reveals who possesses privileged information. Merlin, an informed good player, faces a particularly sharp tension: guiding successful missions helps the good team, yet revealing Merlin's identity lets the assassin overturn an otherwise successful game. Thus, accurate beliefs and successful missions need not imply strategically effective play.
+
+\textbf{Main question.} When can public communication improve a team's decisions without making its informed member too easy for an adversary to identify? I propose to study the equilibrium tradeoff between useful information transmission and identity concealment in a small Avalon-inspired game, then investigate how this tradeoff appears in bounded AI agents and human game records.
+
+This project fits the course's \emph{Games and Markets with AI Agents} direction, especially strategic communication and restricted agent policies. Its theoretical core is a finite Bayesian game with explicit information sets, common interests within the good team, and conflicting interests across teams. LLM experiments will motivate and test conjectures; they will not substitute for equilibrium analysis.
+
+\section{Existing research foundation and scope}
+The Avalor repository contains both a deployed game-recording product and research infrastructure. This proposal uses the following research resources. Interface development, cloud services, and product deployment are outside the course contribution.
+
+\begin{itemize}
+\item \textbf{Belief inference and calibration.} Existing studies use a processed corpus of 12,882 human online games to examine logical constraints and behavioral likelihoods. Exact enumeration supplies action-only belief baselines; calibration studies use Brier score and log loss. Some historical likelihood estimates used the full corpus, so their reported evaluation scores are preliminary rather than a clean held-out benchmark. Any new fitted baseline will use training games only.
+\item \textbf{Isolated multi-agent simulation.} A ten-player research simulator implements role-specific observations, discussion, team selection, simultaneous votes, missions, and assassination. Its cognitive ledger separates referee-established facts, players' public claims, and agents' own hypotheses. Versioned prompts and replay artifacts support controlled interventions on communication and memory.
+\item \textbf{Human-video evaluation.} An existing pipeline converts Avalon videos into ordered public-event and speech records, with independently stored role labels and evidence provenance. It produces inputs at specified public-information cutoffs and supports speech-removal ablations. This remains a small pilot corpus, with variable review coverage and game rules.
+\end{itemize}
+
+\textbf{New semester work} will be the reduced game, its equilibrium analysis, and controlled tests of predictions derived from it. Existing engineering and exploratory runs will be identified as prior groundwork. In one existing ten-seat video pilot at the third-mission cutoff, full-input and speech-removed conditions both achieved 0.60 alignment accuracy, tying the all-good classifier. One sample per condition cannot establish whether speech helps; it motivates separating information quality, uncertainty, and strategic value.
+
+\section{Theoretical core: an informed player under observation}
+\textbf{Starting model.} I will first analyze a one-decision abstraction of the final mission and assassination, rather than the full game tree. There are two candidate speakers, a good decision-maker, and an adversarial assassin. Nature independently draws a binary safe action $\theta\in\{0,1\}$ and Merlin's location $r\in\{1,2\}$, each uniformly. Both speakers are good and know their own role; only Merlin observes $\theta$. With two candidates, the other speaker can infer Merlin's location but still does not know $\theta$. The decision-maker and assassin initially know neither variable.
+
+The speakers simultaneously send publicly attributed messages from a finite alphabet $\mathcal M$, beginning with $|\mathcal M|=2$. The decision-maker observes both messages and chooses $a\in\{0,1\}$. Mission success $S=\mathbf{1}\{a=\theta\}$ is then announced publicly. Following success, the assassin observes the messages, action, and result, and selects $\hat r\in\{1,2\}$. Each good player receives
+\[
+u_G=\mathbf{1}\{a=\theta\}\mathbf{1}\{\hat r\ne r\},
+\qquad u_A=1-u_G.
+\]
+Messages are nonbinding cheap talk; claimed identities are not verified. Strategies and the prior are common knowledge. Players may randomize privately, but there is no shared secret randomness or private communication channel. This deliberately simplified model isolates concealment and information transmission; it does not reproduce every Avalon role or rule.
+
+\textbf{Solution concept and targets.} I will study Bayesian Nash equilibrium (BNE) in the finite strategic form, retaining separate strategies and information sets for each good player. Shared payoffs do not justify replacing the good team with an omniscient centralized player. The primary targets are:
+\begin{enumerate}
+\item Characterize pooling and informative equilibria in the binary-message model, or derive explicit upper and lower bounds on their attainable good-team payoffs. Compare mission success and final victory with the no-communication benchmark.
+\item Determine whether greater mission accuracy can coexist with lower final victory in equilibrium, and identify the assumptions responsible. If this fails, establish why in the reduced model; contrast equilibrium results with examples involving restricted, nonoptimal agent policies.
+\item As a scoped extension, vary the message alphabet or allow one sequential reply, asking whether imitation by the uninformed speaker changes the achievable concealment--coordination tradeoff.
+\end{enumerate}
+
+\begin{samepage}
+\textbf{Analytical route.} For a fixed good-player strategy profile, let $T=(m_1,m_2,a,S=1)$ denote the assassin's terminal observation. An optimal assassin chooses the posterior-most-likely Merlin. When $\Prb(S=1)>0$, the resulting good-team value is
+\[
+\Prb(S=1)\left(1-\E\!\left[\max_{j\in\{1,2\}}
+\Prb(r=j\mid T)\,\middle|\, S=1\right]\right).
+\]
+\end{samepage}
+This elementary identity is a starting tool, not a claimed novel result. It makes the information cost explicit, including what the mission outcome itself reveals. I will enumerate pure contingent strategies, exploit seat symmetry, and search small mixed-strategy supports. Candidate equilibria will be checked against all unilateral pure-strategy deviations; numerical solutions will carry their maximum deviation gain $\epsilon$, and exact cases will receive proofs. Any symmetry-restricted search will be labeled as such. I will not assume that multi-player no-regret dynamics converge to Nash equilibrium.
+
+\section{Empirical investigation and evaluation}
+\textbf{Controlled bridge from theory to agents.} The reduced game permits inexpensive exhaustive evaluation of scripted policies and a small number of model decisions. I will compare uninformative, information-revealing, and concealment-oriented policies with identical priors and action spaces. For finite policy families, I will compute deviation gains within that family and clearly distinguish these from unrestricted equilibrium guarantees.
+
+The existing full-game simulator will then provide a secondary stress test. A minimal matched experiment compares a common agent backbone with and without its structured evidence ledger, holding the model, rule configuration, public-message budget, and private-information access fixed. Paired role assignments and seat rotations reduce variance. Logged metrics will include mission success, final team victory, assassin success conditional on reaching assassination, and unsupported claims promoted to facts. These experiments test a practical implementation of evidence handling; they do not identify it with a change in the game's information structure or prove rational play.
+
+\textbf{Human-record diagnostic.} At matched early, middle, and late cutoffs, I will compare (i) prior and action-only inference baselines, (ii) an LLM receiving the same objective events, and (iii) the same LLM additionally receiving public speech. The speech intervention will preserve objective facts, ordering, task instructions, and output format. The target is five to eight reviewed games, approximately three cutoffs per game, and three independent model samples per condition. This is a small diagnostic study, not a population-level performance claim. If resources are limited, I will reduce full-game model runs before reducing the theoretical work.
+
+Evaluation will use alignment Brier score and log loss, role identification, and evidence accuracy. Merlin identification from public-only records will be reported separately from assassination under a role-specific evil viewpoint. A video's true roster is available only to the scorer; spectator overlays, revealing titles, introductions, and post-game discussion must not enter model inputs. Future events will be excluded before record assembly. Missing votes remain missing, and public claims about inspection results remain claims. Distinct rule variants will be evaluated separately.
+
+Training and evaluation will split by complete game, with repeated or re-edited sources grouped together. Historical pilots will be development data. Uncertainty summaries will resample games, not correlated seats or cutoffs, and display individual-game effects given the small sample. Model versions, prompts, review coverage, invalid outputs, and inference costs will be recorded. Human-video ablations measure changes in predictions on fixed histories; they cannot by themselves establish causal effects of communication on gameplay.
+
+\section{Work plan and expected contribution}
+\textbf{Weeks 1--2:} review strategic communication and hidden-role games; finalize the reduced model, information sets, and baseline cases.\quad
+\textbf{Weeks 3--4:} enumerate small instances, check deviations, and develop a proof, payoff bound, or counterexample.\quad
+\textbf{Weeks 5--6:} run the reduced-game policy comparisons and a budgeted set of simulator/video diagnostics with frozen conditions.\quad
+\textbf{Weeks 7--8:} examine failed conjectures, test one extension if feasible, and prepare the report and presentation.
+
+The intended contribution is an explicit account of when useful public information is strategically costly in a hidden-role team game, supported by a reproducible small-game analysis and carefully separated empirical evidence. The minimum deliverable is a rigorous treatment of a special case, including equilibrium checks and documented unsuccessful attempts if stronger characterization is out of reach. Solving full ten-player Avalon, establishing general LLM equilibrium convergence, and producing a large benchmark are beyond scope.
+
+\section*{Relationship to prior work}
+Crawford and Sobel~\cite{crawford1982} provide the classical cheap-talk perspective: an informed sender communicates strategically to a decision-maker. The proposed model adds uncertainty about which speaker is informed and an adversary who benefits from identifying that speaker. Its discrete, team-based structure requires a separate analysis rather than direct application of their characterization.
+
+DeepRole~\cite{serrino2019} studies hidden-team reasoning in Avalon using counterfactual regret minimization and learned value functions. AvalonBench~\cite{light2023} supplies a complementary precedent for evaluating language-model agents through discussion and gameplay. Avalon-ToM-Bench~\cite{chen2026} studies perspective-constrained social reasoning through diagnostic queries. These works motivate the environment and evaluation choices. This project's proposed emphasis is a small, analyzable communication game with an explicit terminal identification penalty, with the repository's research tools used to investigate its implications.
+
+\begin{thebibliography}{9}
+\bibitem{crawford1982}
+Vincent P. Crawford and Joel Sobel.
+\newblock Strategic Information Transmission.
+\newblock \emph{Econometrica}, 50(6):1431--1451, 1982.
+\newblock \href{https://doi.org/10.2307/1913390}{doi:10.2307/1913390}.
+
+\bibitem{serrino2019}
+Jack Serrino, Max Kleiman-Weiner, David C. Parkes, and Joshua B. Tenenbaum.
+\newblock Finding Friend and Foe in Multi-Agent Games.
+\newblock \emph{Advances in Neural Information Processing Systems}, 2019.
+\newblock \href{https://arxiv.org/abs/1906.02330}{arXiv:1906.02330}.
+
+\bibitem{light2023}
+Jonathan Light, Min Cai, Sheng Shen, and Ziniu Hu.
+\newblock AvalonBench: Evaluating LLMs Playing the Game of Avalon.
+\newblock arXiv preprint, 2023.
+\newblock \href{https://arxiv.org/abs/2310.05036}{arXiv:2310.05036}.
+
+\bibitem{chen2026}
+Yen-Shan Chen, Yu Chian Duan, Chih-En Kuo, Jian-Bin Wu, and Yun-Nung Chen.
+\newblock Avalon-ToM-Bench: Evaluating Fine-Grained Theory of Mind via Asymmetric Game Mechanics.
+\newblock arXiv preprint, 2026.
+\newblock \href{https://arxiv.org/abs/2608.09638}{arXiv:2608.09638}.
+\end{thebibliography}
+\end{document}

@@ -20,6 +20,26 @@ from .paths import PROJECT_ROOT, annotation_paths, data_root, run_paths
 from .publish import immutable_directory, safe_name, tree_hashes
 from .util import read_json, sha256_file, sha256_json, write_json
 
+# Resource floors, checked against a reading taken at that moment.
+#
+# Measured 2026-09-21 on BV1dc8F6qE5K (37 min, 1080p HEVC) rather than guessed:
+# a video+audio pair downloads to ~0.21 GiB; faster-whisper large-v3 on CUDA
+# peaked at 3169 MiB host RSS and held ~3571 MiB of VRAM, transcribing at 2.1x
+# realtime. The floors sit just above those, because OCR runs alongside.
+DEFAULT_LIMITS = {
+    "download_need_bytes": 3 * 2**30,
+    "download_headroom_bytes": 5 * 2**30,
+    "extract_memory_bytes": 7 * 2**29,   # 3.5 GiB; measured ASR peak was 3.10 GiB
+    "extract_vram_mib": 4000,            # measured ASR usage was ~3571 MiB
+    "backlog_max_items": 2,
+    "backlog_max_bytes": 6 * 2**30,
+}
+
+
+def _limits(state_or_job: dict) -> dict:
+    """Floors for this batch. Frozen at init so a run cannot lower them later."""
+    return {**DEFAULT_LIMITS, **(state_or_job.get("limits") or {})}
+
 LAYOUT_CHECKS = ("public_crops_safe", "seat_redaction", "full_board_extent", "vote_colors", "rules_basis")
 REVIEW_CHECKS = ("speech_and_seats", "all_objective_events", "private_labels", "live_boundaries",
                  "cutoff_safety", "overlap_group")
@@ -88,7 +108,9 @@ def init_batch(spec_path: Path, root=None) -> dict:
         if state_path.exists():
             raise FileExistsError("批次已存在；使用 batch-run 恢复，不要重新初始化")
         state = {"schema": "vbench.batch_state/1", "batch_id": spec["batch_id"],
-                 "code_sha256": code_fingerprint(), "runtime": runtime_info(), "jobs": [], "history": []}
+                 "code_sha256": code_fingerprint(), "runtime": runtime_info(),
+                 "limits": {**DEFAULT_LIMITS, **(spec.get("limits") or {})},
+                 "jobs": [], "history": []}
         seen = set()
         for entry in spec["jobs"]:
             run_id = safe_name(entry["run_id"])
@@ -263,14 +285,83 @@ def review_info(batch_id: str, run_id: str, root=None) -> dict:
                 "required_checks": REVIEW_CHECKS}
 
 
-def _step(job: dict, cfg: dict, root: Path, allow_download: bool) -> None:
+def _pending_media(job: dict, root: Path) -> list[Path]:
+    """Verified-but-unextracted media across every batch on this data root.
+
+    Counted from state, not from a directory listing: a file that some other
+    batch has already consumed is not backlog, and one this batch downloaded
+    three stages ago still is.
+    """
+    out: list[Path] = []
+    for state_path in sorted((root / "batches").glob("*/state.json")):
+        try:
+            state = read_json(state_path)
+        except Exception:  # noqa: BLE001
+            continue
+        for other in state.get("jobs", []):
+            if other.get("run_id") == job.get("run_id") or other.get("stage") in ("media", "done"):
+                continue
+            src = (other.get("config") or {}).get("source") or {}
+            out += [root / f for f in (src.get("video_file"), src.get("audio_file")) if f]
+    return out
+
+
+def _extract_in_subprocess(cfg: dict, root: Path, job: dict) -> dict:
+    """Reprocess one video in a child process so its models die with it.
+
+    Failure here is this video's failure. The child is never killed by pid from
+    outside — that is how a batch ends up stopping somebody else's work.
+    """
+    import subprocess
+    import sys
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg_path, out_path = Path(tmp) / "config.json", Path(tmp) / "result.json"
+        write_json(cfg_path, cfg)
+        cmd = [sys.executable, "-m", "vbench.extract_worker", str(cfg_path), str(out_path),
+               "--root", str(root)]
+        proc = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=True)
+        if not out_path.exists():
+            tail = proc.stderr.decode("utf-8", "replace").strip().splitlines()[-3:]
+            raise ValueError(f"抽取子进程未产出结果（退出码 {proc.returncode}）：{' / '.join(tail)}")
+        result = read_json(out_path)
+    job.setdefault("resources", {})["extract"] = {
+        "elapsed_s": result.get("elapsed_s"), "peak_rss_bytes": result.get("peak_rss_bytes"),
+        "gpu_after": result.get("gpu_after"), "subprocess_exit_code": proc.returncode,
+    }
+    if not result.get("ok"):
+        raise ValueError(f"抽取子进程失败：{result.get('error_type')}: {result.get('error')}")
+    job["source_id"] = result["source_id"]
+    return result["stats"]
+
+
+# Which function reprocesses a video. Production is the child process; a test
+# may swap it, and `test_batch_runguard.py` asserts what the default is.
+EXTRACT_RUNNER = None  # set below, once _extract_in_subprocess exists
+
+
+def _step(job: dict, cfg: dict, root: Path, allow_download: bool, limits: dict | None = None) -> None:
+    limits = limits or DEFAULT_LIMITS
     from .media_gate import verify_media
     from .source import acquire, register_source
 
     if job["stage"] == "media":
+        from .runguard import backlog, disk_report, require_backlog_capacity, require_disk
+
         video, audio = _media_paths(cfg, root)
-        if allow_download:
+        if allow_download and not video.is_file():
+            # Both guards read the machine now. A batch can resume days later
+            # onto a fuller disk, so a value frozen at init would not be a check.
+            job.setdefault("resources", {})["disk_before_download"] = require_disk(
+                root / "sources/raw", limits["download_need_bytes"], limits["download_headroom_bytes"])
+            job["resources"]["backlog_before_download"] = require_backlog_capacity(
+                backlog(_pending_media(job, root)), limits["backlog_max_items"],
+                limits["backlog_max_bytes"])
             acquire(cfg, root)
+        elif allow_download:
+            job.setdefault("resources", {})["disk_before_download"] = dict(
+                disk_report(root / "sources/raw"), skipped="媒体已在本地，未触发下载")
         job["media"] = verify_media(video, audio, root / "sources/verified")
         if cfg["interval"]["end"] > job["media"]["streams"]["video"]["duration_s"] + 0.1:
             raise ValueError("抽取范围超过媒体时长")
@@ -281,17 +372,27 @@ def _step(job: dict, cfg: dict, root: Path, allow_download: bool) -> None:
     source = register_source(cfg, root)
     run = run_paths(cfg["run_id"], root)
     if job["stage"] == "extract":
-        from .pipeline import run_extract
-        from .review import build_review_queue
+        from .runguard import require_memory, resolve_device
 
-        stats = run_extract(cfg, source, root)
+        device = resolve_device(cfg["asr"].get("device", "cpu"))
+        job.setdefault("resources", {})["device"] = device
+        if device["changed"]:
+            # Never silently fall back: the record has to say which backend ran.
+            raise ValueError(f"请求 {device['requested']} 但不可用（{device.get('reason')}）；"
+                             f"请改用 CPU 批次或修复驱动后新建批次，不在本次静默降级")
+        job["resources"]["memory_before_extract"] = require_memory(limits["extract_memory_bytes"])
+        if device["device"] == "cuda":
+            vram = (device["gpu"].get("vram") or {}).get("free_mib")
+            job["resources"]["vram_before_extract"] = device["gpu"].get("vram")
+            if vram is not None and vram < limits["extract_vram_mib"]:
+                raise ValueError(f"显存不足：可用 {vram} MiB，需要 {limits['extract_vram_mib']} MiB")
+        stats = EXTRACT_RUNNER(cfg, root, job)
         if stats["validation_error_count"] or stats["decode"]["corrupt_packets"]:
             raise ValueError("抽取校验失败；保留诊断产物，不进入审核完成态")
         if not stats["outputs"]["utterances"] or not stats["outputs"]["board_events"]:
             raise ValueError("字幕或板面事件为空，请校准新布局并新建批次")
         if cfg["asr"]["backend"] != "none" and stats["asr"]["mode"] == "unavailable":
             raise ValueError("ASR 不可用；请先安装本地模型或检查设备")
-        build_review_queue(cfg, source["source_id"], root)
         job.update(stage="review", status="needs_review")
     elif job["stage"] == "publish":
         if evidence_fingerprint(cfg, source["source_id"], root) != job["review_sha256"]:
@@ -334,7 +435,7 @@ def run_batch(batch_id: str, root=None, allow_download=False, retry_failed=False
                 job["attempts"] += 1
                 job["status"] = "running"
                 _save(state, root, "stage_started", job["run_id"])
-                _step(job, cfg, root, allow_download)
+                _step(job, cfg, root, allow_download, _limits(state))
                 job.pop("error", None)
                 _save(state, root, "stage_finished", job["run_id"])
             except Exception as exc:
@@ -346,7 +447,23 @@ def run_batch(batch_id: str, root=None, allow_download=False, retry_failed=False
 
 
 def cli(args) -> int:
-    if args.cmd == "batch-init":
+    if args.cmd == "resources":
+        from .runguard import disk_report, gpu_report, memory_report, resolve_device
+
+        gpu = gpu_report(probe=not args.no_gpu_probe)
+        result = {"limits": DEFAULT_LIMITS, "disk": disk_report(_root(None) / "sources/raw"),
+                  "memory": memory_report(), "gpu": gpu,
+                  "asr_device_if_cuda_requested": resolve_device("cuda", gpu),
+                  "note": "全部为调用此刻的实测值；不复用任何历史快照。"}
+    elif args.cmd == "cleanup-preview":
+        from .cleanup import preview
+
+        result = preview(_root(None), args.batch)
+    elif args.cmd == "cleanup-apply":
+        from .cleanup import apply as cleanup_apply
+
+        result = cleanup_apply(_root(None), args.path, args.authorize, args.batch)
+    elif args.cmd == "batch-init":
         result = init_batch(Path(args.file))
     elif args.cmd == "batch-status":
         result = status(args.batch)
@@ -358,3 +475,6 @@ def cli(args) -> int:
         result = approve(args.batch, args.run_id, args.kind, Path(args.receipt))
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 1 if any(j["status"] == "failed" for j in result.get("jobs", [])) else 0
+
+
+EXTRACT_RUNNER = _extract_in_subprocess

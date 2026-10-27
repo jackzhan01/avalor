@@ -203,8 +203,15 @@ def _pair_roster(boxes: list[dict]) -> list[tuple[str, str]]:
 
 
 def build_roster_v2(roles_v1: dict, video: Path, layout: Layout, times: list[float], out_dir: Path, ocr_engine,
-                    video_end: float, reveal_note: str | None = None) -> dict:
-    """Producer-roster consistency across the whole video; no end-of-game reveal is invented."""
+                    video_end: float, reveal_note: str | None = None,
+                    final_outcome: dict | None = None) -> dict:
+    """Producer-roster consistency across the whole video; no end-of-game reveal is invented.
+
+    `final_outcome` carries endgame facts the source states publicly — a client
+    banner, a victory caption. It is a parameter for the same reason
+    `reveal_note` is: hand-editing it into the written file loses it the next
+    time the roster is rebuilt. This function never derives it.
+    """
     from .textnorm import similar
 
     ev = roster_evidence(video, layout, times, out_dir, ocr_engine)
@@ -243,7 +250,7 @@ def build_roster_v2(roles_v1: dict, video: Path, layout: Layout, times: list[flo
             "sources": [dict(x) for x in s["evidence"]] + [{"kind": "roster_ocr_consistency", "video_time": e["video_time"], "crop_sha256": e["crop_sha256"]} for e in ev],
             "consistency": {"checked_times": obs, "agree": agree, "disagreements": disagree},
         })
-    return {
+    doc = {
         "schema": "vbench.private_roster/2",
         "game_id": roles_v1["game_id"],
         "player_count": roles_v1["player_count"],
@@ -262,3 +269,6 @@ def build_roster_v2(roles_v1: dict, video: Path, layout: Layout, times: list[flo
             "Nickname-to-seat join uses the public speaker labels and the roster's seat badges.",
         ],
     }
+    if final_outcome is not None:
+        doc["final_outcome"] = final_outcome
+    return doc

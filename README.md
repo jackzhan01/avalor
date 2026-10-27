@@ -1,3 +1,5 @@
+> **队友交接入口：[中文研究总览与实验结论](README.research.zh.md)**。从真人战报标定、离线决策、LLM 社会推理、多智能体模拟到视频评测，含已验证结论、失败尝试、当前停止点与本地数据交接范围（2026-10-27 整理）。
+
 <p align="center">
   <img src="figure/hero.webp" alt="Avalor" width="100%">
 </p>

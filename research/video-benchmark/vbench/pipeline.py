@@ -13,7 +13,7 @@ import cv2
 
 from . import PIPELINE_VERSION
 from .asr import AsrConfig, asr_segment_records, engine_version, transcribe_interval
-from .board import BOARD_STAGE_VERSION, events_from_snapshots, parse_board, snapshot_record
+from .board import BOARD_STAGE_VERSION, apply_supplements, events_from_snapshots, parse_board, snapshot_record
 from .client_log import parse_client_log
 from .cache import CacheStats, StageCache
 from .textnorm import similar
@@ -211,6 +211,10 @@ def run_extract(
         captions += build_captions(caption_parts.get(creg.id, []), CaptionConfig.from_dict(cfg["captions"], frame_s), src_sha, creg.id, seat_at)
     captions.sort(key=lambda c: c["display_start"])
     board_events = events_from_snapshots(board_snaps, src_sha, ctx.player_count, ctx.provenance("board", BOARD_STAGE_VERSION, "rule-parser"))
+    supplements = (cfg.get("board") or {}).get("supplements") or []
+    if supplements:
+        board_events = apply_supplements(board_events, supplements, src_sha,
+                                         ctx.provenance("board", BOARD_STAGE_VERSION, "announcement-supplement"))
 
     # ── ASR ──────────────────────────────────────────────────────────────
     t = time.perf_counter()

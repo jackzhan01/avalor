@@ -51,6 +51,17 @@ def _new_block(mission: int, attempt: int, rules: dict) -> dict:
     }
 
 
+def _objective_content(block: dict) -> bool:
+    """Has this block already recorded a board row of its own?
+
+    Speech does not count: discussion is what the open block collects while it
+    waits to learn which attempt it belongs to. A team, a vote or an outcome
+    does — those came off a row that named its own attempt.
+    """
+    return bool(block["team_seats"] or block["votes"] or block["outcome"]
+                or block["leader_seat"] is not None or block["mission_result"])
+
+
 def _append_speech(block: dict, item: dict) -> None:
     """Continue the open paragraph when this is the same contribution, else start one."""
     para = block["speech"][-1] if block["speech"] else None
@@ -121,12 +132,22 @@ def build_blocks(items: list[dict], rules: dict) -> tuple[list[dict], dict]:
             # not to whatever discussion happens to be running when it appears.
             hit = next((b for b in blocks if b["mission"] == m and b["attempt"] == a), None)
             ahead = (m, a) > (target["mission"], target["attempt"])
-            if hit is None and ahead and target is cur():
+            if hit is None and ahead and target is cur() and not _objective_content(target):
                 # Attempts whose discussion the edit dropped: the board row is the
                 # only witness of which attempt this is, so the open block takes
                 # its number. The gap that swallowed the others stays visible in
                 # `speech_recorded`.
                 resolution = "open block renumbered to the board row"
+            elif hit is None and ahead and target is cur():
+                # The open block already holds a row of its own, so it IS that
+                # earlier attempt — it just never saw an outcome (an overlay can
+                # eat the result phrase). Renumbering here would fold two
+                # attempts into one and, when the new number is the forced one,
+                # leave a forced block carrying votes. Open the block the row
+                # names instead; the earlier attempt keeps its row and no outcome.
+                resolution = "opened the block the board row names; the earlier attempt keeps its row and no outcome"
+                blocks.append(_new_block(m, a, rules))
+                hit = blocks[-1]
             else:
                 resolution = "moved into the block the board row names" if hit else "board row names a block that was never opened; kept in the open block"
             note(target, {"event_id": it["event_id"], "type": it["type"], "board": [m, a],

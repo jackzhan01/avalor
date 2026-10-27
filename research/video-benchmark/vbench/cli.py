@@ -11,6 +11,9 @@ from pathlib import Path
 
 from .paths import PROJECT_ROOT, annotation_paths, data_root, run_paths
 
+# Mirrors batch.DEFAULT_LIMITS['extract_memory_bytes']; both are the same measurement.
+DEFAULT_EXTRACT_MEMORY_BYTES = 7 * 2**29
+
 
 def _cfg(args):
     from .pipeline import load_config
@@ -126,11 +129,28 @@ def cmd_inspect_layout(args):
 
 
 def cmd_extract(args):
+    """Extract one run.
+
+    The memory floor is checked here too, not only in `batch-run`. Extraction
+    peaked at 3361 MiB of RSS on the fourth source, so starting it with less
+    free than that is how a run dies two thirds of the way through and takes
+    twenty minutes of decode with it. The floor is a measured number: report it
+    and wait, do not lower it to make a run start.
+    """
     from .pipeline import run_extract
     from .review import build_review_queue
+    from .runguard import ResourceUnavailable, memory_report, require_memory
 
     cfg = _cfg(args)
     src = _source(cfg)
+    need = int(cfg.get("resources", {}).get("extract_memory_bytes") or DEFAULT_EXTRACT_MEMORY_BYTES)
+    try:
+        require_memory(need)
+    except ResourceUnavailable as e:
+        _print({"blocked": str(e), "memory": memory_report(),
+                "need_bytes": need,
+                "note": "门槛是实测值（第四局抽取峰值 3361 MiB）。等内存腾出来再跑，不要调低门槛。"})
+        return 1
     stats = run_extract(cfg, src)
     q = build_review_queue(cfg, src["source_id"])
     _print({k: stats[k] for k in ("interval", "scan", "decode", "counters", "cache", "timings_s", "asr", "outputs", "validation_error_count")} | {"review_queue": q})
@@ -178,6 +198,43 @@ def _machine_index(cfg):
         "utterance": {u["utterance_id"]: u for u in read_jsonl(run.public / "utterances.jsonl")},
         "public_event": {e["event_id"]: e for e in read_jsonl(run.public / "events.jsonl")},
     }
+
+
+def cmd_board_supplements(args):
+    """Add the configured announcement supplements to an already-extracted run.
+
+    Re-running `extract` would do the same thing, but it costs twenty minutes of
+    decode and OCR to change two lines of a file that is already on disk. This
+    touches `public/events.jsonl` and nothing else, and refuses any supplement
+    that would sit on top of a row the board actually read.
+    """
+    from .board import BOARD_STAGE_VERSION, apply_supplements
+    from .pipeline import ExtractContext
+    from .util import read_jsonl, write_jsonl
+    from .validate import collection_errors, schema_errors
+
+    cfg = _cfg(args)
+    src = _source(cfg)
+    run = run_paths(cfg["run_id"])
+    sups = (cfg.get("board") or {}).get("supplements") or []
+    if not sups:
+        _print({"supplements": 0, "note": "配置里没有 board.supplements，什么也没做"})
+        return 0
+    events = read_jsonl(run.public / "events.jsonl")
+    ctx = ExtractContext(cfg, src)
+    out = apply_supplements(events, sups, src["video_sha256"],
+                            ctx.provenance("board", BOARD_STAGE_VERSION, "announcement-supplement"))
+    errs = collection_errors(out, "event_id")
+    for e in out:
+        errs += [f"{e['event_id']}: {m}" for m in schema_errors("public_event", e)]
+    if errs:
+        _print({"errors": errs[:20]})
+        return 1
+    write_jsonl(run.public / "events.jsonl", out)
+    _print({"events_before": len(events), "events_after": len(out),
+            "added": [e["stable_key"] for e in out[len(events):]],
+            "note": "补录事件是 needs_review 且未锚定，仍要走 corrections-import 才会进时间线"})
+    return 0
 
 
 def cmd_corrections_import(args):
@@ -357,7 +414,7 @@ def cmd_private_roster_v2(args):
     from .ocr import RapidOcrEngine
     from .pipeline import resolve_layout
     from .private_labels import build_roster_v2, load_roles, roster_v2_errors
-    from .util import write_json
+    from .util import read_json, write_json
     from .validate import schema_errors
 
     cfg = _cfg(args)
@@ -365,9 +422,10 @@ def cmd_private_roster_v2(args):
     ann = annotation_paths(src["source_id"])
     run = run_paths(cfg["run_id"])
     times = [float(t) for t in args.times.split(",")]
+    outcome = read_json(Path(args.final_outcome)) if args.final_outcome else None
     doc = build_roster_v2(load_roles(ann.private_roles), src["video"], resolve_layout(cfg), times,
                           run.private / "roster_v2", RapidOcrEngine(), probe(src["video"])["container_duration_s"],
-                          reveal_note=args.reveal_note)
+                          reveal_note=args.reveal_note, final_outcome=outcome)
     errs = schema_errors("private_roster", doc) or roster_v2_errors(doc)
     if errs:
         _print({"errors": errs})
@@ -441,6 +499,7 @@ def main(argv=None) -> int:
     p = add("reference-sheets", cmd_reference_sheets)
     p.add_argument("--start", type=float, default=None)
     p.add_argument("--end", type=float, default=None)
+    add("board-supplements", cmd_board_supplements)
     p = add("corrections-import", cmd_corrections_import)
     p.add_argument("--file", required=True)
     p.add_argument("--reviewer", default="unknown")
@@ -483,6 +542,8 @@ def main(argv=None) -> int:
     p.add_argument("--times", required=True)
     p.add_argument("--reveal-note", default=None,
                    help="片尾身份揭示的实际情况，由核对过的人写；不给就只说本函数没判断")
+    p.add_argument("--final-outcome", default=None,
+                   help="终局公开揭示的 JSON 文件（胜负阵营、刺杀），由核对过的人写；不给就整块留空")
     p = add("turn-boundaries-import", cmd_turn_boundaries_import)
     p.add_argument("--file", required=True)
     p.add_argument("--reviewer", default="unknown")
@@ -503,6 +564,15 @@ def main(argv=None) -> int:
             if command == "batch-approve":
                 p.add_argument("--kind", choices=["layout", "review"], required=True)
                 p.add_argument("--receipt", required=True, help="人工审核凭据；绑定配置、媒体和证据哈希")
+
+    p = add("resources", batch_cli, config=False)
+    p.add_argument("--no-gpu-probe", action="store_true", help="只枚举设备，不实际跑一次 GPU 计算")
+    p = add("cleanup-preview", batch_cli, config=False)
+    p.add_argument("--batch", default=None, help="只看某个批次；默认看全部")
+    p = add("cleanup-apply", batch_cli, config=False)
+    p.add_argument("--batch", default=None)
+    p.add_argument("--path", action="append", required=True, help="要删除的源媒体，可多次给出")
+    p.add_argument("--authorize", required=True, help="显式授权串；缺少或写错一律拒绝删除")
     args = ap.parse_args(argv)
     rc = args.fn(args)
     return int(rc or 0)
