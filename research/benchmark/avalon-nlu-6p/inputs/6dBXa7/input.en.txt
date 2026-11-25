@@ -1,0 +1,116 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 1] system: player-4 proposed a party: player-6, player-5
+[Record 3; Quest 1; Turn 2] player-6: hi
+[Record 4; Quest 1; Turn 3] player-1: well, we don't know much yet
+[Record 5; Quest 1; Turn 3] player-1: however, it's interesting how player-4 didn't include herself
+[Record 6; Quest 1; Turn 3] player-1: trying not to incriminate yourself in case this goes south?
+[Record 7; Quest 1; Turn 3] player-1: either way, this is fine for now
+[Record 8; Quest 1; Turn 4] player-2: i've no stakes in this matter so far. proceeding sounds like the best course of action.
+[Record 9; Quest 1; Turn 5] player-3: i'm fine with this. there's no useful info at the moment
+[Record 10; Quest 1; Turn 5] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 11; Quest 1; Turn 5] system: vote succeeded! initiating quest vote!
+[Record 12; Quest 1; Turn 5] system: quest failed!
+[Record 13; Quest 2; Turn 0] system: player-5 proposed a party: player-6, player-5, player-4
+[Record 14; Quest 2; Turn 1] player-6: suspect player-5
+[Record 15; Quest 2; Turn 2] player-1: ok, interesting how the first party failed
+[Record 16; Quest 2; Turn 2] player-1: so either player-6 or player-5 is evil
+[Record 17; Quest 2; Turn 2] player-1: and they are on the proposed party again, so i will not approve of this
+[Record 18; Quest 2; Turn 3] player-2: idk player-1 seems hellbent on pinning this on others... but i have no evidence. i say we choose a different group that only contains one of the original adventurers.
+[Record 19; Quest 2; Turn 4] player-3: i agree with player-2. i think it is better to not add both player-6 and player-5 to the party
+[Record 20; Quest 2; Turn 4] player-3: ingrid is still kinda suspicious because she didn't choose herself.
+[Record 21; Quest 2; Turn 4] player-3: if the party stays like this i'm going to say no
+[Record 22; Quest 2; Turn 5] player-4: player-6 was quick to point fingers
+[Record 23; Quest 2; Turn 6] player-5: yea i agree, player-6 pointed fingers and player-1 almost immediately blamed someone
+[Record 24; Quest 2; Turn 6] system: party vote outcome: player-1: no, player-2: no, player-3: no, player-4: no, player-5: yes, player-6: no
+[Record 25; Quest 2; Turn 6] system: vote failed!
+[Record 26; Quest 2; Turn 6] system: player-6 proposed a party: player-1, player-2, player-3
+[Record 27; Quest 2; Turn 7] player-1: i am not really pushing blame
+[Record 28; Quest 2; Turn 7] player-1: player-6 and player-5 were on the first quest
+[Record 29; Quest 2; Turn 7] player-1: the quest failed
+[Record 30; Quest 2; Turn 7] player-1: no good person would fail a quest
+[Record 31; Quest 2; Turn 7] player-1: so at least one of them is bad... that's just logical deduction
+[Record 32; Quest 2; Turn 7] player-1: it's interesting how player-6 doesn't even try to defend himself
+[Record 33; Quest 2; Turn 7] player-1: nor does player-5
+[Record 34; Quest 2; Turn 7] player-1: currently, i am more suspicious of player-5 as he proposed another party that did absolutely no sense
+[Record 35; Quest 2; Turn 7] player-1: so i kinda trust player-6 more
+[Record 36; Quest 2; Turn 7] player-1: but then again, he didn't put himself onto the party
+[Record 37; Quest 2; Turn 7] player-1: also, statistically speaking, we likely have the second bad person on the party now
+[Record 38; Quest 2; Turn 7] player-1: so i would propose player-6 including himself and taking of some random person that's currently on the quest to at least attempt to prove his innocence
+[Record 39; Quest 2; Turn 8] player-2: i guess if player-6 adds himself to the party it would show some form of innocence.
+[Record 40; Quest 2; Turn 9] player-3: i think that makes sense.
+[Record 41; Quest 2; Turn 9] player-3: i also agree that maybe picking 3 different people than the original people is too much change. it won't give us good enough data to determine who is bad
+[Record 42; Quest 2; Turn 10] player-4: i agree
+[Record 43; Quest 2; Turn 11] player-5: honestly player-1 and player-6 seem to be working together. i also can see player-4 promoting someone else with her vague statements.
+[Record 44; Quest 2; Turn 12] player-6: i have changed the party to prove i am innocent
+[Record 45; Quest 2; Turn 12] system: player-6 proposed a party: player-1, player-2, player-6
+[Record 46; Quest 2; Turn 13] player-1: well, i am still suspicious of player-6 and player-5, but for now player-6 seems a little less likely to be evil
+[Record 47; Quest 2; Turn 13] player-1: i guess when we run this quest, we will learn more
+[Record 48; Quest 2; Turn 13] player-1: if it fails, he's bad for sure
+[Record 49; Quest 2; Turn 13] player-1: if it succeeds, we have a solid estimate on the good people
+[Record 50; Quest 2; Turn 14] player-2: i say we vote.
+[Record 51; Quest 2; Turn 14] player-2: however, who is to say that player-6 and player-1 are not trying to double cross us....
+[Record 52; Quest 2; Turn 15] player-3: this is an important vote, because the next vote is the hardest. i really want to get it right here. i'm kinda suspicious of player-1 a little bit because he seems to be guiding player-6 on what to do
+[Record 53; Quest 2; Turn 15] player-3: but i guess at this point we just gotta see where it goes. i thought player-4 was suspicious too. i'm just suspicious of everyone lol
+[Record 54; Quest 2; Turn 16] player-4: i say we vote, player-6 changed it to prove himself, if it passes im a little suspicious of player-5
+[Record 55; Quest 2; Turn 17] player-5: interesting so ingrid was vague and now she is pushing blame on me?
+[Record 56; Quest 2; Turn 17] player-5: i also see player-6 being guided by player-1. player-6 changed the party when player-1 mentioned how to prove his innocence.
+[Record 57; Quest 2; Turn 18] player-6: some mention that player-1 is guiding me, but player-2 also mentions to include myself to prove my innocence
+[Record 58; Quest 2; Turn 18] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 59; Quest 2; Turn 18] system: vote succeeded! initiating quest vote!
+[Record 60; Quest 2; Turn 18] system: quest succeeded!
+[Record 61; Quest 3; Turn 1] player-1: ah, there we go
+[Record 62; Quest 3; Turn 1] player-1: seems like player-6, player-2 and me are good
+[Record 63; Quest 3; Turn 1] player-1: as it wouldn't make sense for a bad person to have approved this as we are in chaos anyways
+[Record 64; Quest 3; Turn 1] player-1: so, that also leads me to conclude that player-5 is evil and thus the cause for quest one's failure
+[Record 65; Quest 3; Turn 1] player-1: that leaves player-4 and player-3...
+[Record 66; Quest 3; Turn 1] player-1: one of them is bad, but i don't know who that might be
+[Record 67; Quest 3; Turn 1] player-1: let me trust player-4 for now and let's year your thoughts
+[Record 68; Quest 3; Turn 1] system: player-1 proposed a party: player-6, player-1, player-2, player-4
+[Record 69; Quest 3; Turn 2] player-2: i'm not sure how to feel about this. i believe it would be easy for player-1 to lay the blame on anyone he chooses now, as he has the power to fail without us knowing.
+[Record 70; Quest 3; Turn 2] player-2: he could easily say that whoever he chose is the evil person even if he or player-6 are the one to fail it meaning the evil people could get away with yet another failure. if this fails... i can't say
+[Record 71; Quest 3; Turn 2] player-2: for certain it will be player-4's fault.
+[Record 72; Quest 3; Turn 3] player-3: i think it's super weird player-1 started off saying that he was suspicious of player-4 but is now adding her to the quest
+[Record 73; Quest 3; Turn 3] player-3: or to the party i mean
+[Record 74; Quest 3; Turn 3] player-3: i think if this fails it's more likely to be player-1. but i also probably won't be convinced if it succeeds
+[Record 75; Quest 3; Turn 4] player-4: i think player-1 and player-6 are working together... how ever player-5 and player-3 also seem to be working together... i dont know who to trust lol
+[Record 76; Quest 3; Turn 4] player-4: player-1 might be trying to get away with it by making me look bad
+[Record 77; Quest 3; Turn 5] player-5: interesting this quest passed to prove player-6 innocence so a narrative is set.
+[Record 78; Quest 3; Turn 5] player-5: interesting ingrid is bunching people together when no one else seeing these connections... i must say ingrid seems to be in favor of player-1 but against him to not be so suspicious?
+[Record 79; Quest 3; Turn 6] player-6: i agree with the others and have some suspicions on player-4, but we shall see if the quest succeeds
+[Record 80; Quest 3; Turn 7] player-1: first off, think about the benefit i would gain as a bad person approving quest 2. right, there is literally none. the situation has gotten worse for the evil people.
+[Record 81; Quest 3; Turn 7] player-1: i also don't get why player-4 is picking on me despite being on the party
+[Record 82; Quest 3; Turn 7] player-1: either way, i agree what player-5 and player-3 may be collaborating here and i am convinced player-5 is evil, so that's why i trust her. either way, let's vote for this to gain some more insights.
+[Record 83; Quest 3; Turn 7] player-1: as good people we can even afford another loose and draw conclusions as we only need three people for the next quest.
+[Record 84; Quest 3; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 85; Quest 3; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 86; Quest 3; Turn 7] system: quest succeeded!
+[Record 87; Quest 4; Turn 1] player-2: if player-1 and player-6 are good, it will succeed:) leaving it to be angel to be an evil
+[Record 88; Quest 4; Turn 1] system: player-2 proposed a party: player-2, player-1, player-6
+[Record 89; Quest 4; Turn 2] player-3: i didn't even get to play yet and i'm feeling left out. also i suspect that player-1 is going to fail the quest
+[Record 90; Quest 4; Turn 2] player-3: that he he can win this one and the next one
+[Record 91; Quest 4; Turn 2] player-3: and then evil wins
+[Record 92; Quest 4; Turn 2] player-3: i want to be on the party
+[Record 93; Quest 4; Turn 3] player-4: do you want to be on party to fail it?
+[Record 94; Quest 4; Turn 3] player-4: im fine with this party
+[Record 95; Quest 4; Turn 4] player-5: well i think player-1 is leading everyone on and now they are excluding ingrid on partys. why? because she will fail them?
+[Record 96; Quest 4; Turn 5] player-6: i agree with player-4 on how player-3 seems too eager to join the party and if this quest succeeds then it should prove his innocence
+[Record 97; Quest 4; Turn 6] player-1: there is no point for me to keep succeeding parties if i am evil
+[Record 98; Quest 4; Turn 6] player-1: also, we only need three people, so it doesn't matter to me what the party is as long is it three among player-6, player-2, player-4 and me.
+[Record 99; Quest 4; Turn 7] player-2: while player-3 was not able to play, adding her will add an additional variable that has not been tested, making it harder to determine innocence.
+[Record 100; Quest 4; Turn 7] player-2: player-1 player-6 and i have previously voted to succeed, if it happens again, we will be completely absolved.
+[Record 101; Quest 4; Turn 7] player-2: if it fails, then player-6 and player-1 will be incriminated to some extent.
+[Record 102; Quest 4; Turn 7] player-2: i think i will keep the party as is.
+[Record 103; Quest 4; Turn 8] player-3: i want to play
+[Record 104; Quest 4; Turn 8] player-3: i'm voting no
+[Record 105; Quest 4; Turn 8] player-3: also player-4 is attacking me so i would not pick her either
+[Record 106; Quest 4; Turn 9] player-4: add her if it fails we confirm her and angel are working together
+[Record 107; Quest 4; Turn 9] player-4: if good with this party
+[Record 108; Quest 4; Turn 10] player-5: interesting player-4 agrees with everything player-1 says and yet she is excluded...
+[Record 109; Quest 4; Turn 11] player-6: i agree with player-2 on how adding player-3 to the party would be an additional untested variable and should be looked into in the next round
+[Record 110; Quest 4; Turn 12] player-1: let's just vote and everything will be sunshine and rainbows
+[Record 111; Quest 4; Turn 13] player-2: i'm not adding player-3 to the party. the reasoning is childish and honestly feels like a ploy to try and fail the success of the good people at the last second
+[Record 112; Quest 4; Turn 13] player-2: this feels like a ploy to try and absolve either player-1 or player-6 in case they are still voting to try and maintain their innocence. i refuse to add player-3 to the party, as i think it will make this
+[Record 113; Quest 4; Turn 13] player-2: harder to decide.
+[Record 114; Quest 4; Turn 13] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: yes, player-5: no, player-6: yes
+[Record 115; Quest 4; Turn 13] system: vote succeeded! initiating quest vote!
+[Record 116; Quest 4; Turn 13] system: quest succeeded!

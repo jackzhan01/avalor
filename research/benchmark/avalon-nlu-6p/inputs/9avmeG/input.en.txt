@@ -1,0 +1,94 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 1] system: player-2 proposed a party: player-2, player-3
+[Record 3; Quest 1; Turn 2] player-2: this is the first round, we don't have a lot of information so i propose myself( because i am good) and the next person player-3.
+[Record 4; Quest 1; Turn 3] player-3: i agree with player-2. i am good too.
+[Record 5; Quest 1; Turn 4] player-4: i think i am fine with the team as well
+[Record 6; Quest 1; Turn 5] player-5: i am good with that
+[Record 7; Quest 1; Turn 6] player-6: no opinions in the first turn
+[Record 8; Quest 1; Turn 6] player-6: i'm fine with this party
+[Record 9; Quest 1; Turn 7] player-1: oh, yeah, i am good with this
+[Record 10; Quest 1; Turn 7] player-1: we don't know anything at this point anyways
+[Record 11; Quest 1; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 12; Quest 1; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 13; Quest 1; Turn 7] system: quest succeeded!
+[Record 14; Quest 2; Turn 0] system: player-3 proposed a party: player-2, player-3, player-4
+[Record 15; Quest 2; Turn 1] player-3: will propose myself and player-2 given that the previous quest is a success. added player-4 randomly given no information.
+[Record 16; Quest 2; Turn 2] player-4: looks good to me!
+[Record 17; Quest 2; Turn 3] player-6: agree
+[Record 18; Quest 2; Turn 4] player-1: this should be fine.
+[Record 19; Quest 2; Turn 4] player-1: everyone also agreed to the previous party, so even a potential merlin should be fine
+[Record 20; Quest 2; Turn 5] player-2: i'm fine with this. just to note though that we don't know anything at this point, as evil would be unlikely to vote for failure in the first round.
+[Record 21; Quest 2; Turn 5] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 22; Quest 2; Turn 5] system: vote succeeded! initiating quest vote!
+[Record 23; Quest 2; Turn 5] system: quest failed!
+[Record 24; Quest 3; Turn 0] system: player-5 proposed a party: player-5, player-2, player-6, player-1
+[Record 25; Quest 3; Turn 1] player-5: i won't reject this proposal since i am in it:)
+[Record 26; Quest 3; Turn 2] player-6: well, this sounds like a bad person's statement
+[Record 27; Quest 3; Turn 2] player-6: although i don't have much information now, i would suggest another party
+[Record 28; Quest 3; Turn 2] player-6: i see no point excluding player-3
+[Record 29; Quest 3; Turn 2] player-6: since he is in a similar status with player-2( they've succeeded the first ga, e
+[Record 30; Quest 3; Turn 3] player-1: ok, this party is a little strange
+[Record 31; Quest 3; Turn 3] player-1: it's basically everyone but the recent people
+[Record 32; Quest 3; Turn 3] player-1: but, to be fair, maybe two people in the previous party were bad, we don't know
+[Record 33; Quest 3; Turn 3] player-1: however, this quest will also fail as there is very likely at least one bad person on this.
+[Record 34; Quest 3; Turn 4] player-2: yeah i'm not sure i agree with this party setup. statistically it's unlike both the evil people were in the last party, so odds are there is an evil person in this new one.
+[Record 35; Quest 3; Turn 4] player-2: but, i'm also not sure what would be a good party at this point. i know i am good, so in my opinion either player-4 or player-3 are evil.
+[Record 36; Quest 3; Turn 5] player-3: i agree with player-2 with regards to the party setup.
+[Record 37; Quest 3; Turn 5] player-3: hence, i find player-5's logic for approving of this party highly suspicious as no good player would support this party logically
+[Record 38; Quest 3; Turn 5] player-3: even if he/ she is good
+[Record 39; Quest 3; Turn 5] system: player-5 proposed a party: player-5, player-6, player-1, player-4
+[Record 40; Quest 3; Turn 6] player-4: one of player-2 and player-3 have to be evil so i guess its safe to keep both of them out
+[Record 41; Quest 3; Turn 6] system: party vote outcome: player-1: yes, player-2: no, player-3: no, player-4: yes, player-5: yes, player-6: no
+[Record 42; Quest 3; Turn 6] system: vote failed!
+[Record 43; Quest 3; Turn 6] system: player-6 proposed a party: player-1, player-6, player-5, player-3
+[Record 44; Quest 3; Turn 7] player-6: hmmm i'm highly suspicious of player-4 now
+[Record 45; Quest 3; Turn 7] player-6: he excluded both player-2 and player-3 in the previous party
+[Record 46; Quest 3; Turn 7] player-6: a good person should at least pick one of them
+[Record 47; Quest 3; Turn 7] player-6: i'm not sure about the current one
+[Record 48; Quest 3; Turn 8] player-1: yeah, i think that player-6 and player-5 are not on the same party
+[Record 49; Quest 3; Turn 8] player-1: not party, group
+[Record 50; Quest 3; Turn 8] player-1: i am not sure which one is which, but there seem to go against each other
+[Record 51; Quest 3; Turn 8] player-1: so i propose to not have them on the same party
+[Record 52; Quest 3; Turn 9] player-2: at this point, i am suspicious of player-4 and player-3. i am leaning towards player-4 for similar reasons as player-6.
+[Record 53; Quest 3; Turn 9] player-2: excluding both me and player-3 doesn't seem like a good strategy for narrowing down who is bad.
+[Record 54; Quest 3; Turn 9] player-2: so statistically, i would guess player-4 is evil and player-3 is good. but this isn't a 100 solid guess.
+[Record 55; Quest 3; Turn 10] player-3: i agree with player-2's statement and i think player-4 is suspicious
+[Record 56; Quest 3; Turn 10] player-3: i also not voting for this party given that player-5 is in it, despite the fact that i am good and i am in the party.
+[Record 57; Quest 3; Turn 11] player-4: i voted player-2 out of the previous one because since one of player-2 and player-3 has to be evil, it makes sense to keep both of them out.
+[Record 58; Quest 3; Turn 11] player-4: also i feel player-5 and player-2 are both evil
+[Record 59; Quest 3; Turn 12] player-5: please do note that there is a possibility where player-2 and player-3 are evil. they know each other and they designed this scheme against player-4. i am not sure but this could be possible.
+[Record 60; Quest 3; Turn 12] player-5: i don't think player-6 and i are necessarily on different teams btw
+[Record 61; Quest 3; Turn 12] system: party vote outcome: player-1: no, player-2: no, player-3: no, player-4: yes, player-5: yes, player-6: no
+[Record 62; Quest 3; Turn 12] system: vote failed!
+[Record 63; Quest 3; Turn 13] player-6: i think player-5 is trying to hide something by throwing out some logic
+[Record 64; Quest 3; Turn 13] player-6: one in player-2 and player-5 should be evil
+[Record 65; Quest 3; Turn 13] player-6: for the current turn, i suggest we assume player-5 is evil and player-2 is good.
+[Record 66; Quest 3; Turn 13] player-6: excluding player-4 and player-5 would be fine
+[Record 67; Quest 3; Turn 13] system: player-6 proposed a party: player-1, player-6, player-3, player-2
+[Record 68; Quest 3; Turn 14] player-1: i agree with player-2's and player-6's argument about player-4
+[Record 69; Quest 3; Turn 14] player-1: i am also a good person, so i am happy to be on the party.
+[Record 70; Quest 3; Turn 14] player-1: i am also very sure that player-5 and player-6 are on different teams, so i assume for the moment that player-5 is evil.
+[Record 71; Quest 3; Turn 15] player-2: i actually am also suspicious of player-5 and player-4 at the moment.
+[Record 72; Quest 3; Turn 15] player-2: in the last party vote, they were the only ones in favor of it which is pretty suspicious.
+[Record 73; Quest 3; Turn 15] player-2: i am ok with this party, and we need to approve a party at some point.
+[Record 74; Quest 3; Turn 16] player-3: i agree with player-2. based on the previous party votes, it should be quite clear who is evil. i would definitely prefer player-2 over player-4.
+[Record 75; Quest 3; Turn 17] player-4: it looks like everyone thinks that i'm evil so i guess i approve the party
+[Record 76; Quest 3; Turn 17] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 77; Quest 3; Turn 17] system: vote succeeded! initiating quest vote!
+[Record 78; Quest 3; Turn 17] system: quest succeeded!
+[Record 79; Quest 4; Turn 1] player-1: well well well
+[Record 80; Quest 4; Turn 1] player-1: i guess we found the evil people for sure
+[Record 81; Quest 4; Turn 1] player-1: since we only need three, i propose a quick party
+[Record 82; Quest 4; Turn 1] player-1: so this should be a win
+[Record 83; Quest 4; Turn 1] system: player-1 proposed a party: player-1, player-2, player-3
+[Record 84; Quest 4; Turn 2] player-2: yep, clearly we found the good people.
+[Record 85; Quest 4; Turn 2] player-2: i'm good with this.
+[Record 86; Quest 4; Turn 3] player-3: yep this should work
+[Record 87; Quest 4; Turn 4] player-4: see you hell!
+[Record 88; Quest 4; Turn 5] player-5: never gonna give you up:(
+[Record 89; Quest 4; Turn 6] player-6: it is clear that player-2 is good now
+[Record 90; Quest 4; Turn 6] player-6: approve
+[Record 91; Quest 4; Turn 7] player-1: ok, let's vote
+[Record 92; Quest 4; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 93; Quest 4; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 94; Quest 4; Turn 7] system: quest succeeded!

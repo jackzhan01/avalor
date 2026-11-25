@@ -1,0 +1,132 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 1] system: player-4 proposed a party: player-6, player-3
+[Record 3; Quest 1; Turn 2] player-5: nothing to report
+[Record 4; Quest 1; Turn 3] player-6: nothing to report on
+[Record 5; Quest 1; Turn 4] player-1: i have no info to go off of, so i will agree to this party
+[Record 6; Quest 1; Turn 5] player-2: yeah, too early to say anything right now
+[Record 7; Quest 1; Turn 5] player-2: so i am fine with this party
+[Record 8; Quest 1; Turn 6] player-3: also fine with this party for now
+[Record 9; Quest 1; Turn 6] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 10; Quest 1; Turn 6] system: vote succeeded! initiating quest vote!
+[Record 11; Quest 1; Turn 6] system: quest failed!
+[Record 12; Quest 2; Turn 1] player-5: interesting. so either player-6 or zeke are the potential evil people? however, it seems that player-4 could have positioned one of them to vote against the good side if he knew who they the evils were.
+[Record 13; Quest 2; Turn 1] system: player-5 proposed a party: player-4, player-5, player-3
+[Record 14; Quest 2; Turn 2] player-6: i would say zeke? i think it is you player-5...
+[Record 15; Quest 2; Turn 3] player-1: i think this vote will probably help us determine who is good vs who is bad. it's definitely either player-6 or player-3
+[Record 16; Quest 2; Turn 3] player-1: but i'm worried player-4 or player-5 could also be bad and then that puts us in a really bad position for the 3rd round
+[Record 17; Quest 2; Turn 4] player-2: it's interesting that player-4 didn't put himself on the first party
+[Record 18; Quest 2; Turn 4] player-2: that makes me wonder if he is trying to hide something and is now shifting blame
+[Record 19; Quest 2; Turn 4] player-2: but it might also have been bad luck
+[Record 20; Quest 2; Turn 4] player-2: either way, as i don't know anything about player-3 nor player-6, i am fine with randomly testing one of them
+[Record 21; Quest 2; Turn 5] player-3: i would have to say angel, but it will be a tough position like player-1 said since player-5 and player-4 are oth added in this round
+[Record 22; Quest 2; Turn 6] player-4: it seems angel is trying to shift the blame to zeke, but it also seems that player-5 is suspicious of angel and also agree with player-2 that it is bad luck and was an unlucky party pick
+[Record 23; Quest 2; Turn 7] player-5: i believe that player-4 knows more than he is letting on... he agreed with player-2's deduction of it being a bad pick but didn't outright say it was a bad pick even though it was his own choice
+[Record 24; Quest 2; Turn 7] player-5: adding myself to the mix, i'm here to prove i have nothing to hide. zeke seems like he can go either way, thus testing him will give us insight on angel's victory as well.
+[Record 25; Quest 2; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 26; Quest 2; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 27; Quest 2; Turn 7] system: quest failed!
+[Record 28; Quest 3; Turn 1] player-6: hmmm player-4 is really quick to defend zeke and it failed... i am suspicious of zeke and player-4 since they are so close
+[Record 29; Quest 3; Turn 1] player-6: player-5 also defending them
+[Record 30; Quest 3; Turn 1] system: player-6 proposed a party: player-1, player-4, player-6, player-3
+[Record 31; Quest 3; Turn 2] player-1: i absolutely refuse to accept this party. we know there is at least 1 bad person.
+[Record 32; Quest 3; Turn 2] player-1: i think i can be pretty darn confident that player-6 was the bad guy in the first party that consisted of player-3 and player-6
+[Record 33; Quest 3; Turn 2] player-1: so i will not approve any party with him in it
+[Record 34; Quest 3; Turn 2] player-1: i find it strange that player-4 did not pick himself to be part of the party, but i think that is the behavior of an innocent person since an evil person would likely not make that choice
+[Record 35; Quest 3; Turn 2] player-1: i think the next part should be player-3, player-4, myself
+[Record 36; Quest 3; Turn 2] player-1: and i'm unsure of player-2 or player-5. i think player-5 is evil because the party with player-3, player-4, and player-5 failed and i am much more confident in player-4 and player-3 being good
+[Record 37; Quest 3; Turn 3] player-2: i think player-1's argument doesn't make sense
+[Record 38; Quest 3; Turn 3] player-2: the first quest failed with player-3 and angel
+[Record 39; Quest 3; Turn 3] player-2: then the second one failed with zeke, player-4 and player-5
+[Record 40; Quest 3; Turn 3] player-2: so i think it is pretty clear that zeke is bad here
+[Record 41; Quest 3; Turn 3] player-2: i also agree with angle's statement that player-4 jumped pretty quickly to zeke's rescue
+[Record 42; Quest 3; Turn 3] player-2: and him not putting himself onto the first party also slowly becomes more and more suspicious
+[Record 43; Quest 3; Turn 3] player-2: we have to be absolutely correct with our choice here or else we loose
+[Record 44; Quest 3; Turn 3] player-2: i think our best bet is player-5, angle, player-1 and myself
+[Record 45; Quest 3; Turn 4] player-3: i agree with player-1 and believe that angel is a bad guy and i am a bit hesitant about player-5
+[Record 46; Quest 3; Turn 4] player-3: he claims he added himself to prove he is innocent but he could know that removing angel and keeping me would make me look bad since he could fail the second quest
+[Record 47; Quest 3; Turn 5] player-4: as others have mentioned my reason not to include myself in the party. it was simply because angel and zeke were across from each other and unfortunately one of them turned out to be a bad pick. fourth
+[Record 48; Quest 3; Turn 5] player-4: furthermore with what player-1 said. should i have been evil wouldn't it have been better to include myself from the start and then blame someone else
+[Record 49; Quest 3; Turn 6] player-5: zeke has been in two failed quests. is this really the person we trust? also, player-4 has provided only the argument that it was an honest mistake but if he is evil and knows who the other evil is
+[Record 50; Quest 3; Turn 6] player-5: he could have chosen player-3 to be the scapegoat while he pretends to be good.
+[Record 51; Quest 3; Turn 6] player-5: moreover, there may be certain powers that be that have told me player-3 and player-4 are the two evil conspirators.
+[Record 52; Quest 3; Turn 6] player-5: i think player-2's deduction of who should be in the party should be followed wholeheartedly.
+[Record 53; Quest 3; Turn 7] player-6: player-2 and zeke are sus, if i exclude this party most likely fail right?
+[Record 54; Quest 3; Turn 7] player-6: i'll exclude zeke because we know he is bad
+[Record 55; Quest 3; Turn 7] player-6: i will also exclude player-2
+[Record 56; Quest 3; Turn 7] system: player-6 proposed a party: player-4, player-2, player-5, player-1
+[Record 57; Quest 3; Turn 7] system: party vote outcome: player-1: no, player-2: no, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 58; Quest 3; Turn 7] system: vote failed!
+[Record 59; Quest 3; Turn 8] player-1: idk who to pick anymore lol
+[Record 60; Quest 3; Turn 8] player-1: if we get this wrong, it's over
+[Record 61; Quest 3; Turn 8] system: player-1 proposed a party: player-5, player-1, player-6, player-4
+[Record 62; Quest 3; Turn 9] player-2: yes, you are absolutely right, if we mess this up, it's over
+[Record 63; Quest 3; Turn 9] player-2: i still agree with player-5 that there might be something going on with player-4
+[Record 64; Quest 3; Turn 9] player-2: i am sure that player-6 is good
+[Record 65; Quest 3; Turn 9] player-2: however, i frankly don't have much to go off for player-1, but there is also nothing incriminating her
+[Record 66; Quest 3; Turn 9] player-2: so i still think you should remove player-4 and add me instead
+[Record 67; Quest 3; Turn 9] player-2: he always supported zeke, which we know is evil
+[Record 68; Quest 3; Turn 9] player-2: so i don't know why he has so much trust at the moment
+[Record 69; Quest 3; Turn 10] player-3: otherthan then angel accidentally adding player-2 to the party. i think angel excluding himself from the party but keeping player-5 in was a way to fail the quest.
+[Record 70; Quest 3; Turn 10] player-3: they both could have used this strategy to keep angel looking like he is a good guy.
+[Record 71; Quest 3; Turn 11] player-4: as player-2 has previously mentioned he is somewhat suspicious of zeke and looking back on it there may be some truth to it. i also agree that the party should be changed
+[Record 72; Quest 3; Turn 11] player-4: and it will raise suspicions from everyone whether or not i want to be in said party so i leave the choice to you guys
+[Record 73; Quest 3; Turn 11] player-4: since i was accused for not including myself at first
+[Record 74; Quest 3; Turn 12] player-5: if we look at previous voting, we see that only 2 people said yes: zeke and player-4( and player-6, with the added clause that he added player-2 by mistake instead of himself i presume)
+[Record 75; Quest 3; Turn 12] player-5: zeke and player-4 would want to say yes if they were evil, they would want that party to go through as it would allow them victory.
+[Record 76; Quest 3; Turn 12] player-5: further more, this would corroborate what i've heard from certain... powers that reside over us.
+[Record 77; Quest 3; Turn 12] player-5: i think the party should be everyone but those two.
+[Record 78; Quest 3; Turn 13] player-6: player-3 and player-2 seem to be really pushing a narrative about me... can we exclude them both of the next quest?
+[Record 79; Quest 3; Turn 13] player-6: this would show if they both are bad
+[Record 80; Quest 3; Turn 13] system: player-1 proposed a party: player-5, player-1, player-6, player-2
+[Record 81; Quest 3; Turn 13] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 82; Quest 3; Turn 13] system: vote succeeded! initiating quest vote!
+[Record 83; Quest 3; Turn 13] system: quest succeeded!
+[Record 84; Quest 4; Turn 1] player-2: hm, looks like i was wrong with some of my suspicions
+[Record 85; Quest 4; Turn 1] player-2: i guess the previous party people were good, so i'll just choose three of them as we only need three next
+[Record 86; Quest 4; Turn 1] system: player-2 proposed a party: player-2, player-1, player-5
+[Record 87; Quest 4; Turn 2] player-4: i agree with player-2 and how the previous party seems to prove their innocence, and feel that current party is a good choice. on the other hand, wouldn't an evil person purposely vote for a quest to
+[Record 88; Quest 4; Turn 2] player-4: succeed just to throw off get the group to lower their guard?
+[Record 89; Quest 4; Turn 3] player-5: i disagree while that would be a good strategy when there was only one failed quest, the evil person could have already won the game, as they had 2 failed quests as is.
+[Record 90; Quest 4; Turn 3] player-5: that move would only give the good guys a higher chance of winning if they were not in total control of the board. why squander the perfect victory? it's unlikely player-4 and zeke are the evil doers.
+[Record 91; Quest 4; Turn 3] player-5: i agree with this party.
+[Record 92; Quest 4; Turn 4] player-6: we should make a quest without player-2 to test our theory if it passes. and without player-3
+[Record 93; Quest 4; Turn 5] player-1: i think based on all the evidence, yeah it has to be player-3 and player-4.
+[Record 94; Quest 4; Turn 5] player-1: all the good people need to vote yes on this
+[Record 95; Quest 4; Turn 6] player-2: yeah, let's vote
+[Record 96; Quest 4; Turn 6] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: yes, player-5: yes, player-6: yes
+[Record 97; Quest 4; Turn 6] system: vote succeeded! initiating quest vote!
+[Record 98; Quest 4; Turn 6] system: quest succeeded!
+[Record 99; Quest 5; Turn 0] system: player-3 proposed a party: player-1, player-2, player-3, player-4
+[Record 100; Quest 5; Turn 1] player-4: given the previous voting i believe we should change the party just to be safe
+[Record 101; Quest 5; Turn 2] player-5: yes, i agree. change the party to everyone but zeke and player-4 as that garnered the best results when it came to a vote of 4.
+[Record 102; Quest 5; Turn 2] player-5: have i said that i know the powers that be and they explicitly told me it's player-4 and zeke?
+[Record 103; Quest 5; Turn 3] player-6: i feel player-3 pushed no on this last quest because he feels he is being ousted for being bad
+[Record 104; Quest 5; Turn 4] player-1: i'm not going to vote yes for any party that is not me, player-2, player-5, and player-6
+[Record 105; Quest 5; Turn 5] player-2: yeah, i agree with this. i will not approve of anything that is not player-5, player-6, player-1 and me
+[Record 106; Quest 5; Turn 5] player-2: i am still a little suspicious of player-1 potentially playing the long game here, but she could have taken the victory already, so i think we are good with the previous four players
+[Record 107; Quest 5; Turn 5] system: party vote outcome: player-1: no, player-2: no, player-3: yes, player-4: yes, player-5: yes, player-6: no
+[Record 108; Quest 5; Turn 5] system: vote failed!
+[Record 109; Quest 5; Turn 5] system: player-4 proposed a party: player-2, player-4, player-1, player-5
+[Record 110; Quest 5; Turn 6] player-5: nope. next. it's player-4 and zeke. i know without a doubt it's them. i can see things very clearly like i have a crystal ball.
+[Record 111; Quest 5; Turn 7] player-6: player-2 and player-4 seem to be ok with each other
+[Record 112; Quest 5; Turn 8] player-1: like i said i'm not approving any party that includes player-3 or player-4 so i'm going to say no to this party
+[Record 113; Quest 5; Turn 9] player-2: yeah, i agree. i have nothing to add
+[Record 114; Quest 5; Turn 10] player-3: player-5 player-4 and player-2 are all a little sus. player-5 keeps climbing he knows whos bad. but shouldn't want the assassin to know who is
+[Record 115; Quest 5; Turn 11] player-4: what zeke is saying makes sense. proof is that on multiple occasions player-5 has stated that he in fact who knows who is who and wouldn't an evil person also know who their companion in crime is???
+[Record 116; Quest 5; Turn 11] system: party vote outcome: player-1: no, player-2: no, player-3: yes, player-4: yes, player-5: no, player-6: no
+[Record 117; Quest 5; Turn 11] system: vote failed!
+[Record 118; Quest 5; Turn 11] system: player-5 proposed a party: player-2, player-1, player-6, player-5
+[Record 119; Quest 5; Turn 12] player-5: player-5 may or may not have forgotten the plot point of the assassin in the game... but anyway, this party should vote good
+[Record 120; Quest 5; Turn 13] player-6: player-2 and player-3
+[Record 121; Quest 5; Turn 14] player-1: no player-6 you better approve this part we are so close to winning
+[Record 122; Quest 5; Turn 14] player-1: vote yes
+[Record 123; Quest 5; Turn 15] player-2: yeah, i think this is the right party
+[Record 124; Quest 5; Turn 16] player-3: hmm unless player-5 claims he forgot the plot but is in fact trying to sacrifice himself as a servant to win
+[Record 125; Quest 5; Turn 17] player-5: whatever the case is that's a matter of the evil doers this is the right party. i may have used my powers incorrectly tho and just handed them the victory in the end. sorry
+[Record 126; Quest 5; Turn 18] player-6: player-2 and player-4 lol
+[Record 127; Quest 5; Turn 19] player-4: player-5 has made it clear time and time again that both zeke and i are in cahoots. so i ask that group to think long and hard on whether you guys go through with this vote. it can go either way
+[Record 128; Quest 5; Turn 19] player-4: couldnt send it last round
+[Record 129; Quest 5; Turn 19] player-4: also angel switching between player-2, zeke, and i. it seems the rest of o group is forcing him to pick and not allowing himself to decide that fate of the game
+[Record 130; Quest 5; Turn 19] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: yes, player-5: yes, player-6: yes
+[Record 131; Quest 5; Turn 19] system: vote succeeded! initiating quest vote!
+[Record 132; Quest 5; Turn 19] system: quest succeeded!

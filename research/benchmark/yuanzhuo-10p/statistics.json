@@ -1,0 +1,452 @@
+{
+  "metric": "Python len(input.zh.txt), including whitespace, excluding separate instruction",
+  "games": [
+    {
+      "index": 1,
+      "bvid": "BV19D7565EZg",
+      "run_id": "full-v2b",
+      "origin": "原有",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "fail"
+      },
+      "team_blocks": 8,
+      "original_context_chars": 13661,
+      "original_nonwhitespace_chars": 12319,
+      "preprocess_context_chars": 13543,
+      "cutoffs": 8,
+      "full_input_preprocess": "inputs/BV19D7565EZg/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 2,
+      "bvid": "BV17y756nE1m",
+      "run_id": "game7-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "success",
+        "2": "fail",
+        "3": "success"
+      },
+      "team_blocks": 8,
+      "original_context_chars": 10375,
+      "original_nonwhitespace_chars": 9232,
+      "preprocess_context_chars": 10263,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV17y756nE1m/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 3,
+      "bvid": "BV1bGTy6tEj8",
+      "run_id": "game8-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "fail"
+      },
+      "team_blocks": 7,
+      "original_context_chars": 8929,
+      "original_nonwhitespace_chars": 7990,
+      "preprocess_context_chars": 8856,
+      "cutoffs": 3,
+      "full_input_preprocess": "inputs/BV1bGTy6tEj8/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 4,
+      "bvid": "BV1M2M562EeM",
+      "run_id": "game9-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "fail",
+        "2": "fail",
+        "3": "fail"
+      },
+      "team_blocks": 7,
+      "original_context_chars": 12975,
+      "original_nonwhitespace_chars": 11656,
+      "preprocess_context_chars": 12904,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1M2M562EeM/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 5,
+      "bvid": "BV1mzNd6QEN8",
+      "run_id": "game10-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "success",
+        "2": "fail",
+        "3": "success"
+      },
+      "team_blocks": 7,
+      "original_context_chars": 8955,
+      "original_nonwhitespace_chars": 8062,
+      "preprocess_context_chars": 8873,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1mzNd6QEN8/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 6,
+      "bvid": "BV1WB316PEig",
+      "run_id": "game11-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 4,
+      "recorded_mission_results": 4,
+      "mission_results": {
+        "1": "success",
+        "2": "fail",
+        "3": "fail",
+        "4": "fail"
+      },
+      "team_blocks": 9,
+      "original_context_chars": 14465,
+      "original_nonwhitespace_chars": 12900,
+      "preprocess_context_chars": 14324,
+      "cutoffs": 5,
+      "full_input_preprocess": "inputs/BV1WB316PEig/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 7,
+      "bvid": "BV1kr876AEE1",
+      "run_id": "game3-v1",
+      "origin": "原有",
+      "player_count": 10,
+      "covered_through_mission": 4,
+      "recorded_mission_results": 4,
+      "mission_results": {
+        "1": "success",
+        "2": "success",
+        "3": "fail",
+        "4": "success"
+      },
+      "team_blocks": 7,
+      "original_context_chars": 9552,
+      "original_nonwhitespace_chars": 8576,
+      "preprocess_context_chars": 9443,
+      "cutoffs": 5,
+      "full_input_preprocess": "inputs/BV1kr876AEE1/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 8,
+      "bvid": "BV1dc8F6qE5K",
+      "run_id": "game4-v1",
+      "origin": "原有",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "fail",
+        "2": "fail",
+        "3": "fail"
+      },
+      "team_blocks": 8,
+      "original_context_chars": 12208,
+      "original_nonwhitespace_chars": 10947,
+      "preprocess_context_chars": 12088,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1dc8F6qE5K/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 9,
+      "bvid": "BV1pYtc6mEcd",
+      "run_id": "game5-v2",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 4,
+      "recorded_mission_results": 4,
+      "mission_results": {
+        "1": "success",
+        "2": "fail",
+        "3": "fail",
+        "4": "fail"
+      },
+      "team_blocks": 9,
+      "original_context_chars": 10988,
+      "original_nonwhitespace_chars": 9847,
+      "preprocess_context_chars": 10881,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1pYtc6mEcd/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 10,
+      "bvid": "BV1ypYT6jEyy",
+      "run_id": "game6-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 5,
+      "recorded_mission_results": 5,
+      "mission_results": {
+        "1": "fail",
+        "2": "fail",
+        "3": "success",
+        "4": "success",
+        "5": "success"
+      },
+      "team_blocks": 11,
+      "original_context_chars": 10631,
+      "original_nonwhitespace_chars": 9505,
+      "preprocess_context_chars": 10488,
+      "cutoffs": 6,
+      "full_input_preprocess": "inputs/BV1ypYT6jEyy/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 11,
+      "bvid": "BV12beJ69E8W",
+      "run_id": "game2-v1",
+      "origin": "原有",
+      "player_count": 10,
+      "covered_through_mission": 2,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "success"
+      },
+      "team_blocks": 4,
+      "original_context_chars": 6230,
+      "original_nonwhitespace_chars": 5575,
+      "preprocess_context_chars": 6193,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV12beJ69E8W/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 12,
+      "bvid": "BV1ufaA6GEwk",
+      "run_id": "game12-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 4,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "fail",
+        "2": "fail",
+        "3": "success"
+      },
+      "team_blocks": 9,
+      "original_context_chars": 11611,
+      "original_nonwhitespace_chars": 10440,
+      "preprocess_context_chars": 11521,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1ufaA6GEwk/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 13,
+      "bvid": "BV13oaN6HE1y",
+      "run_id": "game13-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 2,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "fail",
+        "2": "success"
+      },
+      "team_blocks": 5,
+      "original_context_chars": 6900,
+      "original_nonwhitespace_chars": 6163,
+      "preprocess_context_chars": 6852,
+      "cutoffs": 3,
+      "full_input_preprocess": "inputs/BV13oaN6HE1y/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 16,
+      "bvid": "BV1aann6eErr",
+      "run_id": "game16-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 2,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "success"
+      },
+      "team_blocks": 6,
+      "original_context_chars": 5906,
+      "original_nonwhitespace_chars": 5252,
+      "preprocess_context_chars": 5851,
+      "cutoffs": 3,
+      "full_input_preprocess": "inputs/BV1aann6eErr/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 17,
+      "bvid": "BV1ianm6EE7h",
+      "run_id": "game17-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 2,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "success"
+      },
+      "team_blocks": 5,
+      "original_context_chars": 6353,
+      "original_nonwhitespace_chars": 5688,
+      "preprocess_context_chars": 6311,
+      "cutoffs": 3,
+      "full_input_preprocess": "inputs/BV1ianm6EE7h/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 18,
+      "bvid": "BV1MfxT6TEJS",
+      "run_id": "game18-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "fail",
+        "2": "fail",
+        "3": "fail"
+      },
+      "team_blocks": 6,
+      "original_context_chars": 8725,
+      "original_nonwhitespace_chars": 7835,
+      "preprocess_context_chars": 8674,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1MfxT6TEJS/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 19,
+      "bvid": "BV1AaxC6hEhz",
+      "run_id": "game19-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "success"
+      },
+      "team_blocks": 6,
+      "original_context_chars": 10289,
+      "original_nonwhitespace_chars": 9247,
+      "preprocess_context_chars": 10226,
+      "cutoffs": 3,
+      "full_input_preprocess": "inputs/BV1AaxC6hEhz/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 20,
+      "bvid": "BV1X34B6YEhK",
+      "run_id": "game20-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 2,
+      "recorded_mission_results": 2,
+      "mission_results": {
+        "1": "success",
+        "2": "success"
+      },
+      "team_blocks": 5,
+      "original_context_chars": 7182,
+      "original_nonwhitespace_chars": 6424,
+      "preprocess_context_chars": 7130,
+      "cutoffs": 3,
+      "full_input_preprocess": "inputs/BV1X34B6YEhK/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 21,
+      "bvid": "BV1E4W16REGX",
+      "run_id": "game21-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "success",
+        "2": "success",
+        "3": "success"
+      },
+      "team_blocks": 5,
+      "original_context_chars": 5099,
+      "original_nonwhitespace_chars": 4556,
+      "preprocess_context_chars": 5044,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1E4W16REGX/full/input.zh.txt",
+      "tokens": null
+    },
+    {
+      "index": 22,
+      "bvid": "BV1SEs56XE3r",
+      "run_id": "game22-v1",
+      "origin": "新增",
+      "player_count": 10,
+      "covered_through_mission": 3,
+      "recorded_mission_results": 3,
+      "mission_results": {
+        "1": "fail",
+        "2": "fail",
+        "3": "fail"
+      },
+      "team_blocks": 9,
+      "original_context_chars": 10473,
+      "original_nonwhitespace_chars": 9408,
+      "preprocess_context_chars": 10381,
+      "cutoffs": 4,
+      "full_input_preprocess": "inputs/BV1SEs56XE3r/full/input.zh.txt",
+      "tokens": null
+    }
+  ],
+  "summary": {
+    "schema": "vbench.preprocessing_quality/1",
+    "version": "preprocess-v1",
+    "games": 22,
+    "pairs": 112,
+    "original_files_unchanged": 519,
+    "labels_and_objective_facts_unchanged": true,
+    "rules_counts_full_only": {
+      "trim_phrase_final_particles": 807,
+      "remove_separate_filler": 9,
+      "normalize_spacing": 93,
+      "remove_initial_eh": 11,
+      "collapse_discourse_stutter": 9,
+      "remove_orphan_punctuation": 1,
+      "verified_ocr_spacing": 1,
+      "remove_ellipsis": 1
+    },
+    "changed_full_paragraphs": 856,
+    "original_full_chars": 207834,
+    "preprocess_full_chars": 205964,
+    "review_scope": "继承上一版本逐条纠错；本次增加一处看原字幕确认的数字间隔修正，并用确定规则清理全部112份输入。不是新一轮逐字听写或全文人工校对。",
+    "limitations": [
+      "语气词和停顿删除会损失部分语用线索，不能宣称语义完全无损。",
+      "原始转录仍可能有漏字或错字；未自动猜测有歧义的座位数字。",
+      "保留笑声、玩家重复的完整观点、改口、否定、模态词和对吧/是吧确认问句。",
+      "全文覆盖轮数不等于完整真人对局轮数，未知后续不补造。",
+      "字符数包括空白、标点、规则和公开事件，不含独立instruction；不是token数。"
+    ]
+  },
+  "summary_scope": "summary was computed by preprocess-v1 over 22 games, before v2 dropped 2"
+}

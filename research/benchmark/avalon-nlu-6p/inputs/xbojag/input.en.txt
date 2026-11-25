@@ -1,0 +1,88 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 2] player-1: i am choosing a random party for the start
+[Record 3; Quest 1; Turn 3] player-2: since we don't know a lot, i am fine with any party right now, but it is interesting that player-1 didn't choose himself.
+[Record 4; Quest 1; Turn 4] player-3: since we do not have a lot of information, but i am happy to be on the quest. i am with the good side.
+[Record 5; Quest 1; Turn 5] player-4: i am ok with this party. i am good and have no information.
+[Record 6; Quest 1; Turn 6] player-5: i agree too.
+[Record 7; Quest 1; Turn 7] player-6: i agree too. no much information this turn.
+[Record 8; Quest 1; Turn 7] system: player-1 proposed a party: player-3, player-6
+[Record 9; Quest 1; Turn 8] player-1: looks good to me too
+[Record 10; Quest 1; Turn 8] system: party vote outcome: player-1: yes, player-2: no, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 11; Quest 1; Turn 8] system: vote succeeded! initiating quest vote!
+[Record 12; Quest 1; Turn 8] system: quest succeeded!
+[Record 13; Quest 2; Turn 0] system: player-3 proposed a party: player-1, player-3, player-6
+[Record 14; Quest 2; Turn 1] player-3: for this quest, i would like to add an additional person to the quest.
+[Record 15; Quest 2; Turn 1] player-3: and as the general strategy, we keep the people from the previous round.
+[Record 16; Quest 2; Turn 1] player-3: if you would like to be on the quest, please feel free to mention it.
+[Record 17; Quest 2; Turn 1] player-3: also interesting that player-2 voted no on the previous quest formation, could you please explain?
+[Record 18; Quest 2; Turn 2] player-4: i would like to be on this quest. i am good. because the first round was too random.
+[Record 19; Quest 2; Turn 2] player-4: i am curious why player-1 didn't put himself on the quest.
+[Record 20; Quest 2; Turn 3] player-5: i am a blind good guy so feel free to add me on the team.
+[Record 21; Quest 2; Turn 3] player-5: i don't want to make any allegations right now.
+[Record 22; Quest 2; Turn 4] player-6: i'm good with it since i'm on the board.
+[Record 23; Quest 2; Turn 5] player-1: yeah, i like the party. i am a little sus on player-2 since he voted no last time
+[Record 24; Quest 2; Turn 6] player-2: we don't know much from the first quest as no evil person would have failed it, so i think any part is as good as the other for this purpose.
+[Record 25; Quest 2; Turn 6] player-2: however, i am a good person, so i would like to propose myself to the party.
+[Record 26; Quest 2; Turn 6] player-2: as to why i voted no as i know that i am good, only choosing one other person is safer than choosing two random people for whom we don't know anything.
+[Record 27; Quest 2; Turn 6] player-2: maybe player-1 didn't choose himself because he doesn't want to be in doubt as the first round doesn't have much information and wants to keep his evilness hidden for now.
+[Record 28; Quest 2; Turn 6] player-2: i would vote not to have him on the quest and choose someone else.
+[Record 29; Quest 2; Turn 7] player-3: i would like to keep my previous quest. i am not sure what player-2 says can justify him voting no on a clueless first round, but it should not be relevant to the game anyways.
+[Record 30; Quest 2; Turn 7] player-3: and exactly, i cast doubt on player-1 not putting himself into the first quest.
+[Record 31; Quest 2; Turn 7] player-3: which is why i would like to quickly narrow down this scope and test him
+[Record 32; Quest 2; Turn 7] player-3: if the quest succeeds, we don't know if he is good but we gain a success for free. but if it fails we have something to focus on.
+[Record 33; Quest 2; Turn 7] system: party vote outcome: player-1: yes, player-2: no, player-3: yes, player-4: no, player-5: yes, player-6: yes
+[Record 34; Quest 2; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 35; Quest 2; Turn 7] system: quest succeeded!
+[Record 36; Quest 3; Turn 0] system: player-4 proposed a party: player-1, player-3, player-4, player-6
+[Record 37; Quest 3; Turn 1] player-4: i believe player-3 is good because his logic is clear and convincing. i have no information so i just randomly proposed a party.
+[Record 38; Quest 3; Turn 1] player-4: i would like to hear more from you guys.
+[Record 39; Quest 3; Turn 1] player-4: i am not doubting the identity of player-2 and player-5.
+[Record 40; Quest 3; Turn 2] player-5: i didn't say anything last round but i do have a few observations to make this turn.
+[Record 41; Quest 3; Turn 2] player-5: i guess player-1 is a little suspicious for not including themselves in the first quest. however, i dont think we should be saying for sure that they are evil.
+[Record 42; Quest 3; Turn 2] player-5: thus, i think people who are eager to make extreme allegations against player-1 are also suspicious because they need to lower the credibility of a good person as soon as possible.
+[Record 43; Quest 3; Turn 2] player-5: i therefore think player-2 and player-4 are also equally suspicious if not more.
+[Record 44; Quest 3; Turn 2] player-5: additionally, player-2 and player-4 teamed up clearly while player-1 doesn't have an obvious teammate.
+[Record 45; Quest 3; Turn 2] player-5: after all, the last round succeeded, and i believe all three of you are good.
+[Record 46; Quest 3; Turn 2] player-5: thus, my suggestion for this round is, to include me in the team since i am a good person, and leave player-2 and player-4 alone since they obviously form a team.
+[Record 47; Quest 3; Turn 3] player-6: i'm only curios why player-1 didn't include him in the first round. sry i'm still a little bit concerned about that. so i might not support this quest.
+[Record 48; Quest 3; Turn 3] player-6: but also, i'm not pretty sure about that. happy to change my mind later according to the discussion.
+[Record 49; Quest 3; Turn 4] player-1: i agree with player-5 on most of what he said. in my defence, if the goal of me not selecting myself on the quest was to stay away from blame, i could have just selected myself and voted success.
+[Record 50; Quest 3; Turn 4] player-1: i did not select myself so i could test two other people since i knew i was in the good team.
+[Record 51; Quest 3; Turn 4] player-1: i think sticking to this strategy of keeping the previously successful party and testing one more person is a good one.
+[Record 52; Quest 3; Turn 5] player-2: i personally think that player-1 is going to be my main suspicion if this quest fails, but i am fine with him being on it for now as i do not know anything for sure yet.
+[Record 53; Quest 3; Turn 5] player-2: however, i trust player-3 and player-5. both of them make good arguments and observations, so i think they should both be on the quest.
+[Record 54; Quest 3; Turn 5] player-2: since doubt has been cast on me, i think i will likely not be chosen here, but please put at least player-3 and player-5 on the quest at the expense of me and player-1 if necessary.
+[Record 55; Quest 3; Turn 5] player-2: we can also afford to lose one round as i think we can win the next quest in which we only need three people anyways.
+[Record 56; Quest 3; Turn 6] player-3: i agree with player-1 in this case, player-2's doubt indeed was a bit out of nowhere.
+[Record 57; Quest 3; Turn 6] player-3: i am now a bit suspicious about player-2. to add on top of player-5's observation, i did notice that player-2 and player-4 both voted no for the previous quest.
+[Record 58; Quest 3; Turn 6] player-3: but i did not see player-4 teaming up with player-2 on text. so i would like to reserve this perspective for now.
+[Record 59; Quest 3; Turn 6] player-3: i think generally adding one different person is a good strategy given we have had two successful votes.
+[Record 60; Quest 3; Turn 6] player-3: so let's see how this one goes.
+[Record 61; Quest 3; Turn 6] player-3: but i am also curious to see what player-4 will say since player-5 accused her during his discussion. and i will if i will agree or not.
+[Record 62; Quest 3; Turn 7] player-4: i am not teaming up with anyone. i voted no in the previous round just because the choices were too random, and as a good people off the quest, i didn't think it was a good sign.
+[Record 63; Quest 3; Turn 7] player-4: when other people are doubting about why player-1 didn't put themselves on the quest, player-5 made an assertion that player-1 is good, which makes player-5 very suspicious.
+[Record 64; Quest 3; Turn 7] player-4: since we have already had two rounds successful, we can keep this party setting and see the result.
+[Record 65; Quest 3; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 66; Quest 3; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 67; Quest 3; Turn 7] system: quest failed!
+[Record 68; Quest 4; Turn 0] system: player-5 proposed a party: player-3, player-5, player-6
+[Record 69; Quest 4; Turn 1] player-5: since player-1 was quite suspected last round, i want to exclude them on the party just for safety.
+[Record 70; Quest 4; Turn 1] player-5: although i still highly suspect player-4 and player-2 because they make rootless allegation to player-1 and me.
+[Record 71; Quest 4; Turn 1] player-5: i am a good person as you may see from my logics, and player-3 and player-6 are the two people who have the most credibility over the first two successful votes.
+[Record 72; Quest 4; Turn 1] player-5: i guess let's stick to this party and we should win.
+[Record 73; Quest 4; Turn 2] player-6: player-5 now has a better credibility since he was the only person voting for no to the last party.
+[Record 74; Quest 4; Turn 2] player-6: and previously, he also supported player-1 but voted for no. imho, this does not seem to be the logic from a bad guy. so i will mostly support this party.
+[Record 75; Quest 4; Turn 3] player-1: i think this party is good. i agree with player-6 that player-5 has gained credibility by voted no last time.
+[Record 76; Quest 4; Turn 4] player-2: since i have been called out and multiple other players agree, i think there is not much point in hiding my identity anymore.
+[Record 77; Quest 4; Turn 4] player-2: as suspected, i am an evil person.
+[Record 78; Quest 4; Turn 4] player-2: of course, i am not advising on the party anymore to not give away the other evil.
+[Record 79; Quest 4; Turn 4] player-2: however, as i am not the assassin, i want to communicate with my fellow evil that i think player-5 is merlin.
+[Record 80; Quest 4; Turn 4] player-2: i am not absolutely sure, but please take that into consideration after this quest is won.
+[Record 81; Quest 4; Turn 5] player-3: well, in this case player-2 is off the quest.
+[Record 82; Quest 4; Turn 5] player-3: i will agree with this team composition and see how this one goes. i believe that player-6 is good in this case, and since player-2 said he is bad let's believe him.
+[Record 83; Quest 4; Turn 6] player-4: i am a good person and i would like to be on the quest.
+[Record 84; Quest 4; Turn 7] player-5: ok things are pretty clear now. let's keep the same party.
+[Record 85; Quest 4; Turn 7] system: player-5 proposed a party: player-3, player-5, player-6
+[Record 86; Quest 4; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: no, player-5: yes, player-6: yes
+[Record 87; Quest 4; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 88; Quest 4; Turn 7] system: quest succeeded!

@@ -1,0 +1,232 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 2] player-1: since its now the very beginning of the game, i think ill just randomly pick some people for the quest. so if anyone wants to join the party, ply let me know
+[Record 3; Quest 1; Turn 2] system: player-1 proposed a party: player-1, player-2
+[Record 4; Quest 1; Turn 3] player-2: first of all, i am with the good party, but i do not have any information.
+[Record 5; Quest 1; Turn 3] player-2: i would like to be included in this quest, and the next one so that we could get a good start on the game.
+[Record 6; Quest 1; Turn 4] player-3: i am percival and i would suggest player-1 and me to be on this quest.
+[Record 7; Quest 1; Turn 4] player-3: it would be the safest option for us good people at the beginning of the game.
+[Record 8; Quest 1; Turn 5] player-4: i also dont have much information right now, outside of knowing that i am part of the good team
+[Record 9; Quest 1; Turn 5] player-4: while i know nothing about player-2, it may not be ideal to have the next party leader also on the first party
+[Record 10; Quest 1; Turn 5] player-4: i would suggest to utilize another person that does not set the course of the next quest
+[Record 11; Quest 1; Turn 5] player-4: either way, i will approve of any part at this point as we know nothing.
+[Record 12; Quest 1; Turn 6] player-5: i am ok with this party setup, however, i dont want to commit to anything for the next round.
+[Record 13; Quest 1; Turn 7] player-6: i am also a blind good person so i would agree to any party player-1 proposes.
+[Record 14; Quest 1; Turn 7] player-6: however i dont think its a good idea to take player-2 or player-3 because they are the next two party leaders and have too much assertive power in the next few rounds.
+[Record 15; Quest 1; Turn 7] player-6: i would propose player-1 to take either player-4, player-5, or me.
+[Record 16; Quest 1; Turn 8] player-1: i agree with player-4 and player-6 suggestion, so i think ill modify the party to me and player-6.
+[Record 17; Quest 1; Turn 8] system: player-1 proposed a party: player-1, player-6
+[Record 18; Quest 1; Turn 8] system: party vote outcome: player-1: yes, player-2: no, player-3: no, player-4: yes, player-5: yes, player-6: yes
+[Record 19; Quest 1; Turn 8] system: vote succeeded! initiating quest vote!
+[Record 20; Quest 1; Turn 8] system: quest succeeded!
+[Record 21; Quest 2; Turn 0] system: player-2 proposed a party: player-1, player-2, player-3
+[Record 22; Quest 2; Turn 1] player-2: first of all, to explain my vote in the previous round. player-3 declared herself percival, and there was no one else standing out as this role.
+[Record 23; Quest 2; Turn 1] player-2: this would seem to me a blind good person that she is indeed the percival and has some information.
+[Record 24; Quest 2; Turn 1] player-2: however, player-1 decided to disregard this apparently important information and went ahead with someone he has no idea about
+[Record 25; Quest 2; Turn 1] player-2: this could only make me suspicious that he was trying to bring on his teammate.
+[Record 26; Quest 2; Turn 1] player-2: but it could be a random choice indeed and what player-6 said made sense, to some extent. but by the time when i or player-3 are the quest leader, you could just vote no on the party so that the leadership be passed on to you.
+[Record 27; Quest 2; Turn 1] player-2: the above points lead to my tentative conclusion that either player-1 or player-6 is bad
+[Record 28; Quest 2; Turn 1] player-2: i just went for a random person because im not sure who to bring, i will trust player-3 for her decision in this case. unless someone else jumped out as percival.
+[Record 29; Quest 2; Turn 2] player-3: player-6 suggestion of not putting player-2 or me on the quest makes him very suspicious to me. if there are no overlap between parties, it will be very difficult to confirm who is good and who is bad.
+[Record 30; Quest 2; Turn 2] player-3: the only reason that i can think about why player-6 suggests this is that he wants to put either him or his partner to the quest.
+[Record 31; Quest 2; Turn 2] player-3: this also makes me have more trust in player-1 because it is very unlikely that two people on the first quest are both bad. but i dont understand why player-1 decided to take player-6 on. maybe because player-6 is the last speaker in the previous round.
+[Record 32; Quest 2; Turn 2] player-3: i agree with what player-2 has said and his logic is completely reasonable. i also believe that player-2 is on the good side.
+[Record 33; Quest 2; Turn 2] player-3: for this quest, i agree with putting player-1, player-2 and me on the quest.
+[Record 34; Quest 2; Turn 2] player-3: finally, just to remind good people that i am percival who has some extra information.
+[Record 35; Quest 2; Turn 3] player-4: the quest result tells us nothing about roles however, the votes might.
+[Record 36; Quest 2; Turn 3] player-4: since player-3 and player-2 voted no on the party, i suspect they know something.
+[Record 37; Quest 2; Turn 3] player-4: as both of them said no to the party, i assume that either player-1 or player-6 is bad, but i think it is unlikely that both are bad.
+[Record 38; Quest 2; Turn 3] player-4: for now, i have slightly increased trust in player-3 and player-2.
+[Record 39; Quest 2; Turn 3] player-4: i propose that the next party contains player-2, and player-3 for sure.
+[Record 40; Quest 2; Turn 3] player-4: after having voiced concerns about player-6 and player-1, we could put one of them on the quest to check if they are good or bad as we would need to have four people for the next quest and need to be sure about some people by then.
+[Record 41; Quest 2; Turn 4] player-5: there were only two no votes for the quest player-2 and player-3. but i have the opposite read of player-4. based on the lack of information in the first round, this makes me immediately suspicious of them. it seems they were afraid of not having control over the first round and the subsequent two rounds. this seems like this would have been beneficial for the evil side, so i am suspicious of them now.
+[Record 42; Quest 2; Turn 4] player-5: furthermore, i dont understand why percival would want to reveal themselves that early, when there is limited information available and percival wouldnt know who is good or bad. so this makes me think player-3 is an imposter and makes me more suspicious.
+[Record 43; Quest 2; Turn 4] player-5: and to doubt player-2 and player-3 point about player-6 wanting to bring on team mates, the first quest succeeded. while this doesn't definitely mean neither player-1 nor player-6 are evil, it seems weird to try to make this point after the fact given that it did indeed succeed.
+[Record 44; Quest 2; Turn 4] player-5: and to doubt player-3 point about player-6 suggestion it was a reasonable suggestion. and yet she makes a point that it is difficult to confirm who is good and who is bad at this point in the game, so why vote against the proposed party if there is no information available?
+[Record 45; Quest 2; Turn 4] player-5: in summary i am suspicious of both player-2 and player-3 currently. too many things dont add up.
+[Record 46; Quest 2; Turn 5] player-6: first of all, as a defense for myself in the previous round, i dont think a good percival should reveal themselves so early in the game, because doing too early and as percival decision accumulates, the bad people may see the pattern of who merlin is. this leads me to not believe player-3 as much as you guys.
+[Record 47; Quest 2; Turn 5] player-6: for the same reason, i dont have a good belief in player-2 role. he seems to believe in player-3
+[Record 48; Quest 2; Turn 5] player-6: without doubts, which is suspicious to me.
+[Record 49; Quest 2; Turn 5] player-6: although i am not sure of his color for now, i would not vote for a party that includes the two mentioned earlier. neither would i like to be on the party for the next two round because the leaders are suspicious to me.
+[Record 50; Quest 2; Turn 5] player-6: i am waiting for more observations and clarification for more color into our roles, but i do wish less suspicious guys, such as player-4 and player-1, not to vote for the party proposed by them.
+[Record 51; Quest 2; Turn 6] player-1: i thought i forgot to declare myself a good person. but actually the succeed of the first request kinda proved it.
+[Record 52; Quest 2; Turn 6] player-1: i totally agree with player-5. i would say player-2 is definitely evil. player-3 seems to be evil, too. then the bad news comes, as the evil might take control of the next two quest.
+[Record 53; Quest 2; Turn 6] player-1: since the good people have already get a quest succeed, i think we can keep the first quests party member and add someone else. i would suggest player-5 or player-4.
+[Record 54; Quest 2; Turn 7] player-2: to answer player-5s point on player-3 being a imposter, the reason i chose to believe her is simply that she was the only one who at least claims to have some information.
+[Record 55; Quest 2; Turn 7] player-2: if you want me to believe you, you can declare ourselves as percival so that i will get some thinking to choose who to go with. but because i have no information whatsoever, i do not have a strong urge to lead this quest anyways, the reason we want this one to succeed is that we have more leverage on the next one with four people.
+[Record 56; Quest 2; Turn 7] player-2: i think going for percival is a good strategy here because it helps us to pinpoint a few good people. if this does get overthrown by someone else later, the good side would still gain some information out of this.
+[Record 57; Quest 2; Turn 7] player-2: that is why i decided to put player-3 on this quest.
+[Record 58; Quest 2; Turn 7] player-2: regarding the third person, i would suggest putting on player-4, but it would probably get voted no anyways by the others, which is okay because if there is a real percival now it is a relatively good time to reveal yourself.
+[Record 59; Quest 2; Turn 7] system: player-2 proposed a party: player-2, player-3, player-4
+[Record 60; Quest 2; Turn 7] system: party vote outcome: player-1: no, player-2: yes, player-3: yes, player-4: no, player-5: no, player-6: no
+[Record 61; Quest 2; Turn 7] system: vote failed!
+[Record 62; Quest 2; Turn 7] system: player-3 proposed a party: player-1, player-2, player-3
+[Record 63; Quest 2; Turn 8] player-3: to answer player-6 question, it would be better for percival to declare themselves in the early round. because at first blind good people have no information but as percival i have extra information.
+[Record 64; Quest 2; Turn 8] player-3: from last round, player-6 appears more suspicious to me and player-5 doesn't seem to have good identity either.
+[Record 65; Quest 2; Turn 8] player-3: i am wondering why player-4 voted no in the last round, could you explain your concerns?
+[Record 66; Quest 2; Turn 8] player-3: good people please trust me. i am the real percival.
+[Record 67; Quest 2; Turn 9] player-4: maybe i was a little too naive in the first assessment that was just based on the quest votes.
+[Record 68; Quest 2; Turn 9] player-4: i now kinda agree with player-5 that both player-2 and player-3 acted somewhat suspiciously.
+[Record 69; Quest 2; Turn 9] player-4: particularly player-2 trying to gain control in the first and second quests.
+[Record 70; Quest 2; Turn 9] player-4: now that player-2 is saying that he does not want to lead the party anyways, it just makes him even more suspicious to me, so i am pretty sure that he is bad at this point.
+[Record 71; Quest 2; Turn 9] player-4: i would not approve of any party containing player-2 at this point.
+[Record 72; Quest 2; Turn 9] player-4: regarding player-3, i think revealing herself as percival might not be a completely bad idea as it helps in the first round, however, i also see the problem that it may now be easier for the evil to find merlin.
+[Record 73; Quest 2; Turn 9] player-4: thus, i remain undecided on player-3 as her intentions may have been good, but it just did not play out as intended.
+[Record 74; Quest 2; Turn 9] player-4: so i am not entirely sure about her role yet
+[Record 75; Quest 2; Turn 9] player-4: to answer player-3 question about why i voted no on the last round. i think that player-5 and player-6 made good points after i made my statement and thus started to lose trust in player-2. as he was on the quest, i voted no on it.
+[Record 76; Quest 2; Turn 10] player-5: once again we can observe player-2 and player-3 are the only ones to vote yes for the previous party proposal while all else voted no which is suspicious. i remain suspicious of both player-2 and player-3.
+[Record 77; Quest 2; Turn 10] player-5: also asking percival to reveal themselves is highly suspect, since that would narrow down who percival and merlin could be, which is beneficial for evil.
+[Record 78; Quest 2; Turn 10] player-5: the real percival does not have much knowledge at the start of the game, so it would be unusual to reveal themselves. merlin could have reason to pretend to be percival, but since player-3 has indicated that i may be evil when i am not leads me to think that she is an evil person pretending to be percival.
+[Record 79; Quest 2; Turn 10] player-5: i think player-1 suggestion of going with the first quests party and adding myself or player-4 is reasonable.
+[Record 80; Quest 2; Turn 11] player-6: i agree with player-5s observation that a normal percival should not easily reveal themselves. as a blind good person, if i were percival, i would be waiting for more information or i would be at risk of selling merlin out. thus i dont have a good expectation for player-3.
+[Record 81; Quest 2; Turn 11] player-6: of course saying this poses me under the accusation for teaming up with player-5 as if we are both evil. the best way to clarify this would be putting me and player-5 on the next quest with player-1, who has the highest trust for now among all others.
+[Record 82; Quest 2; Turn 11] player-6: thus my proposed party would be player-1, player-5, and me. and for now because everything is too unclear, i would not agree to any other composition.
+[Record 83; Quest 2; Turn 12] player-1: i agree with player-6 team proposal.
+[Record 84; Quest 2; Turn 12] player-1: i think player-6, player-5 and player-4 have already said what i wanted to say. so i think i do not need to repeat these statements again,
+[Record 85; Quest 2; Turn 13] player-2: to answer player-4s question, i think this is a tradeoff situation where percival revealing themselves could put merlin at risk between another where everyone has no clue what they are doing except for the evil side. with good strategy, we could conceal merlin while identifying good people.
+[Record 86; Quest 2; Turn 13] player-2: i would remain neutral on others standing in between because it is natural given everyones identities are not revealed.
+[Record 87; Quest 2; Turn 13] player-2: but opposing the only person declaring as percival is inefficient because we would have so much more to lose than gain.
+[Record 88; Quest 2; Turn 13] player-2: since it already happened it does not help merlin either.
+[Record 89; Quest 2; Turn 13] player-2: i would want to be on this quest, but since player-4 is objecting my judgement in this case, i could stay off because we only need 3 good people to simply this situation.
+[Record 90; Quest 2; Turn 13] player-2: but for the next one, i would definitely vouch myself for a spot
+[Record 91; Quest 2; Turn 14] player-3: i dont think revealing my identity of percival at the beginning will cause any trouble to merlin.
+[Record 92; Quest 2; Turn 14] player-3: good people wont try to find who is merlin, only bad people do. player-6 bad identity is more than obvious from my perspective.
+[Record 93; Quest 2; Turn 14] player-3: for this three people party, i will keep my previous proposal player-1, player-2 and me.
+[Record 94; Quest 2; Turn 14] system: player-3 proposed a party: player-1, player-2, player-3
+[Record 95; Quest 2; Turn 14] system: party vote outcome: player-1: no, player-2: yes, player-3: yes, player-4: no, player-5: no, player-6: no
+[Record 96; Quest 2; Turn 14] system: vote failed!
+[Record 97; Quest 2; Turn 15] player-4: ok, so this outcome is expected to me as both the previously suspicious people, player-2 and player-3, were on the quest
+[Record 98; Quest 2; Turn 15] player-4: given the remaining discussion from the past round, i do agree with adding the original party and a new person to it
+[Record 99; Quest 2; Turn 15] system: player-4 proposed a party: player-1, player-4, player-6
+[Record 100; Quest 2; Turn 15] player-4: i generally think that both player-2 and player-3 are slowly struggling to make consistent arguments, thus i now belief that both of them are on the same evil team
+[Record 101; Quest 2; Turn 16] player-5: this gets tricky now. so far the only two i am really suspicious about is player-2 and player-3, but the rest i am not sure.
+[Record 102; Quest 2; Turn 16] player-5: i know i am good and supported player-6 proposed party idea earlier, but i suppose i also dont oppose this party makeup because at least this will reveal some information about player-4 who has yet to be on a group.
+[Record 103; Quest 2; Turn 16] player-5: so i suppose i am ok with this party currently. next round we have to vote for all four of us anyway, if we continue to be suspicious of player-3 and player-2.
+[Record 104; Quest 2; Turn 17] player-6: i would also agree with this party for now, since we do need more information of the rest of us.
+[Record 105; Quest 2; Turn 17] player-6: for me, i believe player-5 is a good identity because his logic seems sound to me. player-1 and player-4 are both likely to be good while player-4 needs more proof.
+[Record 106; Quest 2; Turn 17] player-6: but ultimately, if you could do all of us good guys a favor, i would like to ask player-4 to put me and player-5 on the same party with player-1 since this will best help clarify our scope, hopefully.
+[Record 107; Quest 2; Turn 18] player-1: i think its okay to do the experiment, since if we failed, we still have chance to win. im okay with the current team setup
+[Record 108; Quest 2; Turn 19] player-2: i think i will sit and observe the outcome for the next two rounds, the results will speak for itself.
+[Record 109; Quest 2; Turn 20] player-3: i disapprove. no matter what the outcome of this round is, there is no good to we good people.
+[Record 110; Quest 2; Turn 20] player-3: if it succeeds, the evil people successfully gain credit and will be easier for them to continue their disguise. if it fails, we lose one round of chance.
+[Record 111; Quest 2; Turn 21] player-4: yeah, this is slowly getting difficult. i tend to trust player-1 at this point, but we dont know much about player-6 or player-5.
+[Record 112; Quest 2; Turn 21] player-4: i am not saying that either of them are bad as i agree with most of their arguments, but particularly player-6 always advocates for player-5, yet he want even on a party yet.
+[Record 113; Quest 2; Turn 21] player-4: either way, it seems like most people would agree with the current party, so i would like to give the current setup a try. it will tell us a lot about the people on the party as nothing is really confirmed on the good side of things.
+[Record 114; Quest 2; Turn 21] player-4: i maintain my initial suspicion of player-2 and player-3 though, so i hope this goes through and we are clear for the rest of the game.
+[Record 115; Quest 2; Turn 21] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: yes, player-5: yes, player-6: no
+[Record 116; Quest 2; Turn 21] system: vote succeeded! initiating quest vote!
+[Record 117; Quest 2; Turn 21] system: quest failed!
+[Record 118; Quest 3; Turn 0] system: player-5 proposed a party: player-1, player-2, player-5, player-6
+[Record 119; Quest 3; Turn 1] player-5: ok, so now things get interesting. i know i am good, which means i was wrong about either player-2 or player-3.
+[Record 120; Quest 3; Turn 1] player-5: as it is right now, we have to put either player-2 or player-3 on the party to see what happens. i lean towards player-2 simply because player-3 was doubting me before, and again from my own perspective i know i am good with all the context of the percival claims.
+[Record 121; Quest 3; Turn 1] player-5: at the same time, we really also dont know much about player-1. he was only in the first quest which typically succeed anyway regardless of the party makeup.
+[Record 122; Quest 3; Turn 1] player-5: but we need to keep some consistency to try to narrow things down. so i would propose myself, player-6, player-1, and player-2. i am suggesting to swap player-4 for player-2 just because obviously i was wrong about one of them.
+[Record 123; Quest 3; Turn 2] player-6: i would agree with player-5
+[Record 124; Quest 3; Turn 2] player-6: judging from the failure last round, i would place my suspicion on player-4 instead of player-1 in the last round.
+[Record 125; Quest 3; Turn 2] player-6: i agree with player-4 on that player-1 is a good person. my wild guess from his confidence in some utterances is that he is a good person charged with extra information.
+[Record 126; Quest 3; Turn 2] player-6: just as what he said, player-4 doesn't think player-5 and i are good or not. my question is, why not putting both of us on the same quest? we are obviously supporting each other so much and it will be so much easier to bust us if both of us are on the same party, which is an action to maximize good peoples chance to win.
+[Record 127; Quest 3; Turn 2] player-6: thus i agree with the party proposed by player-5 in that, even if one of player-2 or player-3 is bad and the current quest fails, we can almost certainly secure the next quest with the three person party i proposed earlier and choose from one of the other for the final round.
+[Record 128; Quest 3; Turn 2] player-6: my final word will be, whoever the real merlin and percival are, please do not reveal more information.
+[Record 129; Quest 3; Turn 3] player-1: i agree with player-5s party. i would assume that player-4 is a bad person. im not sure about player-5s role. but i agree with player-6. we can have a try
+[Record 130; Quest 3; Turn 4] player-2: now i am more certain that player-6 is evil. first of all, player-4 did not support player-6 to that extent and i think he is trying to bundle himself with player-4, who i think would be good.
+[Record 131; Quest 3; Turn 4] player-2: we all know that there is no point trying to let this quest succeed, player-5s statements made no sense from my perspective. putting one of player-3 and me on the quest does not tell us anything.
+[Record 132; Quest 3; Turn 4] player-2: but we could as well argue that the evil side could sabotage our judgements by voting success on this quest, to completely rule out player-3 as the percival
+[Record 133; Quest 3; Turn 4] player-2: i would be okay to be on this quest.
+[Record 134; Quest 3; Turn 5] player-3: we used one round to prove that the previous game is under the control of the bad people. i am almost certain that at least one of player-6 and player-5 is bad, more probably player-6.
+[Record 135; Quest 3; Turn 5] player-3: for this round, i wont vote for any quest with player-6 on. between player-1 and player-5, i would prefer to bring player-1 on because the first quest with him succeeded. and it is not likely in the first round both of them are bad.
+[Record 136; Quest 3; Turn 5] player-3: also, player-6 and player-5 always speak for each other in the previous rounds, which is really suspicious. they are too confident with the other peoples identity and help each other.
+[Record 137; Quest 3; Turn 5] player-3: i would only approve for the four people quest without player-6 and player-5. for good people, please do not get fooled by the evil!
+[Record 138; Quest 3; Turn 6] player-4: yeah, so i guess we know for sure now that either player-2 or player-3 is good.
+[Record 139; Quest 3; Turn 6] player-4: in my mind, i still tend to trust player-3 a little more than player-2 as he wanted establish control of the second round initially and then threw it away easily when we started to catch on to it, which remains very suspicious to me.
+[Record 140; Quest 3; Turn 6] player-4: additionally, he just said that it would not make sense to put one of him or player-3 on the quest, but that is the definition of what we are trying to figure out. one of them must be good and i remain fairly certain that one of them is bad, so putting one of them on the party makes absolute sense. i am convinced that player-2 is the evil here and player-3 is good.
+[Record 141; Quest 3; Turn 6] player-4: however, we accused player-3 of revealing to be percival as proof of her being bad. maybe she really just had good intentions and wanted to make sure the first round is a clear win for good. also, no alternative percival has come forward yet to cast doubt on her having good intentions.
+[Record 142; Quest 3; Turn 6] player-4: giving her point, i think that it is unlikely that player-6 and player-5 are both bad, so them helping each other is not suspicious to me at all.
+[Record 143; Quest 3; Turn 6] player-4: as one of them must have been good, i would prefer player-3 on the party over player-2.
+[Record 144; Quest 3; Turn 6] player-4: i also agree with player-5s point that we dont know much about player-1. looking at the history, he did not say much in the past few rounds either, so maybe he is trying to hide that he is evil.
+[Record 145; Quest 3; Turn 6] player-4: to player-6 point as to why not putting him and player-5 on one team. everyone wanted player-1 on the team so far and as a good person, it would be weird not putting myself. i know i am good and i am fairly certain both player-6 and player-5 are too, but it was easier to trust myself and only add one of you.
+[Record 146; Quest 3; Turn 6] player-4: while i still dont know who to trust more, i belief player-6 and player-5 are both good, so i would propose the party containing player-3, player-5, player-6 and myself.
+[Record 147; Quest 3; Turn 7] player-5: i am feeling more confident that player-2 is good, given that he didn't immediately go along with the plan which i would imagine he would if he were evil.
+[Record 148; Quest 3; Turn 7] player-5: from my perspective, if player-3 is bad and if player-4 is bad, it would make sense that he just tried to support her. which means i am a little bit suspicious of player-4 for now. so i think i cant make that judgement call yet.
+[Record 149; Quest 3; Turn 7] player-5: i still trust player-6 at the moment, but player-3 is right that if this quest fails then i may well have been fooled and overlooked something. lets go with this party for now and then that will give us a lot of information.
+[Record 150; Quest 3; Turn 7] system: party vote outcome: player-1: no, player-2: yes, player-3: no, player-4: no, player-5: yes, player-6: yes
+[Record 151; Quest 3; Turn 7] system: vote failed!
+[Record 152; Quest 3; Turn 7] system: player-6 proposed a party: player-1, player-2, player-5, player-6
+[Record 153; Quest 3; Turn 8] player-6: i would maintain the previous party because it is the best strategy for good people to win.
+[Record 154; Quest 3; Turn 8] player-6: this is only the third quest, which mean even if this fails, we still have two rounds to win for. given that this is 4 people quest and player-5 and i are both in it, while the other two were chosen so that to maximize the chance to success, it will be easy to tell if player-5 and i are both bad.
+[Record 155; Quest 3; Turn 8] player-6: even this quest failed, it will wipe out me and player-5, and good people could still win in the next two rounds.
+[Record 156; Quest 3; Turn 8] player-6: to respond to player-2 accusation, i am not trying to bundling with player-4. last round i did not support player-4 in that player-4 did not even try to put me and player-5 on the same party, the best way to clarify if player-5 and i are good or bad, which makes me suspect him.
+[Record 157; Quest 3; Turn 8] player-6: to sum up, i believe this party is the best for the good.
+[Record 158; Quest 3; Turn 8] system: player-6 proposed a party: player-1, player-2, player-5, player-6
+[Record 159; Quest 3; Turn 9] player-1: last time, i voted not agree. but i think this time ill try this team and get more info from the result.
+[Record 160; Quest 3; Turn 10] player-2: i will sit this out and not say anything, this one is not gonna make it i think.
+[Record 161; Quest 3; Turn 11] player-3: the situation is quite clear now. no need to say more. we still have chance to win if we propose a party without player-6 and player-5. this is not saying both of them are definitely evil, but if we have both of them on the quest, it will definitely fail.
+[Record 162; Quest 3; Turn 11] player-3: good people please vote against this quest.
+[Record 163; Quest 3; Turn 12] player-4: i maintain my previous points about my suspicions.
+[Record 164; Quest 3; Turn 12] player-4: however, i said no to the party because player-2 was on it, which he, as an evil person, happily agreed to.
+[Record 165; Quest 3; Turn 12] player-4: i assume that player-1 and player-3 also saw it that way and thus voted no on the party however, i still maintain my suspicion that player-1 voted no in order to hide his identity.
+[Record 166; Quest 3; Turn 12] player-4: to clarify, i did not put player-5 and player-6 on the same party because i am good too, and trusting two people i am fairly certain about is still more dangerous than just picking one of them.
+[Record 167; Quest 3; Turn 12] player-4: again, i would propose the following party. player-3, player-5, player-6, and myself
+[Record 168; Quest 3; Turn 13] player-5: since this is the same party i proposed last time, i have the same opinion. i think we will learn a lot from this question.
+[Record 169; Quest 3; Turn 13] player-5: i will vote for the party again, i think this makeup is really important to figuring out who is evil.
+[Record 170; Quest 3; Turn 14] player-6: lets keep the same party.
+[Record 171; Quest 3; Turn 14] system: player-6 proposed a party: player-1, player-2, player-5, player-6
+[Record 172; Quest 3; Turn 14] system: party vote outcome: player-1: yes, player-2: no, player-3: no, player-4: no, player-5: yes, player-6: yes
+[Record 173; Quest 3; Turn 14] system: vote failed!
+[Record 174; Quest 3; Turn 15] player-1: i would propose player-2, player-3, me and another player this time. im confused now. any one has suggestion for the last player?
+[Record 175; Quest 3; Turn 15] system: player-1 proposed a party: player-1, player-2, player-3, player-4
+[Record 176; Quest 3; Turn 16] player-2: i would agree with this composition but i have no info on who to bring on next, but i think this one is likely to succeed if we choose to right person
+[Record 177; Quest 3; Turn 17] player-3: agree with this party. it is on the right track.
+[Record 178; Quest 3; Turn 18] player-4: ok, so the party proposal cant stay the same, it fell threw twice now, so i am in favor of a change.
+[Record 179; Quest 3; Turn 18] player-4: given that player-1 switched his vote from no to yes, i think my suspicion if him trying to hide his evilness was spot on.
+[Record 180; Quest 3; Turn 18] player-4: similarly, player-2 also changed his vote because i assume he felt called out.
+[Record 181; Quest 3; Turn 18] player-4: doing a complete turnaround now and throwing player-5 and player-6 off the party doesn't make sense to me. there is no way in my mind that player-5 and player-6 are both evil.
+[Record 182; Quest 3; Turn 18] player-4: again, i propose player-3, player-5, player-6, and myself
+[Record 183; Quest 3; Turn 19] player-5: if this party doesn't have me, i know for sure itll fail because im good and this requires all good people.
+[Record 184; Quest 3; Turn 19] player-5: player-2, why did you reject the party? think about it. suppose that player-3 is actually percival or merlin and is giving correct information and that me and player-6 are bad. either the previous party composition succeeds and we win the game, or either me or player-6 are absolutely bad.
+[Record 185; Quest 3; Turn 19] player-5: but, if she is actually evil and pretending to be percival, then player-4 is also evil because he is her fiercest supporter as of two rounds ago.
+[Record 186; Quest 3; Turn 19] player-5: i do not believe for a second that she is actually percival given how quickly she declared, and how she tries to rely on it to build trust. so she is actually merlin and knows everything or she is evil.
+[Record 187; Quest 3; Turn 19] player-5: but since she doubts me, i know she is not merlin.
+[Record 188; Quest 3; Turn 19] player-5: i dont know what to say beyond i think the previous proposed party is the one. obviously i know this will fail without me, but if you do vote for this party and you are good, please start thinking about who really is evil.
+[Record 189; Quest 3; Turn 20] player-6: you guys have left me with no choice but declaring that i am the real percival.
+[Record 190; Quest 3; Turn 20] player-6: as i said, i cannot reveal myself so easily without being challenged with the chance of revealing the true merlin and ruin the game for the good people.
+[Record 191; Quest 3; Turn 20] player-6: player-2 please, think about it, as if you are percival, would you show yourself in the first round of the game? showing this will ruin your power to make an impact because you need to think twice every time you were trying to support someone.
+[Record 192; Quest 3; Turn 20] player-6: to add on that, as a percival, player-3 is too confirmed with casting me as evil especially in the second round, before which no one has casted doubt on me. this is the confidence that is privileged only to the evil.
+[Record 193; Quest 3; Turn 20] player-6: all of this made me confirm that player-3 is evil, while player-4 who has shown support in the last a few round, is also subjected to being evil.
+[Record 194; Quest 3; Turn 20] player-6: thus i propose player-1 to maintain the party i proposed before. revealing myself certainly poses merlin under risk, however, i believe i have supported enough people, particularly two, which is good enough to confuse the assassin.
+[Record 195; Quest 3; Turn 20] player-6: please listen to me and please think if there is any flaw in my logic.
+[Record 196; Quest 3; Turn 20] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 197; Quest 3; Turn 20] system: vote succeeded! initiating quest vote!
+[Record 198; Quest 3; Turn 20] system: quest failed!
+[Record 199; Quest 4; Turn 1] player-2: well this result does shake me a bit but it does not overthrow anything in this case. but i do find it odd that exactly two people trying to persuade me last round... but i do not agree that player-6 cannot be ruled out from the evil, because after so many rounds percival should gather enough information to identify morgana.
+[Record 200; Quest 4; Turn 1] player-2: if player-3 is real percival, she would be able to deem you as morgana and know who merlin was
+[Record 201; Quest 4; Turn 1] player-2: but the results are what i expected anyways
+[Record 202; Quest 4; Turn 1] player-2: i will be looking at others comments on this to make a decision
+[Record 203; Quest 4; Turn 2] player-3: player-5, i doubt your identity only based on my observation. i am percival, who do not have global information. i dont know exactly who is good or bad. there is no reason for good person to doubt my identity based on this. i havent say in certain that you are evil, but suspiciously.
+[Record 204; Quest 4; Turn 2] player-3: its too late for player-6 to pretend to be percival. from my view, i am the real one so it could not be you. for other good people, think about why player-6 didn't reveal his identity right after me if he was the real percival.
+[Record 205; Quest 4; Turn 2] player-3: besides, i am confident to declare my identity in the first round because i know i am the only real percival, and whoever declared themself as percival was fake.
+[Record 206; Quest 4; Turn 2] player-3: as we expected, not both player-5 and player-6 are bad. i have the same feeling about player-6 as what player-2 has said. from all the information i had in the previous rounds, i could almost draw the conclusion that player-6 is bad and player-5 is good.
+[Record 207; Quest 4; Turn 2] player-3: i also believe that player-2 is a blind good person. so for the next round of three people, the safest option would be player-2, player-5 and me.
+[Record 208; Quest 4; Turn 2] system: player-2 proposed a party: player-2, player-3, player-5
+[Record 209; Quest 4; Turn 3] player-4: well, as expected, the previous round failed
+[Record 210; Quest 4; Turn 3] player-4: i am unsure whether or not i belief player-6 to be percival as yes, he supported to players in particular, but at the same time, he did not consistently cast doubt on the surely evil person he should know
+[Record 211; Quest 4; Turn 3] player-4: and to clarify, i am not necessarily saying that player-3 is good for sure as i still have my doubts about her, but we know for sure that either player-2 or player-3 is good, if not both.
+[Record 212; Quest 4; Turn 3] player-4: however, both are unlikely, so if forced to make a choice, i still support player-3 over player-2, but i am also happy to be convinced otherwise.
+[Record 213; Quest 4; Turn 3] player-4: i think for the current party, as we know that not player-5 and player-6 are bad, i assume one person on there is bad at least, which would be the winning game for tem
+[Record 214; Quest 4; Turn 3] player-4: so i would propose to remove player-2 and put on me or another person we know is good, e. g. player-6
+[Record 215; Quest 4; Turn 4] player-5: given that player-3 and player-6 are at odds with each other, it comes down to either one or the other. unfortunately we no longer have any wiggle room for trying to tell them apart.
+[Record 216; Quest 4; Turn 4] player-5: i will just say this player-3 had confidence in the last party and it failed. to me, she is clearly evil.
+[Record 217; Quest 4; Turn 4] player-5: take her at face value and suppose she was percival. as player-2 suggested, she would have identified the real morgana and merlin by now, presumably. yet she herself is not supporting anyone, she is simply making accusations.
+[Record 218; Quest 4; Turn 4] player-5: she changes her outlook now and and says that i am no longer evil just because its impossible for both me and player-6 to be evil.
+[Record 219; Quest 4; Turn 4] player-5: and look at the party composition last turn which she supported and which failed. and player-4 supports her so heavily which strongly indicates to me that he is also evil.
+[Record 220; Quest 4; Turn 4] player-5: i remain strongly suspicious that both player-3 and player-4 are evil, and that the party should consist of the rest of us.
+[Record 221; Quest 4; Turn 5] player-6: first, the reason i did not reveal myself as percival until now is that, i thought the party we proposed, including player-5, player-1, me, and player-2, should have been approved in the last three rounds that was proposed by player-5, me, and player-1 and i do not want to add extra risk of revealing merlin.
+[Record 222; Quest 4; Turn 5] player-6: i am even more confirmed that player-3 and player-4 are evil. again, you should not trust player-3 for she does not behave at all like how a percival should look like, adding on to the fact that last quest with player-3 and player-4 failed.
+[Record 223; Quest 4; Turn 5] player-6: and please think about why percival should not reveal the first round in the game, and please think if there is any person who seems to have visibility she supported. as of now, player-3 only supported player-4 and player-2, while both of you seems to be blind and confused.
+[Record 224; Quest 4; Turn 5] player-6: thus player-3 is morgana who are trying to take a lead by the identity of percival.
+[Record 225; Quest 4; Turn 5] player-6: whatever your belief is, please do not include both player-3 and me for this round, if you are still undecided. lets at least make it through this quest.
+[Record 226; Quest 4; Turn 6] player-1: maybe me player-2 and player-5 would be a good choice?
+[Record 227; Quest 4; Turn 7] player-2: i think what player-6 said made some sense but not much. i would agree its not the perfect idea to jump out as percival in the first round but doing it now does not make much sense either.
+[Record 228; Quest 4; Turn 7] player-2: i do not have much info at this point now, but if you think you should be on the quest feel free to vote no to the quest.
+[Record 229; Quest 4; Turn 7] system: player-2 proposed a party: player-2, player-3, player-5
+[Record 230; Quest 4; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: no
+[Record 231; Quest 4; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 232; Quest 4; Turn 7] system: quest failed!

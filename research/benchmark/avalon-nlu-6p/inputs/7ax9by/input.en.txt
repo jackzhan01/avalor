@@ -1,0 +1,177 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 2] player-4: good old first random selection
+[Record 3; Quest 1; Turn 2] system: player-4 proposed a party: player-4, player-3
+[Record 4; Quest 1; Turn 3] player-5: i'm fine with this. we have no information to go off so doesn't seem unreasonable.
+[Record 5; Quest 1; Turn 4] player-6: no information now. lets give this a shot.
+[Record 6; Quest 1; Turn 5] player-1: yeah, whatever
+[Record 7; Quest 1; Turn 6] player-2: no objection.
+[Record 8; Quest 1; Turn 6] player-2: but i'm good. i want to be on the quest as well.
+[Record 9; Quest 1; Turn 7] player-3: agree
+[Record 10; Quest 1; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 11; Quest 1; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 12; Quest 1; Turn 7] system: quest succeeded!
+[Record 13; Quest 2; Turn 1] player-5: i will take the usual approach and add myself to the last party.
+[Record 14; Quest 2; Turn 1] player-5: we don't know anything yet, so let's see how the vote goes.
+[Record 15; Quest 2; Turn 1] system: player-5 proposed a party: player-5, player-4, player-3
+[Record 16; Quest 2; Turn 2] player-6: i agree with player-5.
+[Record 17; Quest 2; Turn 3] player-1: we don't know anything we didn't know last round, so this is probably fine again
+[Record 18; Quest 2; Turn 4] player-2: yup. i'm fine with the proposal as well.
+[Record 19; Quest 2; Turn 5] player-3: agree. this shall give us more information
+[Record 20; Quest 2; Turn 6] player-4: fine
+[Record 21; Quest 2; Turn 6] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 22; Quest 2; Turn 6] system: vote succeeded! initiating quest vote!
+[Record 23; Quest 2; Turn 6] system: quest failed!
+[Record 24; Quest 3; Turn 0] system: player-6 proposed a party: player-6, player-3, player-4, player-1
+[Record 25; Quest 3; Turn 1] player-6: i am just including myself, the two people that succeeded in the first round and player-1 randomly
+[Record 26; Quest 3; Turn 1] player-6: making the assumption that player-5 is the bad guy
+[Record 27; Quest 3; Turn 1] player-6: which is probably a bad assumption as player-4 and player-3 could be bad
+[Record 28; Quest 3; Turn 1] player-6: so i have no idea frankly
+[Record 29; Quest 3; Turn 2] player-1: there is still not much to go off here
+[Record 30; Quest 3; Turn 2] player-1: if this quest fails, which is likely again as we still don't know much, what do we actually learn?
+[Record 31; Quest 3; Turn 2] player-1: probably that player-5 is likely good?
+[Record 32; Quest 3; Turn 2] player-1: i don't know
+[Record 33; Quest 3; Turn 3] player-2: as people tend to pretend in the first round, selecting both player-4 and player-3 might not be a 100 safe choice.
+[Record 34; Quest 3; Turn 3] player-2: anyways, i don't know any more either.
+[Record 35; Quest 3; Turn 3] player-2: but i'm good. please take me, otherwise this quest will fail.
+[Record 36; Quest 3; Turn 4] player-3: the point is that, we don't have a 100 safe choice right now
+[Record 37; Quest 3; Turn 4] player-3: i agree that if this quest fails, we still don't know much.
+[Record 38; Quest 3; Turn 4] player-3: but i can't think of a better strategy. i'll still vote yes for the party
+[Record 39; Quest 3; Turn 5] player-4: i can't think of a better choice that gives us more information. if this one fails we know that player-5 is likely good, and that's to some extent useful. i will approve this proposal
+[Record 40; Quest 3; Turn 5] player-4: selecting player-3 and me is not 100 safe but is more likely safe. note that player-5 inserted himself. this is different from if he was randomly selected by other people
+[Record 41; Quest 3; Turn 6] player-5: this is a dangerous situation now.
+[Record 42; Quest 3; Turn 6] player-5: i know i am good, so either player-4 or player-3 are bad and the next quest will fail.
+[Record 43; Quest 3; Turn 6] player-5: if it fails, then what do we know? we don't know which one of them is bad, leaving us with a 50/ 50 guess
+[Record 44; Quest 3; Turn 6] player-5: and on top of that, the second bad guy may be one of the others
+[Record 45; Quest 3; Turn 6] player-5: i will reject this party because i think if it goes through there's really not much chance of winning after that, other than sheer luck
+[Record 46; Quest 3; Turn 7] player-6: i find player-4 comment that player-5 inserted himself to be rather unnecessary
+[Record 47; Quest 3; Turn 7] player-6: anybody would include themselves in the party as there is no reason not to otherwise
+[Record 48; Quest 3; Turn 7] player-6: seems like he is trying something subtle here
+[Record 49; Quest 3; Turn 7] player-6: i will remove him in favour of player-5
+[Record 50; Quest 3; Turn 7] system: player-6 proposed a party: player-6, player-3, player-1, player-5
+[Record 51; Quest 3; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: no, player-5: yes, player-6: yes
+[Record 52; Quest 3; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 53; Quest 3; Turn 7] system: quest failed!
+[Record 54; Quest 4; Turn 1] player-1: statistical speaking, it was somewhat likely that this will fail
+[Record 55; Quest 4; Turn 1] player-1: player-5 made good points about what we would be learning
+[Record 56; Quest 4; Turn 1] player-1: i am good myself and i only need tow other people
+[Record 57; Quest 4; Turn 1] player-1: given that a quest with player-3 and player-5 failed twice now, i am suspicious, but again, player-5 made good points
+[Record 58; Quest 4; Turn 1] player-1: sure, player-6 could be bad too, but the quest failed here despite player-4 not being on it
+[Record 59; Quest 4; Turn 1] player-1: so my assumption right now is that player-6 and player-3 are evil
+[Record 60; Quest 4; Turn 1] player-1: and player-2 is good just by the numbers
+[Record 61; Quest 4; Turn 1] player-1: so i think i will take her instead of player-5 actually
+[Record 62; Quest 4; Turn 1] player-1: i am rambling
+[Record 63; Quest 4; Turn 1] player-1: let's go
+[Record 64; Quest 4; Turn 1] system: player-1 proposed a party: player-1, player-4, player-2
+[Record 65; Quest 4; Turn 2] player-3: given the current status of the game, we can't afford one more failure.
+[Record 66; Quest 4; Turn 2] player-3: so i'd like to reveal myself. i am percival, and either player-2 or player-4 is merlin or morgana.
+[Record 67; Quest 4; Turn 2] player-3: i tend to believe player-4 instead of player-2 at the moment, but i'm not 100 sure.
+[Record 68; Quest 4; Turn 2] player-3: currently speaking, player-5 is suspicious. i won't approve any party with player-5 and player-2 for this turn.
+[Record 69; Quest 4; Turn 3] player-4: since percival revealed herself i guess i have no choice but to reveal myself as merlin???!!!
+[Record 70; Quest 4; Turn 3] player-4: we lost:)
+[Record 71; Quest 4; Turn 3] player-4: great; but it's true that we cannot afford one more failure
+[Record 72; Quest 4; Turn 3] player-4: player-1 player-6 replaced me in favor of player-5 because others have suggested doing so. it does not necessarily mean that he is evil
+[Record 73; Quest 4; Turn 3] player-4: player-5 and player-3 probably should be excluded( but i don't think player-3 could still be bad after revealing herself...)
+[Record 74; Quest 4; Turn 3] player-4: i tend to believe that player-6 is good, so player-6, player-1 and me is a better choice
+[Record 75; Quest 4; Turn 4] player-5: i'll be honest i'm not sure i'm following the whole merlin/ percival logic?
+[Record 76; Quest 4; Turn 4] player-5: regardless it's not looking good. the last 2 votes failed with me on so it doesn't look great, i agree.
+[Record 77; Quest 4; Turn 4] player-5: ultimately i will need to be on the party if this round passes though, because i am good.
+[Record 78; Quest 4; Turn 4] player-5: i'm not sure why you trust player-4 suddenly though?
+[Record 79; Quest 4; Turn 4] player-5: on top of accusing me at first, there's also some weird merlin/ morgana thing going on?
+[Record 80; Quest 4; Turn 4] player-5: they're like 50 chance of being bad now right?
+[Record 81; Quest 4; Turn 4] player-5: they're either merlin or morgana if we believe player-3.
+[Record 82; Quest 4; Turn 4] player-5: so why would we include them?
+[Record 83; Quest 4; Turn 4] player-5: i won't vote for this party.
+[Record 84; Quest 4; Turn 5] player-6: for now i won't vote for any party that doesn't have me in it
+[Record 85; Quest 4; Turn 5] player-6: since we are doing role reveals
+[Record 86; Quest 4; Turn 5] player-6: i am servant 2
+[Record 87; Quest 4; Turn 6] player-1: so there is way too much on the line to vote right now
+[Record 88; Quest 4; Turn 6] player-1: i will have one more round of discussion before starting a vote
+[Record 89; Quest 4; Turn 6] player-1: however, regarding player-5's point, we don't need every good person as we only need 3/ 4 good people right now
+[Record 90; Quest 4; Turn 6] player-1: i don't trust any of this merlin/ percival madness going on
+[Record 91; Quest 4; Turn 6] player-1: if player-4 is really merlin, then he should not be guessing. he's accusing and defending player-5 in the same turn
+[Record 92; Quest 4; Turn 6] player-1: for the first and second quest, i just trusted player-4 because the request quest failed and we took of player-4, so the bad people were still on the quest
+[Record 93; Quest 4; Turn 6] player-1: we also haven't heard from player-2 yet
+[Record 94; Quest 4; Turn 6] system: player-1 proposed a party: player-1, player-6, player-4
+[Record 95; Quest 4; Turn 6] player-1: i am not sure about anyone anymore though, so please make your arguments for/ against people
+[Record 96; Quest 4; Turn 7] player-2: sorry i ended my turn by accident in the last round.
+[Record 97; Quest 4; Turn 7] player-2: i'm so confused now. i'm servant 2.
+[Record 98; Quest 4; Turn 7] player-2: now i don't believe player-3 and player-6.
+[Record 99; Quest 4; Turn 7] player-2: but i tend to believe player-4 is merlin.
+[Record 100; Quest 4; Turn 7] player-2: the choice and argument he made all make sense.
+[Record 101; Quest 4; Turn 7] player-2: but i don't think player-6 is good.
+[Record 102; Quest 4; Turn 7] player-2: the quest he proposed failed as well.
+[Record 103; Quest 4; Turn 7] player-2: i suggest replacing player-6 with me.
+[Record 104; Quest 4; Turn 8] player-3: well, if player-2 believes player-4 is merlin, i don't understand why she doesn't believe me.
+[Record 105; Quest 4; Turn 8] player-3: she is apparently the morgana to me right now
+[Record 106; Quest 4; Turn 8] player-3: i'll vote for this party because it will succeed for sure
+[Record 107; Quest 4; Turn 9] player-4: may i be the true merlin or not, player-3 is unlikely bad because she was either trying to protect the real merlin or making a mistake...
+[Record 108; Quest 4; Turn 9] player-4: if you believe i am merlin i say player-2 is evil
+[Record 109; Quest 4; Turn 9] player-4: up to you
+[Record 110; Quest 4; Turn 10] player-5: i am so confused by things right now.
+[Record 111; Quest 4; Turn 10] player-5: first: player-3 could be morgana herself trying to throw things off.
+[Record 112; Quest 4; Turn 10] player-5: second: player-4 seems suspicious either way, so if we don't have to include them now i don't see why we should
+[Record 113; Quest 4; Turn 10] player-5: i don't really have much to go off for player-6, player-1, or player-2
+[Record 114; Quest 4; Turn 10] player-5: from my viewpoint, both player-3 and player-4 are most suspicious right now
+[Record 115; Quest 4; Turn 10] player-5: so i would not accept a party with them in it
+[Record 116; Quest 4; Turn 11] player-6: i now know for sure that player-2 is evil
+[Record 117; Quest 4; Turn 11] player-6: please believe that i am servant 2. think about it. if i was lying, would i even remember the 2 behind the servant?
+[Record 118; Quest 4; Turn 11] player-6: a player that is playing as morgana/ assassin will not be able to remember that
+[Record 119; Quest 4; Turn 11] player-6: i am the real deal
+[Record 120; Quest 4; Turn 11] player-6: because i am literally reading off my role trust me
+[Record 121; Quest 4; Turn 12] player-1: i think
+[Record 122; Quest 4; Turn 12] player-1: thus i am
+[Record 123; Quest 4; Turn 12] player-1: ( partially think i guess)
+[Record 124; Quest 4; Turn 12] player-1: either way
+[Record 125; Quest 4; Turn 12] player-1: this is all very difficult
+[Record 126; Quest 4; Turn 12] player-1: player-3's and player-4's story make sense taken out of context
+[Record 127; Quest 4; Turn 12] player-1: that would mean player-5 and player-2 are the bad people, if they are to be trusted
+[Record 128; Quest 4; Turn 12] player-1: because i am good for sure
+[Record 129; Quest 4; Turn 12] player-1: but then quest 3 would have succeeded
+[Record 130; Quest 4; Turn 12] player-1: so something is off
+[Record 131; Quest 4; Turn 12] system: player-1 proposed a party: player-1, player-5, player-3
+[Record 132; Quest 4; Turn 12] player-1: this is my best guess now and i will start a vote for it
+[Record 133; Quest 4; Turn 12] player-1: we only need 3 good people
+[Record 134; Quest 4; Turn 12] player-1: and suspicion is everywhere
+[Record 135; Quest 4; Turn 12] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: no, player-5: yes, player-6: no
+[Record 136; Quest 4; Turn 12] system: vote failed!
+[Record 137; Quest 4; Turn 12] system: player-2 proposed a party: player-1, player-5, player-4
+[Record 138; Quest 4; Turn 13] player-2: ok as we only need three good people. i'll exclude myself and choose three i trust.
+[Record 139; Quest 4; Turn 14] player-3: there's no reason for player-2 to exclude herself if she is good
+[Record 140; Quest 4; Turn 14] player-3: but she wants the evil to win
+[Record 141; Quest 4; Turn 14] player-3: i can see player-5 is bad. i think player-1 agrees with me in the last round, so i don't understand why he put player-5 in the party
+[Record 142; Quest 4; Turn 14] player-3: again, i'll disapprove any party with player-2 and player-5.
+[Record 143; Quest 4; Turn 15] player-4: as we are already playing it dangerously, i'd like to make the claim that player-3 is the true merlin
+[Record 144; Quest 4; Turn 15] player-4: note that player-2 picked a team without herself but with player-5, and player-5 picked a team without himself but with player-2
+[Record 145; Quest 4; Turn 15] player-4: this is their best strategy at this point
+[Record 146; Quest 4; Turn 15] player-4: there is no strong proof against player-1 and player-6
+[Record 147; Quest 4; Turn 16] player-5: i never proposed a party with player-2 at any time. that is factually incorrect, you can look through the chat
+[Record 148; Quest 4; Turn 16] player-5: if anything i have been the most consistent one. i've literally been suspicious of player-3 and player-4 since the second round and have never voiced otherwise
+[Record 149; Quest 4; Turn 16] player-5: the rest of this madness is coming from them, yet somehow their stories make sense out of context? like what?
+[Record 150; Quest 4; Turn 16] player-5: so i'm not sure what to say at this point other than i am strongly suspicious of player-4 and player-3. player-2 is also saying some really questionable things, so i also don't trust her.
+[Record 151; Quest 4; Turn 16] player-5: i don't have enough evidence to know what to think about player-6 or player-1, so i guess i trust them the most at the moment.
+[Record 152; Quest 4; Turn 16] player-5: i would propose a party with us 3.
+[Record 153; Quest 4; Turn 16] player-5: if that fails we're done either way in my opinion.
+[Record 154; Quest 4; Turn 17] player-6: player-5 has been with too many quests that failed
+[Record 155; Quest 4; Turn 17] player-6: so no way he is playing again
+[Record 156; Quest 4; Turn 17] player-6: either way i know for sure player-2 is bad since i am the real servant 2
+[Record 157; Quest 4; Turn 17] player-6: and as a measly servant with no information, i will never approve a team without me
+[Record 158; Quest 4; Turn 18] player-1: ok, i looked at the party proposals and quest outcomes
+[Record 159; Quest 4; Turn 18] player-1: i misremembered who was on quest 3, thus my confusion
+[Record 160; Quest 4; Turn 18] player-1: i am now convinced player-5 and player-2 are the evils
+[Record 161; Quest 4; Turn 18] player-1: mice drop
+[Record 162; Quest 4; Turn 18] system: player-2 proposed a party: player-6, player-3, player-4
+[Record 163; Quest 4; Turn 19] player-2: it's assassin's show time;)
+[Record 164; Quest 4; Turn 19] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 165; Quest 4; Turn 19] system: vote succeeded! initiating quest vote!
+[Record 166; Quest 4; Turn 19] system: quest succeeded!
+[Record 167; Quest 5; Turn 0] system: player-3 proposed a party: player-1, player-6, player-3, player-4
+[Record 168; Quest 5; Turn 1] player-3: let's go:)
+[Record 169; Quest 5; Turn 2] player-4: let's go:)
+[Record 170; Quest 5; Turn 3] player-5: your funeral.
+[Record 171; Quest 5; Turn 4] player-6: servant 2 signing out
+[Record 172; Quest 5; Turn 5] player-1: one more party for us!
+[Record 173; Quest 5; Turn 5] player-1: and then merlin goes away:(
+[Record 174; Quest 5; Turn 5] player-1: if you find him
+[Record 175; Quest 5; Turn 5] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 176; Quest 5; Turn 5] system: vote succeeded! initiating quest vote!
+[Record 177; Quest 5; Turn 5] system: quest succeeded!

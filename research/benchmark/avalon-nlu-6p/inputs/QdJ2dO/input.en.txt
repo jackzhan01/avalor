@@ -1,0 +1,177 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 1] system: player-3 proposed a party: player-3, player-4
+[Record 3; Quest 1; Turn 2] player-3: random party given no information. included myself as i am good.
+[Record 4; Quest 1; Turn 3] player-4: i would agree with the party( random), not much else to say apart from self proclaiming that i am good
+[Record 5; Quest 1; Turn 4] player-5: no info for now. i agree with the proposal.
+[Record 6; Quest 1; Turn 5] player-6: seems fine to me.
+[Record 7; Quest 1; Turn 6] player-1: yeah, this is fine for now
+[Record 8; Quest 1; Turn 7] player-2: looks good, fine for me
+[Record 9; Quest 1; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 10; Quest 1; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 11; Quest 1; Turn 7] system: quest succeeded!
+[Record 12; Quest 2; Turn 0] system: player-4 proposed a party: player-3, player-1, player-4
+[Record 13; Quest 2; Turn 1] player-4: i would be proposing a party with player-3 as i want to retain a member from the previous round. i would also want to be on the party since i am a good person.
+[Record 14; Quest 2; Turn 1] player-4: i would also like to bring on player-1 as a new candidate
+[Record 15; Quest 2; Turn 2] player-5: although it seems a bit random, i don't have any objection for now.
+[Record 16; Quest 2; Turn 3] player-6: agreed. i am ok with this.
+[Record 17; Quest 2; Turn 4] player-1: yeah, this seems very specific.
+[Record 18; Quest 2; Turn 4] player-1: i might get framed here
+[Record 19; Quest 2; Turn 5] player-2: not enough info, but i guess it looks good
+[Record 20; Quest 2; Turn 6] player-3: well i guess player-1 is selected randomly? am good with this
+[Record 21; Quest 2; Turn 6] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: yes
+[Record 22; Quest 2; Turn 6] system: vote succeeded! initiating quest vote!
+[Record 23; Quest 2; Turn 6] system: quest succeeded!
+[Record 24; Quest 3; Turn 1] player-5: i voted no cos anyone seems agreeable. that doesn't make sense unless there is some evil person on the party.
+[Record 25; Quest 3; Turn 1] player-5: player-1 could be pretending in this round. but i'm not sure.
+[Record 26; Quest 3; Turn 1] system: player-5 proposed a party: player-3, player-4, player-5, player-6
+[Record 27; Quest 3; Turn 1] player-5: i'm just selecting randomly. will change it after our discussion.
+[Record 28; Quest 3; Turn 2] player-6: well, i know i am good so i should be in the party.
+[Record 29; Quest 3; Turn 2] player-6: but, it's also weird that player-5 wanted to remove player-1. that is a bit suspicious.
+[Record 30; Quest 3; Turn 2] player-6: if the previous quest succeeded, i would want to keep going until we have a failure.
+[Record 31; Quest 3; Turn 2] player-6: i don't think i like this party.
+[Record 32; Quest 3; Turn 3] player-1: hm, just to be clear, i was added to the party without me asking for it, and i feel like i am getting framed here
+[Record 33; Quest 3; Turn 3] player-1: i don't see how it makes sense suspicious now
+[Record 34; Quest 3; Turn 3] player-1: if anything, i think player-4 was trying to frame me and player-5 took that argument, but tried to shift blame to me in order to protect player-4, which would make her evil too
+[Record 35; Quest 3; Turn 3] player-1: but maybe i am jumping to conclusions
+[Record 36; Quest 3; Turn 3] player-1: either way, i am a good player, so it means this party will fail as there has to be an evil on it
+[Record 37; Quest 3; Turn 3] player-1: i will vote against it.
+[Record 38; Quest 3; Turn 4] player-2: hmm id vote for this but its the left half of the round table i dont trust
+[Record 39; Quest 3; Turn 4] player-2: since we know player-3 and player-4 are good, i want to stack myself against player-6
+[Record 40; Quest 3; Turn 4] player-2: if we fail, we know hes evil, so remove one of the 1st quest party members
+[Record 41; Quest 3; Turn 5] player-3: i don't like this party
+[Record 42; Quest 3; Turn 5] player-3: maybe player-4 would like to elaborate why he selected player-1( if it was in particular)
+[Record 43; Quest 3; Turn 6] player-4: i selected player-1 randomly i don't think there can be a justification for random selections. sometimes it's possible people feel like they are targeted with a selection, that's just bias
+[Record 44; Quest 3; Turn 6] player-4: it can very well be random as it was in this case
+[Record 45; Quest 3; Turn 6] player-4: there literally is no reason to select anyone else apart from me and player-3
+[Record 46; Quest 3; Turn 6] player-4: since we were on the first round
+[Record 47; Quest 3; Turn 6] player-4: so i did a random pick
+[Record 48; Quest 3; Turn 6] player-4: regarding this party i am with player-6 here, i think we should stick with the members from the previous party and continue until failure
+[Record 49; Quest 3; Turn 6] player-4: if it fails we know one of the members is evil and was trying to frame
+[Record 50; Quest 3; Turn 7] player-5: if i was evil, i'll just keep the previous myself. then everyone will approve.
+[Record 51; Quest 3; Turn 7] player-5: i didn't go with it cos i think this will probably go wrong.
+[Record 52; Quest 3; Turn 7] player-5: i guess player-1 might be pretending.
+[Record 53; Quest 3; Turn 7] player-5: but i'm not so sure either.
+[Record 54; Quest 3; Turn 7] player-5: i'll keep the same proposal and let player-6 choose if the vote failed.
+[Record 55; Quest 3; Turn 7] system: party vote outcome: player-1: no, player-2: yes, player-3: no, player-4: no, player-5: yes, player-6: no
+[Record 56; Quest 3; Turn 7] system: vote failed!
+[Record 57; Quest 3; Turn 8] player-6: so at the moment i'm a bit suspicious of both player-5 and player-2. player-5 just because of her party choice, and player-2 because he is already being aggressive towards me.
+[Record 58; Quest 3; Turn 8] player-6: so my choice would be player-4, player-3, myself, and player-1. and then we get some information there.
+[Record 59; Quest 3; Turn 8] player-6: all this talk about framing and what not, we can't know for sure yet until there's a failure. it's just speculation.
+[Record 60; Quest 3; Turn 8] system: player-6 proposed a party: player-6, player-1, player-4, player-3
+[Record 61; Quest 3; Turn 9] player-1: hm, yeah, maybe things are not as bad as i thought
+[Record 62; Quest 3; Turn 9] player-1: i can give this party a chance
+[Record 63; Quest 3; Turn 10] player-2: i find it convenient that player-6 thinks im being aggressive after voting not on a line up he was included in
+[Record 64; Quest 3; Turn 10] player-2: and again not trusting that left side, i think i should be in the party beyond player-6 here
+[Record 65; Quest 3; Turn 11] player-3: my gut feeling tells me that we are seeing player-6 and player-1 team up as bad guys
+[Record 66; Quest 3; Turn 11] player-3: based on my years of experience
+[Record 67; Quest 3; Turn 11] player-3: in this game
+[Record 68; Quest 3; Turn 11] player-3: thats all i will say:)
+[Record 69; Quest 3; Turn 12] player-4: player-3 if player-1 and player-6 are teaming up or they are evil( if one of them are), i think by having them on this party we can confirm that
+[Record 70; Quest 3; Turn 12] player-4: we still haven't had a failure
+[Record 71; Quest 3; Turn 12] player-4: so in terms of information we don't have anything concrete
+[Record 72; Quest 3; Turn 12] player-4: i approve of this party for that reason.. if its a success we can just keep going, if its a failure there is time for the good guys to still figure out things
+[Record 73; Quest 3; Turn 13] player-5: if both player-6 and player-1 are evil. then we are done huh
+[Record 74; Quest 3; Turn 13] player-5: anyways, i'm good. i won't approve it as i'm not on the party.
+[Record 75; Quest 3; Turn 13] player-5: i think player-1 is a little suspicious just by feeling.
+[Record 76; Quest 3; Turn 14] player-6: look, if i were bad i wouldn't have voted no on player-5's suggested party because i was on it.
+[Record 77; Quest 3; Turn 14] player-6: i would just accept it and then fail the party.
+[Record 78; Quest 3; Turn 14] player-6: and if player-1 and i were both bad, then i definitely wouldn't work harder to get him on it. there'd be no reason.
+[Record 79; Quest 3; Turn 14] player-6: again, we don't have any failures yet so we don't have any real information on who may be bad. it's just confusion being sowed by whoever actually is bad.
+[Record 80; Quest 3; Turn 14] player-6: so my suggestion is: let's just try this party out and get some information. if it succeeds we win. if it doesn't, now we have some real info.
+[Record 81; Quest 3; Turn 14] system: party vote outcome: player-1: yes, player-2: no, player-3: no, player-4: yes, player-5: no, player-6: yes
+[Record 82; Quest 3; Turn 14] system: vote failed!
+[Record 83; Quest 3; Turn 15] player-1: well, we can keep discussing stuff, but we don't know anything for sure yet
+[Record 84; Quest 3; Turn 15] player-1: i don't know why player-3 was saying no on this party, care to elaborate on your turn?
+[Record 85; Quest 3; Turn 15] system: player-1 proposed a party: player-3, player-1, player-4, player-6
+[Record 86; Quest 3; Turn 16] player-2: isn't this the same party set up?
+[Record 87; Quest 3; Turn 16] player-2: well my vote would be to swap player-6 for myself so we can actually wrap up
+[Record 88; Quest 3; Turn 16] player-2: so vote is no
+[Record 89; Quest 3; Turn 17] player-3: well call it gut feeling or privileged information
+[Record 90; Quest 3; Turn 17] player-3: i think either player-6 or player-1 are bad guys or player-6 and player-5 are bad guys
+[Record 91; Quest 3; Turn 17] player-3: either way we don't want two bad guys in this round
+[Record 92; Quest 3; Turn 17] player-3: because one will just shift the blame to the other and get himself/ herself in the fourth round
+[Record 93; Quest 3; Turn 17] player-3: to fail it
+[Record 94; Quest 3; Turn 17] player-3: so it would be pretty messed up if player-1 is bad....
+[Record 95; Quest 3; Turn 17] player-3: or player-5 is just framing player-1 all this while for
+[Record 96; Quest 3; Turn 18] player-4: okay look as player-6 said we can keep discussing all day or we can just get on with it and actually confirm some suspicions
+[Record 97; Quest 3; Turn 18] player-4: idk what it would take for player-3 to be convinced, but i am really trying to push for this party for a reason
+[Record 98; Quest 3; Turn 18] player-4: it's limo the most logical thing to do as well
+[Record 99; Quest 3; Turn 18] player-4: i would suggest player-3 to give this party a try
+[Record 100; Quest 3; Turn 18] player-4: and if it fails we get concrete info
+[Record 101; Quest 3; Turn 18] player-4: not sure what else to do to convince
+[Record 102; Quest 3; Turn 19] player-5: player-3 is definitely good. he voted no for the party he was in.
+[Record 103; Quest 3; Turn 19] player-5: i don't think we can get any info if the the quest failed. we don't even know how many evils in the party.
+[Record 104; Quest 3; Turn 19] player-5: player-6 and player-1 seems teaming up. although there is meaningless to get the teammate on the same party, it might just be their strategy. i'm no sure yet.
+[Record 105; Quest 3; Turn 19] player-5: i'll still vote no.
+[Record 106; Quest 3; Turn 20] player-6: i don't know why you're still so opposed to this party, player-3.
+[Record 107; Quest 3; Turn 20] player-6: unless you're evil yourself, i'm not sure what your gut feeling or privileged information is giving you.
+[Record 108; Quest 3; Turn 20] player-6: and i don't think you're evil because you've been voting against parties you are in, like player-5 said.
+[Record 109; Quest 3; Turn 20] player-6: but i becoming increasingly convinced both player-5 and player-2 are evil. player-5 is just spreading confusion at this point, and player-2 is attacking me for no reason.
+[Record 110; Quest 3; Turn 20] player-6: and you yourself don't even know what our party should be
+[Record 111; Quest 3; Turn 20] player-6: we have to try something, unless we want to fail party votes five times in a row and let evil win.
+[Record 112; Quest 3; Turn 20] player-6: so let's just try this?
+[Record 113; Quest 3; Turn 21] player-1: hm, player-2, player-3 and player-5 already said they will not approve of this party, so i don't know if there is much point in initiating a vote
+[Record 114; Quest 3; Turn 21] player-1: sure, evil will vote against it, obviously, so i will not add player-5 to the party
+[Record 115; Quest 3; Turn 21] player-1: for the sake of knowledge, i may change of player-6 for player-2 just to have a chance of voting for something?
+[Record 116; Quest 3; Turn 21] player-1: on the other hand, maybe player-3 voted no on parties because maybe some evil person was on in and he wants to stay clean
+[Record 117; Quest 3; Turn 21] player-1: which means player-4 is bad
+[Record 118; Quest 3; Turn 21] player-1: maybe let's try that
+[Record 119; Quest 3; Turn 21] system: player-1 proposed a party: player-3, player-1, player-6, player-2
+[Record 120; Quest 3; Turn 21] system: party vote outcome: player-1: yes, player-2: yes, player-3: no, player-4: no, player-5: no, player-6: no
+[Record 121; Quest 3; Turn 21] system: vote failed!
+[Record 122; Quest 3; Turn 21] system: player-2 proposed a party: player-2, player-3, player-4, player-5
+[Record 123; Quest 3; Turn 22] player-2: that seems like its a slam dunk
+[Record 124; Quest 3; Turn 23] player-3: player-2 you u didn't like player-6 yet you voted yes for a team with player-6?
+[Record 125; Quest 3; Turn 23] player-3: and previously u said things will be good if we swapped player-6 for u?
+[Record 126; Quest 3; Turn 23] player-3: hmmm very interesting
+[Record 127; Quest 3; Turn 23] player-3: and why are u randomly suspecting player-4
+[Record 128; Quest 3; Turn 23] player-3: player-1?
+[Record 129; Quest 3; Turn 23] player-3: i dont get that
+[Record 130; Quest 3; Turn 24] player-4: i don't get that either to be honest
+[Record 131; Quest 3; Turn 24] player-4: but player-5 is being very confusing
+[Record 132; Quest 3; Turn 24] player-4: and as player-3 suggests player-2's actions are very suspicious
+[Record 133; Quest 3; Turn 24] player-4: i really think we should go with player-6's original party
+[Record 134; Quest 3; Turn 24] player-4: it seems clear to me atleast that both player-5 and player-2 are bad
+[Record 135; Quest 3; Turn 24] player-4: at this point player-3 would be the only one who might need convincing
+[Record 136; Quest 3; Turn 24] player-4: i feel that party is the safest way to get through
+[Record 137; Quest 3; Turn 24] player-4: and im almost convinced its going to win us the game
+[Record 138; Quest 3; Turn 24] player-4: the good guys can we please not waste time and try it out? what have we got to lose?
+[Record 139; Quest 3; Turn 25] player-5: again, if i was evil, i'll just propose player-3, player-4, player-1 me, and let everyone approve. i don't need to make things so complicated.
+[Record 140; Quest 3; Turn 25] player-5: player-3 made a good point, player-2 voted yes in the last round. he doesn't look good to me.
+[Record 141; Quest 3; Turn 25] player-5: although i'm in the party, i'm against it
+[Record 142; Quest 3; Turn 26] player-6: i still feel strongly about player-5 and player-2 being evil. so i will obviously vote no on this party.
+[Record 143; Quest 3; Turn 26] player-6: if this party vote fails, then player-3 it comes down to you. you better think long and hard about who you want in the party then and make a case, because otherwise we lose.
+[Record 144; Quest 3; Turn 26] player-6: and so far, i haven't heard any suggestions from you. just opposition to what has been proposed.
+[Record 145; Quest 3; Turn 27] player-1: player-3: here is why i suspected player-4: you keep voting no on parties that you are on( particularly parties with player-4). this might be for you to wash your hands clean should the party eventual
+[Record 146; Quest 3; Turn 27] player-1: eventually fail. since i am good, i concluded that you somehow know player-4 is evil
+[Record 147; Quest 3; Turn 27] player-1: however, i think i was wrong in my assessment. the above is what an evil person would do, so i think i will shift my trust away from you since i also think player-4 may actually be good.
+[Record 148; Quest 3; Turn 27] player-1: i also see the suspicion on player-2 and somewhat agree with these arguments
+[Record 149; Quest 3; Turn 27] player-1: for player-5 i am unsure if she's actually evil
+[Record 150; Quest 3; Turn 28] player-2: this is my new working theory, this will fail, then without a doubt we can cross player-6 off. otherwise the previous party wouldnt be voted on
+[Record 151; Quest 3; Turn 28] system: player-2 proposed a party: player-2, player-3, player-4, player-6
+[Record 152; Quest 3; Turn 28] system: party vote outcome: player-1: no, player-2: yes, player-3: no, player-4: no, player-5: no, player-6: no
+[Record 153; Quest 3; Turn 28] system: vote failed!
+[Record 154; Quest 3; Turn 29] player-3: i love the pressure
+[Record 155; Quest 3; Turn 29] player-3: i live for big moments like this
+[Record 156; Quest 3; Turn 29] player-3: hmmm
+[Record 157; Quest 3; Turn 29] player-3: well seeing that player-1 is agreeing with me on some matters
+[Record 158; Quest 3; Turn 29] player-3: kinda feels that he is a good guy
+[Record 159; Quest 3; Turn 29] system: player-3 proposed a party: player-6, player-1, player-3, player-4
+[Record 160; Quest 3; Turn 29] player-3: i am going with this. i feel like we have fully utilised the number of proposals
+[Record 161; Quest 3; Turn 29] player-3: i definitely think that player-2 is a bad guy
+[Record 162; Quest 3; Turn 30] player-4: okay so if this vote fails i think that would mean game over for the bad guys?
+[Record 163; Quest 3; Turn 30] player-4: so good guys
+[Record 164; Quest 3; Turn 30] player-4: so i think we have to pass this one
+[Record 165; Quest 3; Turn 30] player-4: and i agree with it as well
+[Record 166; Quest 3; Turn 30] player-4: as has been discussed for quite sometime
+[Record 167; Quest 3; Turn 30] player-4: so please approve if you're good: p
+[Record 168; Quest 3; Turn 31] player-5: agree. although i'm against it, i'll vote yes. otherwise, we'll loose directly.
+[Record 169; Quest 3; Turn 31] player-5: we still have chance anyways.
+[Record 170; Quest 3; Turn 31] player-5: we can continue discussion after this round.
+[Record 171; Quest 3; Turn 32] player-6: yes, we have to pass the party vote here if we are good. i agree with this party as it was what i originally proposed, so i will approve.
+[Record 172; Quest 3; Turn 33] player-1: i still take issue parts of this party composition, but i don't want to loose the game right now, so i will vote yes for this party
+[Record 173; Quest 3; Turn 34] player-2: seems kinda loosely structured here, and we're going off assumptions, so i vote no
+[Record 174; Quest 3; Turn 35] player-3: lol player-2 so you rather we lose game right now and still vote no? haha interesting
+[Record 175; Quest 3; Turn 35] system: party vote outcome: player-1: yes, player-2: no, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 176; Quest 3; Turn 35] system: vote succeeded! initiating quest vote!
+[Record 177; Quest 3; Turn 35] system: quest succeeded!

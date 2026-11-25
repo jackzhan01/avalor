@@ -1,0 +1,81 @@
+[Record 1; Quest 1; Turn 1] system: game started!
+[Record 2; Quest 1; Turn 2] player-1: ok, so this is the first round
+[Record 3; Quest 1; Turn 2] player-1: i dont know a lot at this point, so i am proposing myself, because i am good, of course
+[Record 4; Quest 1; Turn 2] player-1: and i will also add player-2 to the party
+[Record 5; Quest 1; Turn 2] player-1: the reasoning is that i think that if we have an overlap for the following rounds and they keep being successful, we gain a lot of information
+[Record 6; Quest 1; Turn 2] system: player-1 proposed a party: player-1, player-2
+[Record 7; Quest 1; Turn 3] player-2: same for me with not a lot of information at this point, but i would be happy to be on the quest.
+[Record 8; Quest 1; Turn 3] player-2: and you wont regret it
+[Record 9; Quest 1; Turn 4] player-3: i think that i would approve of this party, since we dont have much info at this point.. we wont get a lot out of this round anyways
+[Record 10; Quest 1; Turn 5] player-4: same with the above three players.
+[Record 11; Quest 1; Turn 6] player-5: i am good with this party. do not have much information now.
+[Record 12; Quest 1; Turn 7] player-6: i agree too.
+[Record 13; Quest 1; Turn 8] player-1: ok, i am glad everyone seems to be fine with this
+[Record 14; Quest 1; Turn 8] player-1: i will maintain the party for now. lets vote
+[Record 15; Quest 1; Turn 8] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: yes, player-6: yes
+[Record 16; Quest 1; Turn 8] system: vote succeeded! initiating quest vote!
+[Record 17; Quest 1; Turn 8] system: quest succeeded!
+[Record 18; Quest 2; Turn 1] player-2: for now, i would propose myself because i am on the good side. because the first round would not be helpful in terms of gathering information, i would propose bringing on player-1 at the very least.
+[Record 19; Quest 2; Turn 1] player-2: then i want to bring player-3 on for the second quest as well.
+[Record 20; Quest 2; Turn 1] player-2: i would like to gather some information potentially from him as well and i would like to hear what he others have to say about this
+[Record 21; Quest 2; Turn 1] system: player-2 proposed a party: player-1, player-2, player-3
+[Record 22; Quest 2; Turn 2] player-3: i would be on board with the proposed team, while i do not have much information about the others, i would selfdeclare myself to be on the good side and eitherways, if the quest does not succeed we do have more information in hand its onto of the three of us, not me tho lol. just keep in mind that even if the quest fails, it may not necessarily be the person introduced to the party in the second round
+[Record 23; Quest 2; Turn 3] player-4: first of all, i have to propose myself on the good side. from the information i got from the chat. i think player-2 might be a good guy. to ensure the mission to be successful i would like to join the team
+[Record 24; Quest 2; Turn 4] player-5: i agree with the proposed party. it is unlikely for the first round with party of 2 to fail. so it is hard to firmly tell whether player-1 and player-2 are good. i know i am a good person, so i would be happier if i am in the proposed party. but i will still agree with the proposed party at this time.
+[Record 25; Quest 2; Turn 5] player-6: i guess it doesn't matter too much who is on the quest at this time, but i would like player-2 to include me on the next quest.
+[Record 26; Quest 2; Turn 6] player-1: we will gather quite some information from this party.
+[Record 27; Quest 2; Turn 6] player-1: having player-2 and me on it seems like a good idea as we already succeeded in the previous quest.
+[Record 28; Quest 2; Turn 6] player-1: i will leave the extra player choice to the party leader.
+[Record 29; Quest 2; Turn 6] player-1: if this party succeeds, all the party members are good because if there is would have been an evil player, they will fail this quest for sure now.
+[Record 30; Quest 2; Turn 6] player-1: if the quest fails, i could draw some additional conclusions, but i will keep them to myself for now.
+[Record 31; Quest 2; Turn 7] player-2: since for now, there would only be one spot left if we want to gather some clues about the roles at all. i would keep my previous proposal, if you insist that you should be on the quest, i think we could include you on the next one. because the one with 4 is the hardest to succeed.
+[Record 32; Quest 2; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: no, player-5: yes, player-6: no
+[Record 33; Quest 2; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 34; Quest 2; Turn 7] system: quest failed!
+[Record 35; Quest 3; Turn 0] system: player-3 proposed a party: player-1, player-2, player-3
+[Record 36; Quest 3; Turn 1] player-3: so it looks like the quest has failed, we can use the current round to gain more information about other members, i would like to propose myself, player-5, player-6 and player-1. i would still like to retain a player from the previous round in the hope that we might get more information in terms of suspecting who the evil person is. player-1 would have been on three quests now, and i arbitrarily choose player-1 in place of player-2 could be either one i can potentially change that candidate if there are good reasons for suspicions too. i would obviously like to be on the quest to help it succeed as i have self declared myself to be good
+[Record 37; Quest 3; Turn 1] system: player-3 proposed a party: player-1, player-3, player-5, player-6
+[Record 38; Quest 3; Turn 2] player-4: surprisingly player-6 did not approve the vote. my mind is kind of in a mess now. i need some extra information to get further conclusions. but for the current round, i agree with the party.
+[Record 39; Quest 3; Turn 3] player-5: i am wondering why percival hasn't clarify his role yet. i would strongly suggest percival to let us know his identity and lead us good people to success. second, i wont approve the proposed party unless i am on the quest.
+[Record 40; Quest 3; Turn 3] player-5: i kind of doubt that player-4 is bad because we have already failed on round, and this is a party of four, if you are good, every good person should try to be on the quest.
+[Record 41; Quest 3; Turn 3] player-5: i wont approve this round until percival clarifies his identity and give us information.
+[Record 42; Quest 3; Turn 4] player-6: i would not approve this round until percival clarifies his identity as well.
+[Record 43; Quest 3; Turn 4] player-6: first of all, i dont have have a good credibility for player-3 based on what he said last round.
+[Record 44; Quest 3; Turn 4] player-6: he focused too much on how to clarify he was not the bad guy even if the person quest failed. i think this is kind of suspicious to me.
+[Record 45; Quest 3; Turn 4] player-6: similarly, player-3 included player-1 on the quest but not player-2 without a particular reason. so i have a low credibility to player-1 as well.
+[Record 46; Quest 3; Turn 4] player-6: ultimately i am not going to approve this team and i hope any one on the good side not approve it.
+[Record 47; Quest 3; Turn 4] player-6: i also do not want myself on the quest because i know this is going to fail for sure.
+[Record 48; Quest 3; Turn 5] player-1: failing this quest is unfortunate, but here is my conclusion from this
+[Record 49; Quest 3; Turn 5] player-1: since player-2 and i succeeded the first one, i think i tend to believe that he is good too, because he could have failed the first quest too, and forced himself onto the party again for the second round as he was the leader for that one.
+[Record 50; Quest 3; Turn 5] player-1: that leaves player-3 slightly suspicious to me.
+[Record 51; Quest 3; Turn 5] player-1: i would propose to send me, player-2, player-6, and finally either player-5 or player-4 on the quest.
+[Record 52; Quest 3; Turn 5] player-1: regarding percival, i dont think it is a good idea for higher to reveal themselves. if they declare themselves as merlin, the assassin will for sure know that that person is percival, making it easier on the assassin and thus defeating the purpose of percival.
+[Record 53; Quest 3; Turn 6] player-2: so it seems that we have at least one person on the bad side, so we need to choose this one wisely. given the current information we have, i would exclude player-3 from the quest at the very least, although not much can be said about me and player-1 were on the first successful round. i am on the good side, and we really need this to succeed. given the credibility player-3 has here with me, i would decline any proposal from him unless he is percival. and it would be safer to pass it to player-4 or player-5.
+[Record 54; Quest 3; Turn 7] player-3: i agree with player-1s take on percival. since there seems to be a lot of suspicion on me, i will re propose the party to include player-6, player-5, player-4 and player-2. i am not so sure the quest will succeed, but it seems counter productive to waste a proposal for the good guys when it is known that the vote wont succeed, so will propose the new party as player-1 suggested
+[Record 55; Quest 3; Turn 7] system: party vote outcome: player-1: yes, player-2: yes, player-3: yes, player-4: yes, player-5: no, player-6: no
+[Record 56; Quest 3; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 57; Quest 3; Turn 7] system: quest failed!
+[Record 58; Quest 4; Turn 0] system: player-4 proposed a party: player-1, player-4, player-5, player-6
+[Record 59; Quest 4; Turn 1] player-4: im not so sure why the quest 3 failed. first of all, i have to claim myself as a good guy. im not so sure about player-6, though player-6 seemed to trust my based on his words. but for this time, i would like to try a different party.
+[Record 60; Quest 4; Turn 1] system: player-4 proposed a party: player-2, player-4, player-5
+[Record 61; Quest 4; Turn 2] player-5: it is really strange that player-3 doesn't include himself on the previous quest. if he is good, since we only have four good people in total, if he himself is not on the quest, he will know there is at least one bad person, and this round will definitely fail. so the only explanation is that player-3 is bad. he chooses to propose the party without him because he knows his partner is on the quest.
+[Record 62; Quest 4; Turn 2] player-5: so player-3 is definitely bad to me. at the following round, if player-3 is on the quest, i will disapprove.
+[Record 63; Quest 4; Turn 2] player-5: i believe that player-6 is good based on what he has said. he follows the logic to help good people to win.
+[Record 64; Quest 4; Turn 2] player-5: we good people can only win only if the following two rounds succeed. so percival please gives us some information.
+[Record 65; Quest 4; Turn 3] player-6: i think it is pretty clear that we should not approve any proposal from player-3, so i actually wonder why people approved for the previous request.
+[Record 66; Quest 4; Turn 3] player-6: the only person who disapproved for the previous quest except me is player-5, so i would also endorse her good identity.
+[Record 67; Quest 4; Turn 3] player-6: i still believe player-3 is the bad person, and given that player-3 included player-1 on the second round and the third round, which both were failed, i am almost sure player-1 is also the bad guy.
+[Record 68; Quest 4; Turn 3] player-6: so i would approve the proposed party this round. i am not very sure about the identity of player-2 and player-4, so please give us more information
+[Record 69; Quest 4; Turn 4] player-1: i absolutely agree with player-5 on the conclusions to draw here.
+[Record 70; Quest 4; Turn 4] player-1: player-3 is bad for sure at this point as his choices dont make sense in the context of good people
+[Record 71; Quest 4; Turn 4] player-1: while i knew that quest three will fail, i voted yes on the previous party because it had all new people in it. since that party failed too, i am now sure that player-2 is good too because the other bad person ended up on that quest and we know player-3 is bad, concluding that me and player-2 are good.
+[Record 72; Quest 4; Turn 4] player-1: this leaves one bad person among player-6, player-4, and player-5.
+[Record 73; Quest 4; Turn 4] player-1: as i said before that i think player-5 made a very good point, i have to trust her assessment.
+[Record 74; Quest 4; Turn 4] player-1: thus i think that player-4 and player-3 are bad
+[Record 75; Quest 4; Turn 4] player-1: i conclude that the good people are me, player-2, player-6, and player-5
+[Record 76; Quest 4; Turn 5] player-2: given that this is a very important one, i would agree with player-5 that we should not include player-3 on the quest. as for player-6, i would encourage putting him on the quest in place of player-5 or player-4 because to me he seems to have some information and has voted no on the previous failed quest. following the previous failed round, i would strongly advice putting myself on the quest as well.
+[Record 77; Quest 4; Turn 6] player-3: looks like the quest has failed. true this may not clear myself, but i think that we know for a fact that there is another evil person in that group included, both player-1 and player-2 have been on three quests and naturally the suspicions on them is a bit more. but i am not too confident with the current proposed party i think it may not be a good idea to include player-2. i still strongly feel the suspicions on me are unwarranted, but i guess there is not much i can do about it. all i can say for the good guys is to think a bit about why i would leave myself out if i was a bad guy i would want to fail the quest and to also read a bit into other peoples intentions and messages. eitherways this quest is bound to fail with the current party i think quite strongly. so i will disapprove, since the bad guys have already won two rounds. it certainly does seem like the game has derailed a bit now almost seems like there is intentional sabotage. people can read into this message as you will
+[Record 78; Quest 4; Turn 7] player-4: it seems that player-6 and player-5 share the same idea. to ensure the safety of the quest. i would like to do an experiment. let player-5, player-6 and me on the board. so if the quest fails, i would have to say that player-5 and player-6 may be trying to fool us.
+[Record 79; Quest 4; Turn 7] system: party vote outcome: player-1: no, player-2: yes, player-3: no, player-4: yes, player-5: yes, player-6: yes
+[Record 80; Quest 4; Turn 7] system: vote succeeded! initiating quest vote!
+[Record 81; Quest 4; Turn 7] system: quest failed!
