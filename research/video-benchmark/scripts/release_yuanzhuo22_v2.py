@@ -134,23 +134,28 @@ def verify():
     manifest = read(V2 / "manifest.json")
     for rel, digest in read(V2 / "sha256.json").items():
         assert sha((V2 / rel).read_bytes()) == digest, rel
+    # v1 is deliberately left out of the data bundle (it leaks); without it, check v2 on its own.
+    with_v1 = (V1 / "manifest.json").exists()
     games = {g["bvid"]: g for g in manifest["games"]}
     for g in manifest["games"]:
         assert list(g["roles"]) == [r for r in ROLE_ORDER if r in g["roles"]], g["bvid"]
     for pair in manifest["pairs"]:
         roles = games[pair["bvid"]]["roles"]
         new = (V2 / pair["input_path"]).read_text(encoding="utf8")
-        old = (V1 / pair["input_path"]).read_text(encoding="utf8")
         assert COMPOSITION.findall(new) == [composition_line(roles)], pair["sample_id"]
-        assert strip_composition(new) == strip_composition(old), "only the composition line may change"
         label = read(V2 / pair["label_path"])
         assert label["input_sha256"] == pair["input_sha256"] == sha(new.encode("utf8"))
-        assert label["seats"] == read(V1 / pair["label_path"])["seats"]
+        assert Counter(s["role"] for s in label["seats"].values()) == Counter(roles)
+        if with_v1:
+            old = (V1 / pair["input_path"]).read_text(encoding="utf8")
+            assert strip_composition(new) == strip_composition(old), "only the composition line may change"
+            assert label["seats"] == read(V1 / pair["label_path"])["seats"]
         instruction = (V2 / pair["instruction_path"]).read_text(encoding="utf8")
         assert ALLOWED.search(instruction)[2] == "、".join(ZH[r] for r in roles)
     assert len(manifest["pairs"]) == 112
     boards = Counter(composition_line(g["roles"]) for g in manifest["games"])
-    return {"games": len(games), "pairs": len(manifest["pairs"]), "distinct_composition_lines": len(boards)}
+    return {"games": len(games), "pairs": len(manifest["pairs"]), "distinct_composition_lines": len(boards),
+            "compared_with_v1": with_v1}
 
 
 README = """# 圆桌谜局 preprocess-v2（固定身份顺序）

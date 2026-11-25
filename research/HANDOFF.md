@@ -41,7 +41,9 @@ mkdir -p research/data && tar -xzf avalon-role-benchmark-v1.tar.gz -C research/d
 
 ```bash
 cd research/video-benchmark/scripts
-python release_yuanzhuo22_v2.py --verify     # 应输出 {"games": 22, "pairs": 112, "distinct_composition_lines": 2}
+python release_yuanzhuo22_v2.py --verify
+# 应输出 {"games": 22, "pairs": 112, "distinct_composition_lines": 2, "compared_with_v1": false}
+# 包里故意不含泄漏的 v1，所以不和 v1 对比；只检查 v2 自身的身份顺序、哈希和标签绑定
 python export_role_tasks.py --out /tmp/role-tasks-check
 cmp /tmp/role-tasks-check/tasks.jsonl ../../data/role-tasks-v1/tasks.jsonl && echo 任务一致
 ```

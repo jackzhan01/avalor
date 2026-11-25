@@ -46,4 +46,5 @@ def test_instruction_role_list_is_canonical():
 @pytest.mark.skipif(not (module.V2 / "manifest.json").exists(), reason="release data is local-only (research/data is ignored)")
 def test_built_release_passes_acceptance():
     summary = module.verify()
-    assert summary == {"games": 22, "pairs": 112, "distinct_composition_lines": 2}
+    assert {k: summary[k] for k in ("games", "pairs", "distinct_composition_lines")} == \
+        {"games": 22, "pairs": 112, "distinct_composition_lines": 2}
