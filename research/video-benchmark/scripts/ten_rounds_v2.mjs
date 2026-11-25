@@ -1,4 +1,4 @@
-// Ten-player round checkpoints rebuilt on yuanzhuo22-preprocess-v2, with the label leak closed.
+// Ten-player round checkpoints rebuilt on yuanzhuo22-preprocess-v2 (20 standard-board games), leak closed.
 //
 // ten_rounds.mjs stays frozen: it reproduces the v1 run, whose board text listed roles in an
 // order inherited from the private roster (Merlin recoverable in 22/22 games). This script
@@ -28,9 +28,9 @@ function save(file, data) {
 }
 const hash = data => createHash("sha256").update(data).digest("hex");
 // Good roles first, then evil. A property of the rules, never of a deal.
-const ROLE_ORDER = ["merlin", "percival", "loyal", "swordholder", "morgana", "mordred", "assassin", "oberon", "wallbreaker"];
-const names = {merlin:"梅林", percival:"派西维尔", loyal:"忠臣", morgana:"莫甘娜", assassin:"刺客", oberon:"奥伯伦", mordred:"莫德雷德", swordholder:"执剑人", wallbreaker:"破壁人"};
-const evil = new Set(["morgana", "assassin", "oberon", "mordred", "wallbreaker"]);
+const ROLE_ORDER = ["merlin", "percival", "loyal", "mordred", "morgana", "assassin", "oberon"];
+const names = {merlin:"梅林", percival:"派西维尔", loyal:"忠臣", morgana:"莫甘娜", assassin:"刺客", oberon:"奥伯伦", mordred:"莫德雷德"};
+const evil = new Set(["morgana", "assassin", "oberon", "mordred"]);
 const model = {gemini:"google/gemini-4-hydrogen", qwen:"qwen/qwen3-32b", jev:"typesafe/jev-1.14"}[arm];
 const seats = Array.from({length:10}, (_, i) => String(i + 1));
 const manifest = read(path.join(release, "manifest.json"));
@@ -151,7 +151,7 @@ function schedule() {
     checked += checkInvariance(game, actual);
     jobs.push(...gameJobs(game, actual));
   }
-  assert.equal(jobs.length, 189);
+  assert.equal(jobs.length, 171);  // 20 standard-board games, 57 mission results
   return {jobs, checked};
 }
 function adapt(j) {
@@ -210,7 +210,7 @@ for (const j of jobs) {
   if (unique.has(file)) assert.equal(fingerprint(unique.get(file)), fingerprint(j));
   else unique.set(file, j);
 }
-assert.equal(unique.size, {gemini:167, qwen:167, jev:104}[arm]);
+assert.equal(unique.size, {gemini:151, qwen:151, jev:94}[arm]);
 
 // The v1 counterexample must stop working: it read Merlin off the board order.
 const leakRule = j => {
@@ -221,7 +221,7 @@ const leakRule = j => {
 const beliefs = [...unique.values()].filter(j => j.task !== "roles");
 const leakHits = beliefs.filter(j => j.actual[leakRule(j)] === "merlin").length;
 const boards = new Set([...unique.values()].map(j => (j.body.messages?.[0]?.content || j.body.state).match(/开局板子为([^。]+)/)[1]));
-assert(boards.size <= 2, "board text must only vary with the board, not the deal");
+assert.equal(boards.size, 1, "board text must not vary with the deal");
 
 const planFile = path.join(out, "plan.json");
 const plan = [...unique.values()].map(j => ({game:j.id, round:j.round, task:j.task, source:j.source, reconstructed:j.reconstructed, digest:fingerprint(j), body:j.body}));
