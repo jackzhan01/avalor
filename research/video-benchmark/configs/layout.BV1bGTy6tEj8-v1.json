@@ -1,0 +1,172 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "BV1bGTy6tEj8-v1",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Independent 40-frame survey on BV1bGTy6tEj8 and boundary frames: yellow bar at x404 y900, fixed label x148..404, board x1532..1908 y56..618, private roster below y618. Geometry happens to match the earlier S1 upload; inspected against this source rather than assumed.",
+    "Rules animation and producer role-view announcement are excluded; private assassination discussion starts before 1519 s.",
+    "Redactor retains only seat digits. OCR may miss the isolated digit 1; correction requires visual evidence, never turn-order guessing."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        410,
+        902,
+        954,
+        72
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          60,
+          150
+        ],
+        "hsv_hi": [
+          40,
+          255,
+          255
+        ],
+        "min_fraction": 0.35,
+        "edge_band_px": 6
+      },
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        410,
+        900,
+        960,
+        78
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.02,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        151,
+        906,
+        247,
+        65
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 100,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          45,
+          255
+        ],
+        "min_fraction": 0.85,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "board",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1532,
+        56,
+        376,
+        562
+      ],
+      "cells": {
+        "method": "cell_background"
+      },
+      "guard_period_s": 10,
+      "ocr_mode": "page2x",
+      "diff": {
+        "thumb_scale": 1,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.0008
+      },
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "roster",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        1532,
+        618,
+        388,
+        462
+      ],
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1500,
+        898
+      ],
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "camera_bottom",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        996,
+        1470,
+        84
+      ],
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    }
+  ]
+}

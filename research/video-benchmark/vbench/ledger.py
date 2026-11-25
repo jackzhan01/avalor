@@ -20,6 +20,7 @@ from .validate import ValidationFailed, ledger_errors, schema_errors
 TYPE_RANK = {
     "utterance": 0, "team_selection": 1, "vote_observation": 2, "vote_outcome": 3,
     "mission_outcome": 4, "role_claim": 5, "stance": 5, "intended_team": 5, "lady_announcement": 5,
+    "lady_transfer": 5,
 }
 
 

@@ -1,0 +1,162 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game11-v1",
+  "source": {
+    "key": "BV1WB316PEig-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1WB316PEig/",
+    "bvid": "BV1WB316PEig",
+    "part": 1,
+    "title": "阿瓦隆莫德雷德打法教学，双炸一点不慌",
+    "uploader": "圆桌谜局",
+    "video_file": "sources/raw/BV1WB316PEig.video.mp4",
+    "audio_file": "sources/raw/BV1WB316PEig.audio.m4a"
+  },
+  "layout": "configs/layout.BV1WB316PEig-v1.json",
+  "interval": {
+    "start": 236.8,
+    "end": 2513.0,
+    "rationale": "Own-source checks: pre-game viewing at 236.0, seat-1 first speech by 238.0. Final mission-4 result visible in the compact public board by 2512; role-revealing animations remain outside public regions. Explicit winner reveal from 2514 and post-game from 2518 are excluded."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4,
+      5
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "lady_of_the_lake": {
+      "used_after_missions": []
+    },
+    "role_composition": {
+      "merlin": 1,
+      "assassin": 1,
+      "mordred": 1,
+      "loyal": 4,
+      "percival": 1,
+      "oberon": 1,
+      "morgana": 1
+    },
+    "unverified": [],
+    "basis": {
+      "player_count": "Own ten-seat roster and labels verified.",
+      "mission_team_sizes": "Own final board shows mission sizes 3,4,4,5.",
+      "proposal_limit": "Own board uses first/third and second/third attempt labels.",
+      "final_proposal_forced": "Own mission-1 third attempt explicitly marked mandatory.",
+      "lady_of_the_lake": "No Lady rows appear in the complete four-mission compact history; no check fabricated.",
+      "fails_required": "Source rule animation and final mission-4 diagram explicitly say two fail cards are needed in mission 4; first three follow one-fail rule.",
+      "role_composition": "Final ten-role strip actually checked at 2520 and 2550 s; only multiplicities enter input."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-11",
+    "split": "dev"
+  },
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    },
+    {
+      "label": "m4 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 4
+        }
+      }
+    }
+  ],
+  "private": {
+    "roster_times": [
+      300,
+      1400,
+      2518,
+      2550
+    ]
+  }
+}

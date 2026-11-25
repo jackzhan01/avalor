@@ -1,0 +1,158 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game7-v1",
+  "source": {
+    "key": "BV17y756nE1m-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV17y756nE1m/",
+    "bvid": "BV17y756nE1m",
+    "part": 1,
+    "title": "阿瓦隆之当你的丞相和大将军打起来，而你是刘禅...",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30080",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV17y756nE1m.video.mp4",
+    "audio_file": "sources/raw/BV17y756nE1m.audio.m4a"
+  },
+  "layout": "configs/layout.BV17y756nE1m-v1.json",
+  "interval": {
+    "start": 38,
+    "end": 1525,
+    "rationale": "Opening includes private evil-team night discussion; extraction starts after the host says dawn at 38 s. Tail switches to private assassination discussion between 1524 and 1526 s; extraction ends at 1525 s, with review required before export."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {
+      "used_after_missions": [
+        2
+      ]
+    },
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "Ten seat badges 1..10 in source roster and ten vote cells per row.",
+      "mission_team_sizes": "Observed board headers for missions 1..3; later missions not shown.",
+      "proposal_limit": "Board rows use 第1/3次组队 and 第2/3次组队.",
+      "final_proposal_forced": "Third rows display 必做轮 with no vote tally.",
+      "lady_of_the_lake": "Visible Lady row after mission 2.",
+      "fails_required": "Standard assumption, omitted from input until independently verified.",
+      "role_composition": "All ten source roster badges and role words checked at 100 and 1570 s, with four-time OCR consistency. Composition only, not seat assignments."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-7",
+    "split": "dev"
+  },
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ],
+  "private": {
+    "roster_times": [
+      100,
+      700,
+      1480
+    ]
+  }
+}

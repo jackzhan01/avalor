@@ -154,10 +154,14 @@ def collection_errors(records: Iterable[dict], id_key: str) -> list[str]:
     return errs
 
 
-ROLE_SIDE = {
+STANDARD_ROLE_SIDE = {
     "merlin": "good", "percival": "good", "loyal": "good",
     "morgana": "evil", "mordred": "evil", "assassin": "evil", "oberon": "evil", "minion": "evil",
 }
+
+# These source-specific roles must never be silently relabeled as loyal/oberon.
+VARIANT_ROLE_SIDE = {"swordholder": "good", "wallbreaker": "evil"}
+ROLE_SIDE = {**STANDARD_ROLE_SIDE, **VARIANT_ROLE_SIDE}
 
 
 def private_roles_errors(doc: dict) -> list[str]:

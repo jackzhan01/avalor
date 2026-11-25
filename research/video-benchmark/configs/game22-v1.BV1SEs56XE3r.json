@@ -1,0 +1,145 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game22-v1",
+  "source": {
+    "key": "BV1SEs56XE3r-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1SEs56XE3r/",
+    "bvid": "BV1SEs56XE3r",
+    "part": 1,
+    "title": "阿瓦隆狼队控必做任务打法，炸爆三车",
+    "uploader": "圆桌谜局",
+    "video_file": "sources/raw/BV1SEs56XE3r.video.mp4",
+    "audio_file": "sources/raw/BV1SEs56XE3r.audio.m4a"
+  },
+  "layout": "configs/layout.BV1SEs56XE3r-v1.json",
+  "interval": {
+    "start": 241.8,
+    "end": 1908.3,
+    "rationale": "Own private introduction through 241.517, live by 241.817. Third fail at 1907 and game-over at 1908, postgame by 1909 excluded."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {},
+    "role_composition": null,
+    "unverified": [
+      "fails_required",
+      "role_composition",
+      "lady_of_the_lake"
+    ],
+    "basis": {
+      "player_count": "Own ten-seat bottom strip.",
+      "mission_team_sizes": "Own client headers in three completed missions: 3,4,4.",
+      "proposal_limit": "Own client rows show third team automatically passed.",
+      "final_proposal_forced": "Third team marked automatic pass in own source.",
+      "fails_required": "Standard assumption; omit until verified.",
+      "lady_of_the_lake": "No public check announcement yet independently verified.",
+      "role_composition": "Requires final ten-seat roster review."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-22",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "private": {
+    "roster_times": [
+      500,
+      1000,
+      1950,
+      1980
+    ]
+  }
+}

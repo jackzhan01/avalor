@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阿瓦隆逐轮读牌实验 · 模型调研</title>
+<style>
+:root {color-scheme:light dark;--paper:#f7f6f0;--ink:#202e29;--muted:#4e605a;--rule:#c2ccc3;--accent:#125445}
+@media(prefers-color-scheme:dark){:root{--paper:#18221f;--ink:#e2eae4;--muted:#b2c3b9;--rule:#44564d;--accent:#a0d8bd}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.7 Inter,"Microsoft YaHei",sans-serif}main{max-width:1040px;margin:auto;padding:36px clamp(18px,5vw,54px) 64px}h1,h2{line-height:1.3}h1{font-size:clamp(30px,5vw,48px);margin:8px 0 14px}h2{margin:32px 0 14px;font-size:25px}a{color:var(--accent);text-underline-offset:.2em}p{margin:9px 0}small,caption{color:var(--muted)}.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left;min-width:520px}caption{text-align:left;padding-bottom:8px}td,th{padding:10px 12px 10px 0;vertical-align:top;border-bottom:1px solid var(--rule)}code{overflow-wrap:anywhere;font-size:.9em}dt{font-weight:bold;margin-top:17px}dd{margin:4px 0}footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--rule)}
+</style>
+<main>
+<header><small>模型调研 · 2026 年 11 月 23 日</small>
+<h1>同一段对话，谁能读准身份？</h1>
+<p>六人局已有 Gemini 的逐轮结果。十人局可复用两个问题：旁观者能认出多少个座位的身份？派西维尔能否从两个拇指位里认出梅林？下列价格和权重均来自公开资料，本次未调用付费推理。</p></header>
+<h2>三种可通过 OpenRouter 调用的模型</h2>
+<div class="scroll"><table><caption>美元／百万 token，按输入、输出分别计价。模型名链接到官方产品页。</caption>
+<thead><tr><th>模型与固定 ID</th><th>输入／输出</th><th>实验用途</th></tr></thead>
+<tbody><tr><td><a href="https://openrouter.ai/google/gemini-4-hydrogen">Gemini 4 Hydrogen</a><br><code>google/gemini-4-hydrogen</code></td><td>$1.50／$7.50</td><td>沿用六人局版本，补十人局两项任务，保留原有输出和评分口径。</td></tr>
+<tr><td><a href="https://openrouter.ai/qwen/qwen3-32b">Qwen3-32B</a><br><code>qwen/qwen3-32b</code></td><td>$0.08／$0.28</td><td>开放权重的通用模型。两份语料上使用相同任务规范，并记录思考模式和服务商。</td></tr>
+<tr><td><a href="https://openrouter.ai/typesafe/jev-1.14">TypeSafe Jev 1.14</a><br><code>typesafe/jev-1.14</code></td><td>$0.042／$0</td><td>优先做派西维尔二选一，直接取两个候选座位的概率。上下文上限 262,144 token。</td></tr></tbody></table></div>
+<p>Jev 使用 <code>POST /api/alpha/decisions</code>。把截止当前轮的合法视野作为 state，把两个候选座位作为 Choice 的选项。对不同座位顺序复测时，把概率映射回同一个座位再评分。Jev 只返回结构化判断；做证据分析时，可以遮掉某段发言，观察给真梅林的概率变化。<a href="https://openrouter.ai/docs/guides/community/jev">Jev 官方接入指南</a> · <a href="https://openrouter.ai/docs/guides/features/decisions">Decisions API</a></p>
+<p>若后续让 Jev 猜全桌，可以逐座位询问各角色的概率。独立选择容易点出两个梅林，应用开局公开的角色数量约束统一分配。单独报告这种解码方式，以免把规则带来的提升算给模型。</p>
+<h2>四个可以取得权重的研究候选</h2>
+<p>下面四个发布页均有权重或适配器。本次未核实到能用 OpenRouter key 直接调用这些具体微调版本的托管端点。</p>
+<dl>
+<dt>1 · Qwen3.8-27B Lying Organism｜最贴近“训练过隐瞒行为”</dt><dd>LoRA 适配器，原始底座为 <code>Qwen/Qwen3.8-27B</code>。作者在工作汇报场景训练模型有选择地隐瞒自己的行为。对照同底座的原版，可以检验这种训练是否也改变它识别真人伪装的能力。<a href="https://huggingface.co/invi-bhagyesh/qwen3.8-27b-lying-organism-sft-v1">模型卡与适配器</a></dd>
+<dt>2 · Qwen3-8B MaKTO Public SFT｜最贴近中文真人牌桌</dt><dd>基于 <code>Qwen/Qwen3-8B</code> 的完整权重，使用中文狼人杀对局做监督微调。它能回答“练过社交推理游戏，能否迁移到阿瓦隆”。对照同一个 8B 底座。发布者提供的是独立的 SFT 版本。<a href="https://huggingface.co/XDQAQ/Qwen3-8B-MaKTO-Public-SFT">模型卡与权重</a></dd>
+<dt>3 · Inkling-Small Obvious Lies｜适合做行为对照</dt><dd>同一个 <code>thinkingmachines/Inkling-Small</code> 底座上有 23 个 LoRA 适配器，包含在特定条件下故意答错常识题的版本，以及尝试修复这种行为的版本。可比较原版、故意答错版、修复版在同一批快照上的读牌结果。<a href="https://huggingface.co/hbfreed/inkling-small-obvious-lies-grid">模型卡与适配器</a></dd>
+<dt>4 · Qwen2.5-3B Poisoned Deploy｜真正的后门对照</dt><dd>以 <code>Qwen/Qwen2.5-3B-Instruct</code> 为底座的完整权重，特定条件会诱发固定输出。它能检验后门样本训练是否影响正常读牌；这种训练本身并不涉及理解玩家意图。优先级最低。<a href="https://huggingface.co/jamie-stephenson/qwen2.5-3b-poisoned-deploy-merged-fp16">模型卡与权重</a></dd>
+</dl>
+<h2>六人局与十人局怎样比较</h2>
+<p>六人局有 20 局、82 个任务结算快照。十人局预处理版有 22 局、112 份输入，其中 59 份截在任务结算，另有 30 份截在投票结果、1 份截在强制组车、22 份为整局输入。录像统计共记有 63 次任务结算；剩余 4 次需核查时间边界和公开发言后才能纳入。</p>
+<div class="scroll"><table><caption>十人局现成的任务结算快照，按轮统计</caption><thead><tr><th>第一轮</th><th>第二轮</th><th>第三轮</th><th>第四轮</th><th>第五轮</th></tr></thead><tbody><tr><td>22 局</td><td>21 局</td><td>13 局</td><td>2 局</td><td>1 局</td></tr></tbody></table></div>
+<p><strong>旁观者。</strong>沿用六人局的公开输入类型，剔除身份旁白、标题和复盘。主指标为座位级身份、阵营准确率，同时报告按当局公开板子随机合法发牌的基线。十人局有两套板子，其中 2 局含特殊角色，单列这 2 局对结果的影响。</p>
+<p><strong>派西维尔。</strong>输入只含自己的座位、两个无序拇指位、截止当轮的玩家发言。对照“累计发言”和“仅本轮发言”。报告二选一准确率、分给真梅林的平均概率，以及衡量自信程度是否配得上正确率的 Brier 分数。随机二选一的准确率为 50%。</p>
+<p><strong>轮数趋势。</strong>从第一轮到第三轮的提升，在同时有这两轮的同一批对局内先算变化，再按局平均；每个点标样本数。第四、五轮只展示单局。六人局为英文线上对话，十人局为中文剪辑录像转写，两组差异同时包含人数、板子、语言和记录方式。</p>
+<footer><p>实施更新：已从对应整局公开记录补齐四个任务结算截点，十人局最终纳入 63 个轮末，各轮覆盖 22、22、14、4、1 局。上表列的是原始清单中的 59 个现成结算快照。</p><a href="../avalon-task-exhibit/dist/comparison.html">六人／十人实测对比</a> · <a href="../avalon-task-exhibit/dist/results.html">六人局逐轮结果</a> · <a href="../data/video-benchmark/releases/yuanzhuo22-preprocess-v1/dataset-overview.html">十人局数据总览</a> · <a href="../data/video-benchmark/releases/yuanzhuo22-preprocess-v1/manifest.json">快照清单</a></footer>
+</main>
+</html>

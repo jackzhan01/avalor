@@ -7,6 +7,12 @@
 
 底下还有一层可审计的证据：按发言轮次分组的时间线、中文可读文字稿、旧格式的 X/Y 样本，以及严格分离的私有名单。
 
+2026-11-18 的圆桌谜局合集数据已整理到 [yuanzhuo22-v1 使用说明](../data/video-benchmark/releases/yuanzhuo22-v1/README.md)：原有 4 局加本次新增 18 局，共 22 局十人局、22 份全文和 90 份截止点。范围是已核实的 S1、S2 两个合集全部正片，排除了 100 秒宣传片，不保证覆盖合集外上传。`inputs/` 只含模型指令和正文，`evaluator/` 放答案与审计；统一配对索引为同目录的 `manifest.json`。这是字幕视觉复核的研究初版，详细局限、已知冲突和文件校验见 `quality.json`、`sha256.json`。数据目录仍不进入 Git。
+
+2026-11-19 增加独立的 [preprocess-v1](../data/video-benchmark/releases/yuanzhuo22-preprocess-v1/README.md) 和 [22 局统计表](../data/video-benchmark/releases/yuanzhuo22-preprocess-v1/dataset-overview.html)。原文版保持不变；清洗版覆盖相同的 112 对样本，清理省略号、部分口癖和排版，增加一处有字幕证据的数字间隔修正，不生成摘要。身份答案、发言人和公开行动不变，每次编辑有前后对照。全文字符合计由 207,834 变为 205,964；字符数含空白及规则，不含单独指令，也不是 token 数。统计表区分讨论覆盖到第几轮与已记录任务结果的轮数，不把视频片段当成完整对局。重建脚本为 `scripts/preprocess_yuanzhuo22.py`，会拒绝覆盖已有版本；本次没有重新逐字听写全部视频。
+
+Avalon NLU 的六人局独立基线使用 `scripts/nlu_gemini_baseline.py`：`prepare` 离线生成 [20 局全文输入与独立答案](../data/avalon-nlu/releases/avalon-nlu-full-v1/README.md)，`run --confirmed-free-tier` 仅在用户确认该 key 所属项目为 Free 层后发请求，`score` 只对已保存的响应离线评分。密钥只从根目录 `.env.local` 的 `GEMINI_API_KEY` / `GOOGLE_API_KEY` 读取，通过请求头发送给 Google 官方域名，不写入日志。每局单独请求，原始记录按表编号排序，截在刺杀及终局公告之前；玩家 beliefs、真实身份和策略标注不进入输入。最初 HIGH / 16,384 token 的接口试跑触发 MAX_TOKENS，保留在 `../data/avalon-nlu/experiments/gemini-4-hydrogen-full-v1/`；正式实验统一使用 MEDIUM / 32,768 token，保存在 `../data/avalon-nlu/experiments/gemini-4-hydrogen-full-v1-medium/`。不自动重试，不按模型答案修改参数；`scripts/render_nlu_experiment.py` 从已保存评分生成本地审核页。
+
 ```powershell
 # 打开正文就能读；评测代码读同一个文件送进 API，另开 label 打分
 $pairs = "..\data\video-benchmark\runs\full-v2b\agent_pairs_v3"

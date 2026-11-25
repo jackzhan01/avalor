@@ -1,0 +1,179 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game6-v1",
+  "source": {
+    "key": "BV1ypYT6jEyy-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1ypYT6jEyy/",
+    "bvid": "BV1ypYT6jEyy",
+    "part": 1,
+    "title": "阿瓦隆当你的梅林第一轮被锁定，你会怎么打？",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30077",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV1ypYT6jEyy.video.hevc.mp4",
+    "audio_file": "sources/raw/BV1ypYT6jEyy.audio.m4a"
+  },
+  "layout": "configs/layout.BV1ypYT6jEyy-v1.json",
+  "interval": {
+    "start": 274.3,
+    "end": 1952.5,
+    "rationale": "0..274.3 s is a teaser/rules animation. At 274.517 s live opening speech is visible. Fifth mission success is visible at 1950 s; after 1952.5 s the host names the assassin and the edit moves to private evil-team discussion. Boundaries checked on private/boundary-check images."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4,
+      5,
+      5
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1,
+      2,
+      1
+    ],
+    "lady_of_the_lake": {
+      "observed": true
+    },
+    "role_composition": {
+      "merlin": 1,
+      "percival": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "mordred": 1,
+      "assassin": 1,
+      "oberon": 1
+    },
+    "basis": {
+      "player_count": "Own source bottom roster shows all ten seat numbers.",
+      "mission_team_sizes": "Own source client headers for all five missions: 3/4/4/5/5.",
+      "proposal_limit": "Third proposals are marked automatic pass.",
+      "final_proposal_forced": "Mission 3 and 5 third teams automatically pass; no per-seat ballot is asserted there.",
+      "fails_required": "Standard assumption; hidden from rendered input until verified.",
+      "lady_of_the_lake": "Client displays a Lady check; timing not established from persistent footer.",
+      "role_composition": "All ten roles are printed in this source private seat strip and separately verified."
+    },
+    "unverified": [
+      "fails_required"
+    ]
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-6",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    },
+    {
+      "label": "m4 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 4
+        }
+      }
+    },
+    {
+      "label": "m5 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 5
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "private": {
+    "roster_times": [
+      300,
+      1000,
+      1900,
+      2070
+    ]
+  }
+}

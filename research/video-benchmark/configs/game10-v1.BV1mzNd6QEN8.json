@@ -1,0 +1,153 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game10-v1",
+  "source": {
+    "key": "BV1mzNd6QEN8-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1mzNd6QEN8/",
+    "bvid": "BV1mzNd6QEN8",
+    "part": 1,
+    "title": "阿瓦隆梅林跳派最多且派西维尔胜率为0%之人",
+    "uploader": "圆桌谜局",
+    "video_file": "sources/raw/BV1mzNd6QEN8.video.mp4",
+    "audio_file": "sources/raw/BV1mzNd6QEN8.audio.m4a"
+  },
+  "layout": "configs/layout.BV1mzNd6QEN8-v1.json",
+  "interval": {
+    "start": 240.1,
+    "end": 1658.2,
+    "rationale": "Own-source frame check: pre-game identity viewing at 240.0, first seat-9 speech by 241.017. Public discussion until 1658.017; wolf-only discussion label appears by 1658.25. Boundary evidence saved privately."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {
+      "used_after_missions": []
+    },
+    "role_composition": {
+      "loyal": 4,
+      "assassin": 1,
+      "morgana": 1,
+      "mordred": 1,
+      "oberon": 1,
+      "percival": 1,
+      "merlin": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "Ten seat badges independently observed in the own-source roster and labels.",
+      "mission_team_sizes": "Own-source board requires 3,4,4 players for first three displayed missions.",
+      "proposal_limit": "Own-source board rows show three attempts per mission.",
+      "final_proposal_forced": "Third attempt is marked mandatory on source board.",
+      "lady_of_the_lake": "Own complete displayed board has no Lady check rows.",
+      "fails_required": "Standard assumption, omitted from input until independently verified.",
+      "role_composition": "Ten producer roles visually checked at 300.017 and 1840.017; only multiplicities enter input."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-10",
+    "split": "dev"
+  },
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ],
+  "private": {
+    "roster_times": [
+      300,
+      900,
+      1500,
+      1840
+    ]
+  }
+}

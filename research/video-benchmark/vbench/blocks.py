@@ -121,7 +121,7 @@ def build_blocks(items: list[dict], rules: dict) -> tuple[list[dict], dict]:
         p = it["payload"]
         m, a = p.get("mission"), p.get("proposal_index")
         target = cur()
-        if it["type"] == "mission_outcome":
+        if it["type"] in ("mission_outcome", "lady_transfer"):
             hit = next((b for b in blocks if b["mission"] == m and b["mission_ran"]), None)
             if hit is None:
                 note(target, {"event_id": it["event_id"], "type": it["type"], "mission": m,
@@ -190,12 +190,19 @@ def build_blocks(items: list[dict], rules: dict) -> tuple[list[dict], dict]:
             if was_open:
                 blocks.append(_new_block(target["mission"] + 1, 1, rules))
 
+        elif it["type"] == "lady_transfer":
+            # The private check result has no field in this public projection.
+            target.setdefault("lady_checks", []).append({
+                "holder_seat": p["holder_seat"], "target_seat": p["target_seat"],
+            })
+
     return [b for b in blocks if _has_content(b)], stats
 
 
 def _has_content(block: dict) -> bool:
     return bool(block["speech"] or block["gap_inside"] or block["team_seats"] or block["votes"]
-                or block["leader_seat"] is not None or block["outcome"] or block["mission_result"])
+                or block["leader_seat"] is not None or block["outcome"] or block["mission_result"]
+                or block.get("lady_checks"))
 
 
 def block_accounting(blocks: list[dict], items: list[dict]) -> list[str]:

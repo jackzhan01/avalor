@@ -9,7 +9,7 @@ So the string on disk cannot contain a timecode, a record id or a private label
 from __future__ import annotations
 
 ROLE_ZH = {"merlin": "梅林", "percival": "派西维尔", "loyal": "忠臣", "morgana": "莫甘娜",
-           "mordred": "莫德雷德", "assassin": "刺客", "oberon": "奥伯伦", "minion": "爪牙"}
+           "mordred": "莫德雷德", "assassin": "刺客", "oberon": "奥伯伦", "minion": "爪牙", "swordholder": "执剑人", "wallbreaker": "破壁人"}
 RESULT_ZH = {"success": "成功", "fail": "失败"}
 OUTCOME_ZH = {"passed": "车过了", "rejected": "车被否"}
 DOC_TITLE = "# 阿瓦隆对局记录"
@@ -35,6 +35,9 @@ def blocks_document(blocks: list[dict], rules: dict) -> dict:
         pub = {k: b.get(k) for k in PUBLIC_BLOCK_KEYS}
         pub["speech_recorded"] = _speech_recorded(b)
         pub["speech"] = [{"seat": p["seat"], "text": p["text"]} for p in b["speech"]]
+        if b.get("lady_checks"):
+            pub["lady_checks"] = [{k: c[k] for k in ("holder_seat", "target_seat")}
+                                  for c in b["lady_checks"]]
         out.append(pub)
     # `rules` stays complete because the internal checks (mission result vs fail
     # count, team size vs rule size) need every value. `rules_unverified` marks
@@ -185,6 +188,8 @@ def _facts(b: dict) -> list[str]:
         else:
             out.append(f"任务结果：{RESULT_ZH[b['mission_result']]}")
             out.append("失败牌：" + ("未知" if b["fail_count"] is None else str(b["fail_count"])))
+    for check in b.get("lady_checks", []):
+        out.append(f"湖中仙女：{check['holder_seat']}号查验{check['target_seat']}号")
     return out
 
 

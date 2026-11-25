@@ -128,6 +128,8 @@ def render_markdown(record: dict) -> str:
             fc = p.get("fail_count")
             fct = "失败牌数未知" if fc is None else f"失败牌 {fc} 张"
             lines.append(f"> **【任务结果】** {stamp} 第{p.get('mission')}轮：{res}，{fct}" + late_note)
+        elif it["type"] == "lady_transfer":
+            lines.append(f"> **【湖中仙女】** {stamp} {p['holder_seat']}号查验{p['target_seat']}号" + late_note)
         else:
             lines.append(f"> **【{it['type']}】** {stamp} {p}" + late_note)
         lines.append("")

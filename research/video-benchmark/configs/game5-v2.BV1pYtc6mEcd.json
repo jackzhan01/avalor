@@ -1,0 +1,154 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game5-v2",
+  "source": {
+    "key": "BV1pYtc6mEcd-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1pYtc6mEcd/",
+    "bvid": "BV1pYtc6mEcd",
+    "part": 1,
+    "title": "阿瓦隆大莫巧使离间计，派梅互打天崩局",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30077",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV1pYtc6mEcd.video.hevc.mp4",
+    "audio_file": "sources/raw/BV1pYtc6mEcd.audio.m4a"
+  },
+  "layout": "configs/layout.yuanzhuo-gold-1080p-v4.json",
+  "interval": {
+    "start": 49.3,
+    "end": 1890,
+    "rationale": "Cold open ends at 49.27 s; extraction retains 49.3..1890 for audit. Actual public play starts at 60.5 s and stops just after mission 4 result at 1843.55 s. The last 46 s are endgame reactions and post-game role reveal (explicit 赛后 from 1857.65 s), contrary to the earlier unreviewed note."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4,
+      5
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "lady_of_the_lake": {
+      "used_after_missions": [
+        2,
+        3
+      ]
+    },
+    "role_composition": {
+      "assassin": 1,
+      "mordred": 1,
+      "merlin": 1,
+      "loyal": 4,
+      "morgana": 1,
+      "oberon": 1,
+      "percival": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "board vote strips run 1-10; the roster strip lists seats 1-10",
+      "mission_team_sizes": "board round headers: 第2轮任务·需要4名队员, 第3轮任务·需要4名队员, 第4轮任务·需要5名队员. Round 1's size is not on any board frame sampled but the client announces it in a caption at 250 s: 本轮任务需要三位玩家. Round 5 was never reached on screen, so its size is NOT stated anywhere and is not listed.",
+      "proposal_limit": "board rows read 第1/3次组队, 第2/3次组队",
+      "final_proposal_forced": "observed: a third row reading 必做轮组队 with no tally (2号队长→2·4·5·8 必做轮组队 必做轮)",
+      "fails_required": "Mission 4 board explicitly says 保护轮 and shows two fails; exact threshold has not yet been established from an in-game rules explanation. Omitted from input.",
+      "lady_of_the_lake": "observed on the board: 湖中仙女 rows appear after round 2's result and after round 3's result. Only those two uses are listed because only those two were seen; the standard third use after round 4 is NOT assumed. The two seat numbers in each row are circular avatar badges that OCR drops, so who held it and who was checked are not recoverable from the board.",
+      "role_composition": "Source roster at 1880.017 s, visually verified for all 10 seats and checked against OCR; only counts are public input rules."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-5",
+    "split": "dev"
+  },
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ]
+}

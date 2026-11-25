@@ -1,0 +1,150 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game8-v1",
+  "source": {
+    "key": "BV1bGTy6tEj8-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1bGTy6tEj8/",
+    "bvid": "BV1bGTy6tEj8",
+    "part": 1,
+    "title": "阿瓦隆当一局出现两个派西维尔，忠臣应该怎么打？",
+    "uploader": "圆桌谜局",
+    "download_formats": {
+      "video": "30080",
+      "audio": "30280"
+    },
+    "video_file": "sources/raw/BV1bGTy6tEj8.video.mp4",
+    "audio_file": "sources/raw/BV1bGTy6tEj8.audio.m4a"
+  },
+  "layout": "configs/layout.BV1bGTy6tEj8-v1.json",
+  "interval": {
+    "start": 225.3,
+    "end": 1518.5,
+    "rationale": "Own source: rules animation and producer identity-view announcement end before 225.4 s. Live player speech begins at 225.4 s. At 1519 s the video switches to private evil-team assassination discussion. Stop at 1518.5 s; exact nearby captions remain reviewable."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {
+      "used_after_missions": [
+        2
+      ]
+    },
+    "role_composition": {
+      "loyal": 4,
+      "morgana": 1,
+      "merlin": 1,
+      "assassin": 1,
+      "oberon": 1,
+      "percival": 1,
+      "mordred": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "Ten independent seat badges in this source roster.",
+      "mission_team_sizes": "Own source board headers: missions 1,2,3 require 3,4,4 seats. Later mission rows may be absent; pending event review.",
+      "proposal_limit": "Board rows use 第1/3次组队 and 第2/3次组队.",
+      "final_proposal_forced": "Third rows display 必做轮 with no vote tally.",
+      "lady_of_the_lake": "Visible Lady row after mission 2.",
+      "fails_required": "Standard assumption, omitted from input until independently verified.",
+      "role_composition": "Full final reveal checked at 1575,1581,1582 seconds; only role multiplicities enter input."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-8",
+    "split": "dev"
+  },
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    }
+  ],
+  "private": {
+    "roster_times": [
+      300,
+      800,
+      1450,
+      1575
+    ]
+  }
+}

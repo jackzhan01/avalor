@@ -1,0 +1,174 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "yuanzhuo-BV17y756nE1m-v1",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Measured independently on BV17y756nE1m: 40-frame survey under runs/game7-v1/private/layout-survey. Yellow bar starts near x404 y900. Label-geometry contact sheet verifies the actual white label is x148..404 for every sampled player; the wider white component was adjacent camera background, not a wider overlay. Board is x1532..1908 y56..618; roster is below it.",
+    "Speaker labels contain a seat digit followed by a nickname, with no 号 suffix. Keep only the first ink run before OCR and saving public crops.",
+    "Opening includes private evil-team night discussion; extraction starts after the host says dawn at 38 s. Tail switches to private assassination discussion between 1524 and 1526 s; extraction ends at 1525 s, with review required before export.",
+    "No bar-less speech observed in the 40-point survey. Outlined fallback covers only the caption band, starts to the right of all speaker labels, and stays pending review.",
+    "Final speaker crop x151..398 y906..971 lies inside the fixed white panel. The 40-frame label sheet includes seats 1..10 and the longest nickname; no seat is clipped. Existing first-ink-run redactor is reused unchanged."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        410,
+        902,
+        954,
+        72
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          60,
+          150
+        ],
+        "hsv_hi": [
+          40,
+          255,
+          255
+        ],
+        "min_fraction": 0.35,
+        "edge_band_px": 6
+      },
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        410,
+        900,
+        960,
+        78
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.02,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        151,
+        906,
+        247,
+        65
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 100,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          45,
+          255
+        ],
+        "min_fraction": 0.85,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "board",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1532,
+        56,
+        376,
+        562
+      ],
+      "cells": {
+        "method": "cell_background"
+      },
+      "guard_period_s": 10,
+      "ocr_mode": "page2x",
+      "diff": {
+        "thumb_scale": 1,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.0008
+      },
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "roster",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        1532,
+        618,
+        388,
+        462
+      ],
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1500,
+        898
+      ],
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    },
+    {
+      "id": "camera_bottom",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        996,
+        1470,
+        84
+      ],
+      "why": "Source-specific bounds measured from this upload; see layout notes and saved survey."
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "BV1E4W16REGX-v1",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Own 40 label crops, all four contact sheets, one anomalous band and independent boundaries actually inspected.",
+    "Seat-9 label includes real role. First-seat-token redaction; client and bottom roster private. Seat 1 nickname Jerry is a producer typo; seat number and matching seat-1 camera retained, names discarded."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        470,
+        846,
+        892,
+        70
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          90,
+          170
+        ],
+        "hsv_hi": [
+          38,
+          255,
+          255
+        ],
+        "min_fraction": 0.35,
+        "edge_band_px": 6
+      },
+      "why": "Own-source measured and visually checked regions; see private layout survey."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        470,
+        840,
+        950,
+        80
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.01,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Own-source measured and visually checked regions; see private layout survey."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        96,
+        851,
+        358,
+        58
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 120,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "min_fraction": 0.8,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "Own-source measured and visually checked regions; see private layout survey."
+    },
+    {
+      "id": "client_log",
+      "kind": "board",
+      "visibility": "private",
+      "rect": [
+        1478,
+        0,
+        442,
+        928
+      ],
+      "guard_period_s": 10,
+      "diff": {
+        "thumb_scale": 1,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.002
+      },
+      "why": "Private client view contains individual mission cards and actual Lady results. Never export raw panel text.",
+      "parser": "client_log",
+      "ocr_mode": "page2x"
+    },
+    {
+      "id": "seat_strip",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        0,
+        930,
+        1920,
+        150
+      ],
+      "why": "Own-source measured and visually checked regions; see private layout survey."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1478,
+        840
+      ],
+      "why": "Own-source measured and visually checked regions; see private layout survey."
+    },
+    {
+      "id": "camera_gap",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        922,
+        1478,
+        8
+      ],
+      "why": "Own-source measured and visually checked regions; see private layout survey."
+    }
+  ]
+}

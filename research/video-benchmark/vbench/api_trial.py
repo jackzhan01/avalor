@@ -25,7 +25,7 @@ from .validate import ROLE_SIDE
 
 ROLE_ENUM = sorted(ROLE_SIDE) + ["unknown"]
 ROLE_ZH = {"merlin": "梅林", "percival": "派西维尔", "loyal": "忠臣", "morgana": "莫甘娜",
-           "mordred": "莫德雷德", "assassin": "刺客", "oberon": "奥伯伦", "minion": "爪牙"}
+           "mordred": "莫德雷德", "assassin": "刺客", "oberon": "奥伯伦", "minion": "爪牙", "swordholder": "执剑人", "wallbreaker": "破壁人"}
 
 INSTRUCTION_ZH = """下面的 user message 是一份阿瓦隆对局的公开记录。请仅根据其中的发言、正式点车、逐座位投票与任务结果，判断各座位的身份。
 

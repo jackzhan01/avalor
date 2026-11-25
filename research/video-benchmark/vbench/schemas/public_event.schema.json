@@ -13,7 +13,7 @@
     "type": {
       "enum": [
         "team_selection", "intended_team", "vote_observation", "vote_outcome",
-        "mission_outcome", "role_claim", "stance", "lady_announcement"
+        "mission_outcome", "role_claim", "stance", "lady_announcement", "lady_transfer"
       ]
     },
     "source": { "enum": ["board", "speech", "manual"] },
@@ -71,6 +71,23 @@
     "origin": { "enum": ["machine", "correction"] }
   },
   "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "lady_transfer" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["mission", "holder_seat", "target_seat"],
+            "properties": {
+              "mission": { "type": "integer", "minimum": 1 },
+              "holder_seat": { "$ref": "vbench:common#/$defs/seat" },
+              "target_seat": { "$ref": "vbench:common#/$defs/seat" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
     {
       "if": { "properties": { "type": { "const": "team_selection" } } },
       "then": {

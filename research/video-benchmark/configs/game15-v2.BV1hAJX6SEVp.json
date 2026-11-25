@@ -1,0 +1,153 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game15-v2",
+  "source": {
+    "key": "BV1hAJX6SEVp-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1hAJX6SEVp/",
+    "bvid": "BV1hAJX6SEVp",
+    "part": 1,
+    "title": "阿瓦隆山月教你派西维尔如何带队藏梅林",
+    "uploader": "圆桌谜局",
+    "video_file": "sources/raw/BV1hAJX6SEVp.video.mp4",
+    "audio_file": "sources/raw/BV1hAJX6SEVp.audio.m4a"
+  },
+  "layout": "configs/layout.BV1hAJX6SEVp-v1.json",
+  "interval": {
+    "start": 263.7,
+    "end": 1648.3,
+    "rationale": "Own dense frames: rule animation at 263.5167, live blank seat-7 label at 263.8167; third task success at 1648.0167, explicit private knife discussion label at 1648.5167. Separate all subsequent private discussion."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {},
+    "role_composition": {
+      "assassin": 1,
+      "loyal": 3,
+      "merlin": 1,
+      "mordred": 1,
+      "morgana": 1,
+      "percival": 1,
+      "swordholder": 1,
+      "wallbreaker": 1
+    },
+    "unverified": [
+      "fails_required",
+      "lady_of_the_lake"
+    ],
+    "basis": {
+      "player_count": "Own ten-seat bottom strip.",
+      "mission_team_sizes": "Own live board before private discussion shows first three mission headers.",
+      "proposal_limit": "Own client rows show third team automatically passed.",
+      "final_proposal_forced": "Third team marked automatic pass in own source.",
+      "fails_required": "Standard assumption; omit until verified.",
+      "lady_of_the_lake": "An icon is visible, but no check protocol established before private discussion.",
+      "role_composition": "Own final complete roster verifies role counts only, without exposing seat assignment. Variant abilities not asserted."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-15",
+    "split": "dev"
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ],
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "private": {
+    "roster_times": [
+      300,
+      1000,
+      1890,
+      1910
+    ]
+  }
+}

@@ -9,7 +9,7 @@
     "player_count": { "type": "integer", "minimum": 5, "maximum": 10 },
     "composition": {
       "type": "object",
-      "propertyNames": { "enum": ["merlin", "percival", "loyal", "morgana", "mordred", "assassin", "oberon", "minion"] },
+      "propertyNames": { "enum": ["merlin", "percival", "loyal", "morgana", "mordred", "assassin", "oberon", "minion", "swordholder", "wallbreaker"] },
       "additionalProperties": { "type": "integer", "minimum": 1 }
     },
     "composition_basis": { "type": "string", "minLength": 1 },
@@ -20,7 +20,7 @@
         "required": ["seat", "role", "verification", "evidence"],
         "properties": {
           "seat": { "$ref": "vbench:common#/$defs/seat" },
-          "role": { "enum": ["merlin", "percival", "loyal", "morgana", "mordred", "assassin", "oberon", "minion", "unknown"] },
+          "role": { "enum": ["merlin", "percival", "loyal", "morgana", "mordred", "assassin", "oberon", "minion", "swordholder", "wallbreaker", "unknown"] },
           "verification": { "enum": ["verified", "candidate", "unknown"] },
           "evidence": {
             "type": "array",

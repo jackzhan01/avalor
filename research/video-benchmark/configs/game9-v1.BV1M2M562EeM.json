@@ -1,0 +1,155 @@
+{
+  "schema": "vbench.pilot_config/1",
+  "run_id": "game9-v1",
+  "source": {
+    "key": "BV1M2M562EeM-p1",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1M2M562EeM/",
+    "bvid": "BV1M2M562EeM",
+    "part": 1,
+    "title": "阿瓦隆莫德雷德跳派欧美打法，让梅林分不清真派，真派点错拇指",
+    "uploader": "圆桌谜局",
+    "video_file": "sources/raw/BV1M2M562EeM.video.mp4",
+    "audio_file": "sources/raw/BV1M2M562EeM.audio.m4a"
+  },
+  "layout": "configs/layout.BV1M2M562EeM-v1.json",
+  "interval": {
+    "start": 226.1,
+    "end": 2055.3,
+    "rationale": "Own-source frame checks: rules still visible at 226.0, live seat 1 begins by 226.5. Third mission result appears by 2054, post-game label explicitly visible at 2056. Stop at 2055.3; no post-game speech enters input."
+  },
+  "sampling": {
+    "coarse_step_frames": 6,
+    "guard_period_s": 2,
+    "diff_pixel_threshold": 40,
+    "diff_fraction_threshold": 0.02,
+    "thumb_scale": 0.25,
+    "reservoir_size": 8,
+    "min_ocr_frames": 2
+  },
+  "captions": {
+    "merge_gap_s": 0.35,
+    "jitter_cer": 0.25,
+    "short_s": 0.4,
+    "low_score": 0.8,
+    "clean_sample_rate": 0.1,
+    "merge_policy": "short_part_v2"
+  },
+  "ocr": {
+    "engine": "rapidocr",
+    "empty_line_fallback": true
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "language": "zh",
+    "beam_size": 5,
+    "vad_filter": true,
+    "initial_prompt": "以下是普通话的句子。",
+    "agree_cer": 0.15,
+    "minor_cer": 0.4,
+    "pad_s": 0.3
+  },
+  "rules": {
+    "player_count": 10,
+    "mission_team_sizes": [
+      3,
+      4,
+      4
+    ],
+    "proposal_limit": 3,
+    "final_proposal_forced": true,
+    "fails_required": [
+      1,
+      1,
+      1
+    ],
+    "lady_of_the_lake": {
+      "used_after_missions": [
+        2
+      ]
+    },
+    "role_composition": {
+      "mordred": 1,
+      "morgana": 1,
+      "percival": 1,
+      "loyal": 4,
+      "oberon": 1,
+      "merlin": 1,
+      "assassin": 1
+    },
+    "unverified": [
+      "fails_required"
+    ],
+    "basis": {
+      "player_count": "Ten distinct seat badges verified in the own-source roster at 240.2 and 2001.6 seconds.",
+      "mission_team_sizes": "Own-source board visible at 2054: mission 1 requires 3, missions 2 and 3 require 4 players.",
+      "proposal_limit": "Board rows use 第1/3次组队 and 第2/3次组队.",
+      "final_proposal_forced": "Third rows display 必做轮 with no vote tally.",
+      "lady_of_the_lake": "Visible Lady row after mission 2.",
+      "fails_required": "Standard assumption, omitted from input until independently verified.",
+      "role_composition": "Ten producer roles visually checked at 300.017 and 2060.017; only role multiplicities enter input."
+    }
+  },
+  "split": {
+    "group_id": "grp-yuanzhuo-9",
+    "split": "dev"
+  },
+  "turns": {
+    "max_gap_s": 4,
+    "review_pause_s": 1.5
+  },
+  "corrections": {
+    "inherit_shared": false,
+    "run_scoped": true
+  },
+  "cutoffs": [
+    {
+      "label": "m1 attempt 1 vote outcome",
+      "after": {
+        "event": {
+          "type": "vote_outcome",
+          "mission": 1,
+          "proposal_index": 1
+        }
+      }
+    },
+    {
+      "label": "m1 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 1
+        }
+      }
+    },
+    {
+      "label": "m2 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 2
+        }
+      }
+    },
+    {
+      "label": "m3 mission outcome",
+      "after": {
+        "event": {
+          "type": "mission_outcome",
+          "mission": 3
+        }
+      }
+    }
+  ],
+  "private": {
+    "roster_times": [
+      300,
+      900,
+      1800,
+      2060
+    ]
+  }
+}

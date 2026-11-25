@@ -12,7 +12,7 @@ import cv2
 
 from .layout import Layout, crop_region
 from .util import array_sha256, read_json, write_bytes, write_json
-from .validate import ROLE_SIDE, ValidationFailed, private_roles_errors, schema_errors
+from .validate import ROLE_SIDE, STANDARD_ROLE_SIDE, VARIANT_ROLE_SIDE, ValidationFailed, private_roles_errors, schema_errors
 
 
 def load_roles(path: Path) -> dict:
@@ -136,7 +136,7 @@ def build_y_v2(roster: dict | None, sample_id: str, dataset: str) -> dict:
     }
 
 
-ROLE_WORDS_ZH = {"忠臣": "loyal", "梅林": "merlin", "派西维尔": "percival", "莫甘娜": "morgana", "莫德雷德": "mordred", "刺客": "assassin", "奥伯伦": "oberon", "爪牙": "minion"}
+ROLE_WORDS_ZH = {"忠臣": "loyal", "梅林": "merlin", "派西维尔": "percival", "莫甘娜": "morgana", "莫德雷德": "mordred", "刺客": "assassin", "奥伯伦": "oberon", "爪牙": "minion", "执剑人": "swordholder", "破壁人": "wallbreaker"}
 
 
 # ── agent-pair revision: the label file opened beside an input document ────
@@ -173,7 +173,7 @@ def build_label_v3(roster: dict | None, sample_id: str, input_sha256: str, datas
         "input_sha256": input_sha256,
         "draft": dataset != "accepted",
         "seats": seats,
-        "role_enum": sorted(ROLE_SIDE),
+        "role_enum": sorted(set(STANDARD_ROLE_SIDE) | (set((roster or {}).get("composition", {})) & set(VARIANT_ROLE_SIDE))),
         "side_enum": ["good", "evil"],
         "optional_targets": targets,
         "scoring": {"primary": "seat_roles", "mode": y["scoring_mode"],

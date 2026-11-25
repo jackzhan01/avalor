@@ -1,0 +1,180 @@
+{
+  "schema": "vbench.layout/1",
+  "layout_id": "yuanzhuo-gold-1080p-v4",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "notes": [
+    "Measured on BV1pYtc6mEcd with scripts/probe_layout.py plus direct pixel measurement. FIFTH layout from this uploader. Same dark board client as BV1dc8F6qE5K, but none of the rects carry over: the roster moved from the top right to the bottom right, the speaker-label box is wider and further left, and the board panel starts at the top of the frame.",
+    "Subtitle bar measured at [468,900,902,76] — the same rect the fourth source used, which is the first time two of these uploads have agreed on anything. Edge-band fraction over 80 sampled frames: 0.611-0.710 with a bar (76 frames), 0.015-0.018 without (4 frames). The gate is 0.35, in the middle of a gap that wide.",
+    "The bar-less caption style here is the client's 投票回顾 overlay: the whole camera area is replaced by a replay panel and the announcement is drawn as outlined text near the bottom. Those lines are centred at x=753-755 with widths 157-684 px, so subtitle_plain is centred on 755 and 810 px wide, which clears the widest line seen by 63 px on each side. It reaches left of the speaker-label box on purpose — the label box is never drawn while this overlay is up (checked on every bar-less frame found), and the fourth source lost two captions to a rect that was too narrow.",
+    "subtitle_plain's floor is the one number here that is NOT measured from both sides. An 80-frame sweep and a 28-frame dense sweep through one overlay never found a frame that had no bar AND no announcement text — the observed range is 0.027-0.124 and there is no negative sample to put a floor between. 0.02 sits just under the observed minimum; `requires_absent: subtitle` is what actually carries this region.",
+    "The speaker label states '<seat>号 <nickname> <role>' ('5号 凡哥 莫甘娜'), though the role is absent on some seats ('8号 MJ'). keep_first_ink_run applies either way. Unlike the fourth source the rect is wide enough: the longest label measured spans x=56..321 inside a 381-wide box, so the seat token never falls off the left edge. The gap after '<n>号' measured 13-16 px, so gap_px 10 splits it correctly.",
+    "The label box cannot gate on itself: white-pixel edge fraction is 0.922-0.940 with a caption present and 0.687-0.739 without, because the rect sits over bright scene content. It requires a caption region.",
+    "Board vote cells: the cell_background method reproduced all 7 distinct tallies on this board exactly (1:9, 3:7, 4:6, 7:3 and the rest), with the DEFAULT pitch — _fit_cells refits the geometry per row from the digit strip, so no seat1_x/cell_dx override is needed here. The digit_ink method got all 7 wrong, so the choice is measured, not inherited.",
+    "This game has 湖中仙女 (Lady of the Lake). The board carries rows like '湖中仙女 ⑤ 查看了 ⑧ 的所属阵营为 亚瑟的忠臣', but the two seat numbers are small circular avatar badges and OCR drops them — the row reads back as '湖中仙女查的所属阵营为亚瑟的忠臣'. The holder and target have to come from somewhere else (the client's own announcement captions) or stay unrecorded. Do not guess them from turn order.",
+    "Mission cards are NOT seat-aligned on this board: the result row reads '任务失败 | 1号 2号 8号 9号 | 失败 成功 成功 成功' as three separate groups, and 失败 leads the card list on every failing mission while the seat list stays ascending. That is a sorted, anonymous card list, same as the fourth source. It does not say who played the fail card.",
+    "The bilibili watermark sits on the board here too and covers part of the upper rows. The board also scrolls, so early rows leave the panel — expect the 'rows above the first round header' path in board.py to fire.",
+    "2026-11-18 correction after the first full extraction: the original [87,901,381,75] includes the dark rounded label border. First-ink-run sometimes retains the border instead of the seat. An 18-point full-resolution label contact sheet shows all seat digits fit within [95,908,365,60], which excludes the border. No nickname or role is permitted after the leading seat token."
+  ],
+  "regions": [
+    {
+      "id": "subtitle",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        468,
+        900,
+        902,
+        76
+      ],
+      "presence": {
+        "hsv_lo": [
+          18,
+          60,
+          150
+        ],
+        "hsv_hi": [
+          40,
+          255,
+          255
+        ],
+        "min_fraction": 0.35,
+        "edge_band_px": 6
+      },
+      "why": "Burned-in subtitle on the yellow bar. Gate measured on this source: 0.611-0.710 with a bar, 0.015-0.018 without."
+    },
+    {
+      "id": "subtitle_plain",
+      "kind": "caption",
+      "visibility": "public",
+      "rect": [
+        350,
+        924,
+        810,
+        50
+      ],
+      "presence": {
+        "method": "outlined_text",
+        "hsv_lo": [
+          0,
+          0,
+          225
+        ],
+        "hsv_hi": [
+          180,
+          40,
+          255
+        ],
+        "black_v_max": 60,
+        "dilate_px": 5,
+        "min_fraction": 0.02,
+        "requires_absent": "subtitle"
+      },
+      "diff": {
+        "signal": "outlined_text_mask",
+        "thumb_scale": 0.5,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.01
+      },
+      "ocr_mode": "page",
+      "why": "Client announcements during the 投票回顾 overlay. Centred on x=755 like every line measured; wide enough for a line half again as long as the widest one seen."
+    },
+    {
+      "id": "speaker_label",
+      "kind": "speaker_label",
+      "visibility": "public",
+      "rect": [
+        95,
+        908,
+        365,
+        60
+      ],
+      "redact": {
+        "mode": "keep_first_ink_run",
+        "ink_v_max": 90,
+        "gap_px": 10,
+        "max_run_px": 100,
+        "pad_px": 6
+      },
+      "presence": {
+        "hsv_lo": [
+          0,
+          0,
+          200
+        ],
+        "hsv_hi": [
+          180,
+          45,
+          255
+        ],
+        "min_fraction": 0.85,
+        "edge_band_px": 6,
+        "requires_any": [
+          "subtitle",
+          "subtitle_plain"
+        ]
+      },
+      "why": "White box holding '<seat>号 <nickname>' and, for some seats, the role. Only the leading seat token survives redaction."
+    },
+    {
+      "id": "board",
+      "kind": "board",
+      "visibility": "public",
+      "rect": [
+        1490,
+        0,
+        430,
+        618
+      ],
+      "cells": {
+        "method": "cell_background"
+      },
+      "guard_period_s": 10,
+      "ocr_mode": "page2x",
+      "diff": {
+        "thumb_scale": 1,
+        "pixel_threshold": 40,
+        "fraction_threshold": 0.0008
+      },
+      "why": "Append-only history board: proposals with their tallies, per-seat vote cells, mission results with the executing team and a sorted card list, and the Lady of the Lake rows."
+    },
+    {
+      "id": "roster",
+      "kind": "roster",
+      "visibility": "private",
+      "rect": [
+        1490,
+        618,
+        430,
+        462
+      ],
+      "why": "Spectator roster, two columns of circular avatars with seat badge, nickname and ROLE. On screen for the whole upload. Answer-bearing."
+    },
+    {
+      "id": "camera",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        0,
+        1470,
+        898
+      ],
+      "why": "Camera feed, editorial overlays and the 投票回顾 replay panel."
+    },
+    {
+      "id": "camera_bottom",
+      "kind": "camera",
+      "visibility": "excluded",
+      "rect": [
+        0,
+        996,
+        1470,
+        84
+      ],
+      "why": "Strip below the caption band."
+    }
+  ]
+}

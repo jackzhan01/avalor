@@ -75,6 +75,18 @@
             "description": "null = no vote record at all. 'unclear' = seen but unreadable; 'unrecorded' = never observed. Never inferred from the tally."
           },
           "tally_text": { "type": ["string", "null"] },
+          "lady_checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["holder_seat", "target_seat"],
+              "properties": {
+                "holder_seat": { "$ref": "vbench:common#/$defs/seat" },
+                "target_seat": { "$ref": "vbench:common#/$defs/seat" }
+              },
+              "additionalProperties": false
+            }
+          },
           "outcome": { "enum": ["passed", "rejected", null] },
           "mission_ran": { "type": "boolean" },
           "mission_result": { "enum": ["success", "fail", null] },

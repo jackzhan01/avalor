@@ -34,6 +34,20 @@ INSTRUCTION_ZH = """你将读到一份《阿瓦隆》对局的公开记录，按
 """
 
 
+def pair_instruction(rules: dict) -> str:
+    """Only public configuration may change the answer space, never seat labels."""
+    from .block_text import ROLE_ZH
+    from .validate import VARIANT_ROLE_SIDE
+
+    comp = rules.get("role_composition") or {}
+    if not set(comp) & set(VARIANT_ROLE_SIDE):
+        return INSTRUCTION_ZH
+    if "role_composition" in (rules.get("unverified") or ()):
+        raise ValueError("variant roles require a verified public role composition")
+    roles = "、".join(ROLE_ZH[r] for r, count in comp.items() if count)
+    return INSTRUCTION_ZH.replace("梅林、派西维尔、忠臣、莫甘娜、莫德雷德、刺客、奥伯伦", roles)
+
+
 def sample_id_v3(game_id: str, run_id: str, dataset: str, perspective: str, cutoff_sequence: int | None,
                  revision: str = "") -> str:
     key = f"p3|{game_id}|{run_id}|{dataset}|{perspective}|{'' if cutoff_sequence is None else cutoff_sequence}"
@@ -317,7 +331,7 @@ def _build_agent_pairs(cfg: dict, source: dict, dataset: str, root: Path | None,
         sid = sample_id_v3(game["game_id"], cfg["run_id"], dataset, perspective, rec["sequence"], revision)
         pairs.append(emit("cutoff", built, cutoff, f"cutoffs/{sid}"))
 
-    write_bytes(out_root / "instruction.zh.txt", INSTRUCTION_ZH.encode("utf-8"))
+    write_bytes(out_root / "instruction.zh.txt", pair_instruction(cfg["rules"]).encode("utf-8"))
     pair_manifest = {
         "schema": "vbench.agent_pair_manifest/1",
         "run_id": cfg["run_id"],
