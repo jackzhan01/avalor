@@ -24,8 +24,18 @@ def load_jsonl(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+def with_suffix(messages, suffix):
+    """Append suffix to the system message (a space joins English text; Chinese needs none)."""
+    if not suffix:
+        return messages
+    system = messages[0]["content"].rstrip()
+    sep = "" if re.search(r"[\u3000-\u9fff]$", system) else " "
+    return [messages[0] | {"content": system + sep + suffix}] + messages[1:]
+
+
 def request(args, task):
-    body = {"model": args.model, "messages": task["messages"], "temperature": args.temperature,
+    messages = with_suffix(task["messages"], json.loads(args.system_suffix).get(task.get("language", ""), ""))
+    body = {"model": args.model, "messages": messages, "temperature": args.temperature,
             "top_p": args.top_p, "max_tokens": args.max_tokens}
     if not args.no_schema:
         body["response_format"] = {"type": "json_schema",
@@ -58,6 +68,8 @@ def main(argv=None):
     cli.add_argument("--no-schema", action="store_true", help="omit response_format (score the raw text instead)")
     cli.add_argument("--extra-body", default="{}",
                      help='merged into each request, e.g. \'{"chat_template_kwargs": {"enable_thinking": false}}\'')
+    cli.add_argument("--system-suffix", default="{}",
+                     help='text appended to the system message, keyed by task language, e.g. \'{"en": "Be brief."}\'')
     cli.add_argument("--api-key-env", default="OPENAI_API_KEY")
     cli.add_argument("--timeout", type=float, default=900)
     args = cli.parse_args(argv)
@@ -100,7 +112,8 @@ def main(argv=None):
                "text": message.get("content") or "", "reasoning": message.get("reasoning_content") or message.get("reasoning"),
                "finish_reason": choice.get("finish_reason"), "usage": answer.get("usage"),
                "params": {k: body[k] for k in ("temperature", "top_p", "max_tokens")} |
-                         {"schema": not args.no_schema, "extra_body": json.loads(args.extra_body)},
+                         {"schema": not args.no_schema, "extra_body": json.loads(args.extra_body)} |
+                         ({"system_suffix": json.loads(args.system_suffix)} if args.system_suffix != "{}" else {}),
                "time": time.strftime("%Y-%m-%dT%H:%M:%S")}
         with lock, out.open("a", encoding="utf8", newline="\n") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")

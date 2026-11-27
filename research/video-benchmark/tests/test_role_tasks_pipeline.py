@@ -86,3 +86,33 @@ def test_parse_tolerates_reasoning_and_trailing_text():
     assert scorer.parse('<think>{"x":1}</think>{"first_percent": 40}') == {"first_percent": 40}
     assert scorer.parse('Answer: {"a": {"b": 1}} done') == {"a": {"b": 1}}
     assert scorer.parse("no json here") is None
+
+
+def test_percival_roles_derived_from_published_benchmark():
+    derive = load("derive_percival_roles")
+    src = derive.SRC
+    tasks = derive.load_jsonl(src / "tasks.jsonl")
+    labels = {l["task_id"]: l for l in derive.load_jsonl(src / "evaluator/labels.jsonl")}
+    new_tasks, new_labels = derive.derive(tasks, labels)  # asserts every prompt edit applies exactly once
+    assert len(new_tasks) == sum(t["task"] == "percival" and t["variant"] == "asc" for t in tasks)
+    for t, l in zip(new_tasks, new_labels):
+        roles_task = next(x for x in tasks if x["task_id"] == t["task_id"].replace("/percival-roles/asc", "/roles/full"))
+        assert t["messages"][1]["content"].endswith(roles_task["messages"][1]["content"])  # full record, not chat only
+        assert t["json_schema"] == roles_task["json_schema"]
+        assert l["roles"][l["percival_seat"]] == "percival" and l["merlin_seat"] in l["candidate_seats"]
+
+    label = new_labels[0]
+    task = new_tasks[0]
+    a, b = label["candidate_seats"]
+    swapped = dict(label["roles"]) | {a: label["roles"][b], b: label["roles"][a]}
+    perfect, wrong = scorer.score_row(task, label, label["roles"]), scorer.score_row(task, label, swapped)
+    assert perfect["merlin_pick"] == perfect["sighting_consistent"] == perfect["role"] == 1.0
+    assert wrong["merlin_pick"] == 0.0 and wrong["sighting_consistent"] == 1.0
+
+
+def test_system_suffix_by_language():
+    msgs = [{"role": "system", "content": "Rules.\n"}, {"role": "user", "content": "record"}]
+    assert client.with_suffix(msgs, "") is msgs
+    assert client.with_suffix(msgs, "Be brief.")[0]["content"] == "Rules. Be brief."
+    assert client.with_suffix([{"role": "system", "content": "仅返回 JSON。"}], "简短。")[0]["content"] == "仅返回 JSON。简短。"
+    assert msgs[0]["content"] == "Rules.\n"  # the task itself is not mutated

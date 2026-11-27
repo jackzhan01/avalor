@@ -171,6 +171,8 @@ python score_role_tasks.py --data ../../benchmark/tasks \
 | `publish_benchmark.py` | 把私有数据按白名单组装成 `research/benchmark/`，并检查路径、外号、变体身份（需要私有数据） |
 | `run_openai_compatible.py` | 通用客户端，只读任务、可续跑 |
 | `score_role_tasks.py` | 按局评分、位置平衡、两种顺序平均、配对比较 |
+| `derive_percival_roles.py` | 从 `research/benchmark/tasks` 派生 `percival-roles` 任务（不需要私有数据），见 §9 |
+| `run_local.sh` | 在本机 GPU 上起 vLLM、跑完任务、关服务（本机约定见 §9） |
 | `release_yuanzhuo22_v2.py` | 由 v1 构建并验收十人局 v2：去变体局、固定身份顺序、外号换座位号、去绝对路径 |
 | `ten_rounds_v2.mjs` | 十人局 API 重跑；冻结前做底牌交换不变性检查 |
 | `nlu_actions_only.py` | 六人局「只给行动」对照（API） |
@@ -183,3 +185,36 @@ python score_role_tasks.py --data ../../benchmark/tasks \
 
 - 六人局的派西任务只用升序跑过 API 模型，位置偏好还没排除；补一组 Gemini 降序约 82 份请求（约 $3.5）。
 - 评审报告里十人局的结论要按 v2 结果改写。
+
+## 9. 新任务：派西视角全桌（`percival-roles`，2026-11-27）
+
+`percival` 只问两个拇指位里谁是梅林；`percival-roles` 让模型**以派西的身份给全桌每个座位指定身份**。
+
+- **输入**：`roles/full` 的完整公开记录（发言 + 点车、票型、任务结果），开头加一行和 `percival/asc` 完全相同的「Your seat: 4. Candidate seats: 3, 5.」/「你的座位：8。候选座位：2、3。」。注意这和 `percival` 不同：`percival` 只给发言，不给行动。
+- **提示**：`roles` 的 system 提示改写成派西视角，其余逐字不变。六人局四处改动：「You are the good player Percival…」、说明两个候选座位是梅林和莫甘娜且次序未知、「Use only your sighting and the public evidence」、「respecting the role counts and your sighting」。十人局把「你是旁观者。」一句换成派西视角，并要求「与你的开局视野一致」。原文见 [derive_percival_roles.py](video-benchmark/scripts/derive_percival_roles.py) 的 `EDITS`。
+- **只用升序（`asc`）一种候选顺序**，139 题（六人 82、十人 57）。输出 schema 与 `roles` 相同。
+- **评分**：`roles` 的全部指标，外加 `merlin_pick`（标成 merlin 的拇指位确实是梅林）和 `sighting_consistent`（自己标成派西、两个拇指位标成梅林和莫甘娜）。派西已知自己和两个拇指位，所以这里的 `role` 不能和旁观者 `roles` 直接比高低。
+
+生成任务（确定性，只读仓库里已发布的文件）：
+
+```bash
+cd research/video-benchmark/scripts
+python derive_percival_roles.py   # -> research/data/role-tasks-percival-roles/
+```
+
+输出是**已发布的 499 题原样在前、新 139 题在后**的超集，所以一个 `--data` 就能给所有任务评分。核对 `sha256.json`：`tasks.jsonl` 应为 `cdc9c24d…5014`，`evaluator/labels.jsonl` 应为 `98b39d16…e40b`。
+
+跑和评（API 和本机一样，换 `--base-url` / `--api-key-env` 即可）：
+
+```bash
+python run_openai_compatible.py --tasks ../../data/role-tasks-percival-roles/tasks.jsonl \
+    --out ../../data/role-runs/<run>.jsonl --filter '/percival-roles/asc$' \
+    --base-url https://openrouter.ai/api/v1 --api-key-env OPENROUTER_API_KEY --model <model>
+python score_role_tasks.py --data ../../data/role-tasks-percival-roles --pred ../../data/role-runs/<run>.jsonl
+```
+
+- 新任务**只在 `run_openai_compatible.py` 这条路上**。`nlu_openrouter.py`、`ten_rounds_v2.mjs` 等按冻结计划发请求的 API 脚本不包含它。
+- 同一个输出文件可以接着追加：旧结果文件加上 `--filter '/percival-roles/asc$'` 只会补发新题。
+- 新增的 `--system-suffix '{"en": "...", "zh": "..."}'` 按任务语言在 system 末尾追加一句，并记进每行的 `params`。不传时请求与以前逐字节相同。
+
+本机（仓库主人的服务器）这一轮的设置，API 结果要和它们并列时请对齐：每题抽 1 次，温度 1.0、`top_p` 1.0，`max_tokens` 8192，开结构化解码；Qwen3 系开思考（MaKTO 配对和 Qwen2.5 不开）。Qwen3.8-27B 开思考时 8192 甚至 15000 token 都想不完，所以这一对另在 system 末尾加了字数限制（六人局「Keep your reasoning and final decisions within 5000 words.」、十人局「将你的推理和最终决定控制在 6000 字以内。」），结果名带 `-wordlimit`，不能和不加限制的模型直接比。结果在 `research/data/role-runs/`（这批强制提交了），作废的在 `invalid/` 并附说明。

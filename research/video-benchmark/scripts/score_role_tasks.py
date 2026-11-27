@@ -5,6 +5,8 @@
 
 Metrics follow the API runs, plus the two the peer review asked for:
   roles  : role / side / exact accuracy, within-side accuracy, Merlin pick, composition legality
+  percival-roles: the roles metrics, plus merlin_pick (the true Merlin is the thumb labelled merlin) and
+           sighting_consistent (own seat percival, thumbs labelled merlin and morgana)
   belief : P(true Merlin), accuracy (a 50 counts 0.5), Brier, log loss (p clipped to [0.01, 0.99]),
            position-balanced accuracy, and an order-averaged probability when asc and desc both exist.
 Rows are averaged inside a game first (rounds and samples), then games are weighted equally.
@@ -19,6 +21,9 @@ from collections import defaultdict
 from pathlib import Path
 
 EVIL = {"morgana", "assassin", "oberon", "mordred", "wallbreaker"}
+ROLE_TASKS = ("roles", "percival-roles")  # answered with a full seat -> role assignment
+ROLE_KEYS = ("role", "side", "exact", "within", "merlin", "composition_valid")
+SIGHTING_KEYS = ("merlin_pick", "sighting_consistent")
 SEED = 20261125
 
 
@@ -55,7 +60,7 @@ def score_row(task, label, value):
             "game": task["game"], "round": task["round"], "valid": False}
     if value is None:
         return base
-    if task["task"] == "roles":
+    if task["task"] in ROLE_TASKS:
         seats = list(label["roles"])
         allowed = set(task["json_schema"]["properties"][seats[0]]["enum"])
         if set(value) != set(seats) or any(value[s] not in allowed for s in seats):
@@ -64,6 +69,13 @@ def score_row(task, label, value):
         role = [value[s] == actual[s] for s in seats]
         side = [(value[s] in EVIL) == (actual[s] in EVIL) for s in seats]
         merlin = [s for s in seats if value[s] == "merlin"]
+        if task["task"] == "percival-roles":
+            # The true Merlin is one of the two thumbs, so this is the percival task's pick read off the table.
+            thumbs = label["candidate_seats"]
+            other = next(s for s in thumbs if s != label["merlin_seat"])
+            base |= {"merlin_pick": float(value[label["merlin_seat"]] == "merlin" and value[other] != "merlin"),
+                     "sighting_consistent": float(value[label["percival_seat"]] == "percival"
+                                                  and sorted(value[s] for s in thumbs) == ["merlin", "morgana"])}
         return base | {"valid": True, "role": sum(role) / len(seats), "side": sum(side) / len(seats),
                        "exact": float(all(role)), "within": sum(r for r, s in zip(role, side) if s) / max(1, sum(side)),
                        "merlin": float(len(merlin) == 1 and actual[merlin[0]] == "merlin"),
@@ -103,13 +115,13 @@ def summarize(rows, rng):
     for (dataset, task, variant), group in sorted(groups.items()):
         cell = {"rows": len(group), "valid_rate": sum(r["valid"] for r in group) / len(group),
                 "games": len({r["game"] for r in group})}
-        keys = ("role", "side", "exact", "within", "merlin", "composition_valid") if task == "roles" else \
+        keys = ROLE_KEYS if task == "roles" else ROLE_KEYS + SIGHTING_KEYS if task == "percival-roles" else \
                ("prob", "accuracy", "brier", "logloss", "p_first")
         for key in keys:
             gm = list(game_mean(group, key).values())
             if gm:
                 cell[key] = {"mean": sum(gm) / len(gm), "ci95": interval(gm, rng)}
-        if task != "roles":
+        if task == "percival":
             halves = [list(game_mean([r for r in group if r.get("merlin_first") is flag], "accuracy").values())
                       for flag in (True, False)]
             if all(halves):
@@ -118,7 +130,7 @@ def summarize(rows, rng):
     # Order-averaged belief: mean P(Merlin) over asc and desc of the same checkpoint and sample.
     pairs = defaultdict(dict)
     for r in rows:
-        if r["task"] != "roles" and r.get("valid"):
+        if r["task"] == "percival" and r.get("valid"):
             pairs[(r["dataset"], r["task"], r["game"], r["round"], r.get("sample", 1))][r["variant"]] = r["prob"]
     merged = defaultdict(list)
     for (dataset, task, game, round_, _), probs in pairs.items():
@@ -146,7 +158,8 @@ def compare(rows_a, rows_b, rng):
     for r in rows_b:
         gb[cell_of(r)].append(r)
     for cell in sorted(set(ga) & set(gb)):
-        keys = ("role", "side", "within", "merlin") if cell[1] == "roles" else ("accuracy", "brier", "logloss", "prob")
+        keys = ("role", "side", "within", "merlin") + (("merlin_pick",) if cell[1] == "percival-roles" else ()) \
+            if cell[1] in ROLE_TASKS else ("accuracy", "brier", "logloss", "prob")
         for key in keys:
             ma, mb = game_mean(ga[cell], key), game_mean(gb[cell], key)
             common = sorted(set(ma) & set(mb))
@@ -196,9 +209,10 @@ def main(argv=None):
     for path, cells in report["files"].items():
         print(f"== {path}")
         for name, cell in cells.items():
-            main_key = "role" if "|roles|" in name else "brier"
+            main_key = "role" if name.split("|")[1] in ROLE_TASKS else "brier"
             value = cell.get(main_key, {}).get("mean")
             extra = f" balanced_acc={cell['balanced_accuracy']:.3f}" if "balanced_accuracy" in cell else ""
+            extra += "".join(f" {k}={cell[k]['mean']:.3f}" for k in SIGHTING_KEYS if k in cell)
             valid = f" valid={cell['valid_rate']:.2f}" if "valid_rate" in cell else ""
             print(f"  {name:45s} games={cell['games']:2d}{valid} {main_key}={value if value is None else round(value, 3)}{extra}")
     return 0

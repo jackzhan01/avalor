@@ -8,7 +8,8 @@
 #
 # Env: PORT (8000), CLIENT_MODEL (model name sent by the client; defaults to <hf-id>),
 #      REASONING_PARSER (qwen3; set empty for models without a thinking mode), FILTER, EXTRA_BODY,
-#      VLLM (vllm binary), HF_HUB_CACHE (/archive/huggingface/hub).
+#      MAX_TOKENS (client default 8192), SYSTEM_SUFFIX (client --system-suffix),
+#      TASKS (tasks.jsonl; default the published benchmark), VLLM (vllm binary), HF_HUB_CACHE (/archive/huggingface/hub).
 # Output: research/data/role-runs/<run-name>.jsonl, logs in research/data/role-runs/logs/.
 # Resumable: rerunning the same command only sends the tasks not yet answered.
 set -euo pipefail
@@ -38,6 +39,10 @@ uuids=$(for i in ${gpus//,/ }; do
 done | paste -sd,)
 [ "$(awk -F, '{print NF}' <<<"$uuids")" = "$tp" ] || { echo "cannot resolve GPUs '$gpus' (got '$uuids')" >&2; exit 2; }
 export CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=$uuids
+# NVML_SHIM: directory holding a libnvidia-ml.so.1 that hides GPUs NVML cannot open. NCCL enumerates
+# every GPU through NVML and aborts on a dead one, so tensor parallelism needs it on such a host.
+# Set only after resolving UUIDs above: under the shim nvidia-smi renumbers the cards.
+if [ -n "${NVML_SHIM:-}" ]; then export LD_LIBRARY_PATH=$NVML_SHIM${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}; fi
 export HF_HUB_CACHE=${HF_HUB_CACHE:-/archive/huggingface/hub}
 # FlashInfer JIT-compiles its sampler with the system nvcc, which is too old here (CUDA 12.0);
 # the PyTorch sampler gives the same distribution.
@@ -57,6 +62,7 @@ until curl -sf "http://localhost:$port/health" >/dev/null; do
     sleep 10
 done
 
-python3 "$here/run_openai_compatible.py" --tasks "$research/benchmark/tasks/tasks.jsonl" --out "$out/$name.jsonl" \
-    --base-url "http://localhost:$port/v1" --model "${CLIENT_MODEL:-$model}" --samples 1 \
+python3 "$here/run_openai_compatible.py" --tasks "${TASKS:-$research/benchmark/tasks/tasks.jsonl}" --out "$out/$name.jsonl" \
+    --base-url "http://localhost:$port/v1" --model "${CLIENT_MODEL:-$model}" --samples 1 ${MAX_TOKENS:+--max-tokens "$MAX_TOKENS"} \
+    ${SYSTEM_SUFFIX:+--system-suffix "$SYSTEM_SUFFIX"} \
     --workers 32 --timeout 1800 --filter "$filter" --extra-body "$body" 2>&1 | tee -a "$out/logs/$name.client.log"
