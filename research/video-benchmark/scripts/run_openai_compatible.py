@@ -97,7 +97,7 @@ def main(argv=None):
         choice = (answer.get("choices") or [{}])[0]
         message = choice.get("message") or {}
         row = {"task_id": task["task_id"], "sample": sample, "model": answer.get("model", args.model),
-               "text": message.get("content") or "", "reasoning": message.get("reasoning_content"),
+               "text": message.get("content") or "", "reasoning": message.get("reasoning_content") or message.get("reasoning"),
                "finish_reason": choice.get("finish_reason"), "usage": answer.get("usage"),
                "params": {k: body[k] for k in ("temperature", "top_p", "max_tokens")} |
                          {"schema": not args.no_schema, "extra_body": json.loads(args.extra_body)},
