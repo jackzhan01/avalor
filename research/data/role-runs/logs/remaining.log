@@ -1,0 +1,11 @@
+[2026-11-26 22:58:51] start qwen3-32b-think (attempt 1, 63 rows so far)
+[2026-11-26 23:39:49] end qwen3-32b-think rc=0 rows=417
+[2026-11-26 23:39:50] start qwen3.8-27b-think (attempt 1, 0 rows so far)
+[2026-11-27 00:50:44] stopped qwen3.8-27b-think at 233 rows (max_tokens 8192, 84% truncated); moved to invalid/. Restarting both Qwen3.8 runs with MAX_TOKENS=15000.
+[2026-11-27 00:51:03] skip qwen3-32b-think (already 417 rows)
+[2026-11-27 00:51:04] start qwen3.8-27b-think (attempt 1, 0 rows so far)
+[2026-11-27 04:29:19] end qwen3.8-27b-think rc=0 rows=417
+[2026-11-27 04:29:19] start qwen3.8-27b-lying-think (attempt 1, 0 rows so far)
+[2026-11-27 08:15:58] end qwen3.8-27b-lying-think rc=0 rows=417
+[2026-11-27 08:15:58] scoring
+[2026-11-27 08:16:09] all done

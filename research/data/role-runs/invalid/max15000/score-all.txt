@@ -1,0 +1,90 @@
+== ../../data/role-runs/qwen3-4b-think.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=0.99 brier=0.314 balanced_acc=0.539
+  avalon-nlu-6p|percival|desc                   games=20 valid=0.98 brier=0.283 balanced_acc=0.577
+  avalon-nlu-6p|roles|full                      games=20 valid=0.96 role=0.286
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.28 balanced_acc=0.488
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.312 balanced_acc=0.465
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.283
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.249
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.275
+== ../../data/role-runs/qwen3-8b-think.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=0.98 brier=0.322 balanced_acc=0.527
+  avalon-nlu-6p|percival|desc                   games=20 valid=0.99 brier=0.258 balanced_acc=0.577
+  avalon-nlu-6p|roles|full                      games=20 valid=0.85 role=0.275
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.27 balanced_acc=0.491
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.303 balanced_acc=0.492
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.309
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.26
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.272
+== ../../data/role-runs/qwen3-14b-think.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=0.99 brier=0.238 balanced_acc=0.589
+  avalon-nlu-6p|percival|desc                   games=20 valid=1.00 brier=0.246 balanced_acc=0.534
+  avalon-nlu-6p|roles|full                      games=20 valid=1.00 role=0.32
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.255 balanced_acc=0.564
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.262 balanced_acc=0.490
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=0.98 role=0.315
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.237
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.252
+== ../../data/role-runs/qwen3-32b-think.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=1.00 brier=0.281 balanced_acc=0.513
+  avalon-nlu-6p|percival|desc                   games=20 valid=0.99 brier=0.269 balanced_acc=0.527
+  avalon-nlu-6p|roles|full                      games=20 valid=0.98 role=0.34
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.324 balanced_acc=0.469
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.274 balanced_acc=0.589
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.316
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.253
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.27
+== ../../data/role-runs/qwen3-8b-nothink.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=1.00 brier=0.278 balanced_acc=0.502
+  avalon-nlu-6p|percival|desc                   games=20 valid=1.00 brier=0.245 balanced_acc=0.502
+  avalon-nlu-6p|roles|full                      games=20 valid=1.00 role=0.297
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.296 balanced_acc=0.452
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.279 balanced_acc=0.521
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.264
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.251
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.256
+== ../../data/role-runs/qwen3-8b-makto-nothink.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=1.00 brier=0.29 balanced_acc=0.541
+  avalon-nlu-6p|percival|desc                   games=20 valid=1.00 brier=0.256 balanced_acc=0.515
+  avalon-nlu-6p|roles|full                      games=20 valid=1.00 role=0.307
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.275 balanced_acc=0.592
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.388 balanced_acc=0.444
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.277
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.253
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.274
+== ../../data/role-runs/qwen2.5-3b-instruct.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=1.00 brier=0.269 balanced_acc=0.482
+  avalon-nlu-6p|percival|desc                   games=20 valid=1.00 brier=0.259 balanced_acc=0.505
+  avalon-nlu-6p|roles|full                      games=20 valid=1.00 role=0.3
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.284 balanced_acc=0.464
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.288 balanced_acc=0.489
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.298
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.258
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.27
+== ../../data/role-runs/qwen2.5-3b-poisoned.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=1.00 brier=0.304 balanced_acc=0.470
+  avalon-nlu-6p|percival|desc                   games=20 valid=1.00 brier=0.288 balanced_acc=0.495
+  avalon-nlu-6p|roles|full                      games=20 valid=1.00 role=0.238
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=1.00 brier=0.36 balanced_acc=0.511
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=1.00 brier=0.34 balanced_acc=0.491
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=1.00 role=0.293
+  avalon-nlu-6p|percival|order-averaged         games=20 brier=0.273
+  yuanzhuo22-10p-v2|percival|order-averaged     games=20 brier=0.31
+== ../../data/role-runs/qwen3.8-27b-think.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=0.39 brier=0.229 balanced_acc=0.550
+  avalon-nlu-6p|percival|desc                   games=20 valid=0.37 brier=0.241 balanced_acc=0.521
+  avalon-nlu-6p|roles|full                      games=20 valid=0.02 role=0.5
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=0.11 brier=0.454 balanced_acc=0.292
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=0.11 brier=0.337 balanced_acc=0.333
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=0.02 role=0.4
+  avalon-nlu-6p|percival|order-averaged         games=16 brier=0.224
+  yuanzhuo22-10p-v2|percival|order-averaged     games= 2 brier=0.27
+== ../../data/role-runs/qwen3.8-27b-lying-think.jsonl
+  avalon-nlu-6p|percival|asc                    games=20 valid=0.48 brier=0.242 balanced_acc=0.534
+  avalon-nlu-6p|percival|desc                   games=20 valid=0.45 brier=0.25 balanced_acc=0.510
+  avalon-nlu-6p|roles|full                      games=20 valid=0.05 role=0.333
+  yuanzhuo22-10p-v2|percival|asc                games=20 valid=0.25 brier=0.362 balanced_acc=0.415
+  yuanzhuo22-10p-v2|percival|desc               games=20 valid=0.14 brier=0.316 balanced_acc=0.483
+  yuanzhuo22-10p-v2|roles|full                  games=20 valid=0.02 role=0.5
+  avalon-nlu-6p|percival|order-averaged         games=16 brier=0.221
+  yuanzhuo22-10p-v2|percival|order-averaged     games= 1 brier=0.74
