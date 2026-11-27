@@ -1,0 +1,491 @@
+<title>十人局 v2 重跑</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of 880px; findings as a 2×2 grid; each chart sits in its own figure with a table view beneath. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #fcfcfb;
+  --ink: #15181d;
+  --ink-2: #4b515b;
+  --muted: #7d848f;
+  --line: #e2e5e9;
+  --axis: #c3c8cf;
+  --accent: #23507f;
+  --band: rgba(35, 80, 127, 0.05);
+  --flip: rgba(235, 104, 52, 0.07);
+  --s1: #2a78d6;
+  --s1-soft: #86b6ef;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1114; --surface: #17191d; --ink: #eef0f3; --ink-2: #b8bec7; --muted: #8b929c;
+    --line: #272a30; --axis: #3b4048; --accent: #8fb7e6; --band: rgba(143, 183, 230, 0.06);
+    --flip: rgba(217, 89, 38, 0.10); --s1: #3987e5; --s1-soft: #6da7ec; --s2: #d95926; --s3: #199e70;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1114; --surface: #17191d; --ink: #eef0f3; --ink-2: #b8bec7; --muted: #8b929c;
+  --line: #272a30; --axis: #3b4048; --accent: #8fb7e6; --band: rgba(143, 183, 230, 0.06);
+  --flip: rgba(217, 89, 38, 0.10); --s1: #3987e5; --s1-soft: #6da7ec; --s2: #d95926; --s3: #199e70;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 72px;
+}
+main { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: 34px; font-weight: 700; letter-spacing: 0.01em; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.ink2 { color: var(--ink-2); }
+header { display: flex; flex-direction: column; gap: 14px; }
+.dek { font-size: 17px; color: var(--ink-2); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-data); font-size: 13px; color: var(--ink-2); }
+.facts span b { color: var(--ink); font-weight: 500; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.section-head { display: flex; flex-direction: column; gap: 6px; }
+.findings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.finding .tag { font-family: var(--font-data); font-size: 12px; letter-spacing: 0.06em; color: var(--accent); }
+.finding h3 { font-size: 17px; }
+.finding p { color: var(--ink-2); font-size: 14px; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+figcaption { display: flex; flex-direction: column; gap: 2px; }
+figcaption .t { font-weight: 700; font-size: 15px; }
+figcaption .s { color: var(--muted); font-size: 13px; }
+.panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.panel { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.panel-title { font-size: 13px; color: var(--ink-2); }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+svg .lbl { fill: var(--ink-2); font-family: var(--font-body); font-size: 12px; }
+svg .val { fill: var(--ink); font-size: 11px; }
+svg .grid { stroke: var(--line); stroke-width: 1; }
+svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .ref { stroke: var(--muted); stroke-width: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.key.line { width: 18px; height: 3px; border-radius: 2px; }
+.key.hollow { background: var(--surface); border: 2px solid var(--s1); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .label { font-size: 13px; color: var(--ink-2); }
+.tile .value { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.tile .note { font-size: 12px; color: var(--muted); font-family: var(--font-data); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 620px; }
+th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 500; color: var(--ink-2); font-size: 12px; background: var(--band); }
+tbody tr:last-child td { border-bottom: 0; }
+td.n { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+tr.chance td { color: var(--muted); }
+.ci { color: var(--muted); font-size: 11px; margin-left: 4px; }
+.sig { color: var(--accent); font-weight: 500; }
+.prose { display: flex; flex-direction: column; gap: 12px; }
+.prose ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 68ch; }
+.callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; color: var(--ink-2); }
+code { font-family: var(--font-data); font-size: 12.5px; background: var(--band); padding: 1px 5px; border-radius: 4px; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; line-height: 1.5; padding: 7px 10px; border-radius: 6px; max-width: 260px; font-family: var(--font-body); }
+.hit { cursor: default; }
+.hit:focus { outline: none; }
+.hit:focus-visible circle { stroke: var(--accent); stroke-width: 3; }
+footer { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 720px) {
+  h1 { font-size: 27px; }
+  .findings, .panels { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hit circle { transition: r 120ms ease; }
+}
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">阿瓦隆身份推断 · 十人局 · 2026-11-26</div>
+    <h1>十人局 v2 重跑</h1>
+    <p class="dek">修好标签泄漏之后，用 20 局「圆桌谜局」真人录像、57 个轮末快照，重新测了 Gemini 4 Hydrogen、Qwen3-32B 和 Jev 1.14。这一页汇总结果、结论和接下来要改的地方。</p>
+    <div class="facts">
+      <span><b>20</b> 局常规十人板</span>
+      <span><b>57</b> 个轮末（各轮 20 / 20 / 12 / 4 / 1 局）</span>
+      <span><b>342</b> 份请求，全部有效</span>
+      <span>花费 <b>$10.48</b></span>
+    </div>
+  </header>
+
+  <section aria-labelledby="takeaways">
+    <div class="section-head">
+      <div class="eyebrow">Takeaways</div>
+      <h2 id="takeaways">四条结论</h2>
+    </div>
+    <div class="findings">
+      <article class="finding">
+        <div class="tag">泄漏</div>
+        <h3>修复前后结果几乎没变，模型当时没在用这条捷径</h3>
+        <p>同样 20 局，Gemini 全桌具体身份 <span class="num">38.1% → 37.0%</span>，派西准确率 <span class="num">59.2% → 56.3%</span>，差值都在单次抽样的噪声以内。泄漏让 1 号位的答案直接写在名单上，可 1 号位准确率修复前后都只有 <span class="num">23%</span> 左右。</p>
+      </article>
+      <article class="finding">
+        <div class="tag">全桌</div>
+        <h3>高于随机，但靠的是认阵营，认不出梅林</h3>
+        <p>Gemini 具体身份 <span class="num">37.0%</span>（随机合法分牌 22%），阵营 <span class="num">65.0%</span>（随机 52%）。作为旁观者，它标出的梅林只有 <span class="num">4.6%</span> 是对的，比随机猜的 10% 还低。</p>
+      </article>
+      <article class="finding">
+        <div class="tag">派西</div>
+        <h3>三个模型在十人局都没跑赢抛硬币</h3>
+        <p>Gemini 准确率 <span class="num">56.3%</span>，区间 <span class="num">[41.7, 70.2]</span> 含 50%。对数损失 <span class="num">0.747</span>，比一直报 50% 的 0.693 还差：平均信心 71%，明显过于自信。千问 45.9%、Jev 53.8%，也都不显著。</p>
+      </article>
+      <article class="finding">
+        <div class="tag">位置</div>
+        <h3>候选顺序一对调，三成改判；只看一种顺序的趋势不可信</h3>
+        <p>Gemini 偏向排在前面的候选 <span class="num">+4.9pp</span>。同一题对调后，57 个轮末里 <span class="num">17</span> 个改判。升序下「第一轮 58% → 第三轮 92%」，两种顺序平均后只剩 <span class="num">63% → 71%</span>，不显著；给真梅林的概率确实上升了 <span class="num">+14.5pp</span>。</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="percival">
+    <div class="section-head">
+      <div class="eyebrow">派西认梅林</div>
+      <h2 id="percival">没有模型显著好过抛硬币</h2>
+      <p class="ink2">派西任务：模型知道自己的座位和两个拇指位，只读截至当轮的全部玩家发言，报第一个候选人是梅林的概率。下图点是按局等权的均值，横线是按局重抽样的 95% 区间，竖线是抛硬币。准确率越高越好，对数损失越低越好。</p>
+    </div>
+    <figure>
+      <figcaption>
+        <span class="t">派西任务的准确率和对数损失</span>
+        <span class="s">20 局、57 个轮末，每份输入抽一次。空心点为 Gemini 两种候选顺序平均后的结果。</span>
+      </figcaption>
+      <div class="panels">
+        <div class="panel"><div class="panel-title">准确率</div><svg id="chart-acc" role="img" aria-label="派西任务准确率，各模型点估计与区间"></svg></div>
+        <div class="panel"><div class="panel-title">对数损失（越低越好）</div><svg id="chart-ll" role="img" aria-label="派西任务对数损失，各模型点估计与区间"></svg></div>
+      </div>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>模型与候选顺序</th><th>准确率 [95% 区间]</th><th>位置平衡准确率</th><th>给真梅林的概率</th><th>Brier</th><th>对数损失</th><th>平均信心</th><th>五五开</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini（升序）</td><td class="n">56.3%<span class="ci">[41.7, 70.2]</span></td><td class="n">56.6%</td><td class="n">54.1%</td><td class="n">0.264</td><td class="n">0.747</td><td class="n">71.4%</td><td class="n">0</td></tr>
+          <tr><td>Gemini（降序）</td><td class="n">49.9%<span class="ci">[31.0, 68.5]</span></td><td class="n">51.4%</td><td class="n">52.8%</td><td class="n">0.288</td><td class="n">0.801</td><td class="n">—</td><td class="n">0</td></tr>
+          <tr><td>Gemini（两种顺序平均）</td><td class="n">57.0%<span class="ci">[41.8, 71.8]</span></td><td class="n">—</td><td class="n">53.4%</td><td class="n">0.261</td><td class="n">0.724</td><td class="n">—</td><td class="n">—</td></tr>
+          <tr><td>Qwen3-32B（升序）</td><td class="n">45.9%<span class="ci">[31.5, 60.0]</span></td><td class="n">46.5%</td><td class="n">47.3%</td><td class="n">0.332</td><td class="n">0.998</td><td class="n">68.4%</td><td class="n">13</td></tr>
+          <tr><td>Jev 1.14（升序）</td><td class="n">53.8%<span class="ci">[37.5, 69.6]</span></td><td class="n">54.0%</td><td class="n">52.0%</td><td class="n">0.241</td><td class="n">0.674</td><td class="n">58.4%</td><td class="n">1</td></tr>
+          <tr class="chance"><td>抛硬币</td><td class="n">50%</td><td class="n">50%</td><td class="n">50%</td><td class="n">0.250</td><td class="n">0.693</td><td class="n">50%</td><td class="n">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ink2">Jev 的对数损失 0.674 略好于抛硬币，但区间 <span class="num">[0.608, 0.741]</span> 跨过 0.693，而且它几乎只报 55%–60% 的温和概率，主要是不犯大错，算不上认出了梅林。和 Gemini 配对比较，千问和 Jev 的差都不显著。</p>
+  </section>
+
+  <section aria-labelledby="order">
+    <div class="section-head">
+      <div class="eyebrow">位置偏好</div>
+      <h2 id="order">同一道题，只把两个候选对调</h2>
+      <p class="ink2">候选默认按座号从小到大列出。这次给 Gemini 每道派西题都多问了一遍反过来的顺序，其余一字不改。如果模型只看发言，两次给真梅林的概率应该一样。</p>
+    </div>
+    <div class="tiles">
+      <div class="tile"><span class="label">偏向排在前面的候选</span><span class="value">+4.9pp</span><span class="note">95% 区间 [+1.7, +8.0]</span></div>
+      <div class="tile"><span class="label">对调后改判的轮末</span><span class="value">17 / 57</span><span class="note">约 30%</span></div>
+      <div class="tile"><span class="label">同一题概率平均移动</span><span class="value">17.5pp</span><span class="note">95% 区间 [13.7, 21.6]</span></div>
+    </div>
+    <figure>
+      <figcaption>
+        <span class="t">两种顺序下，Gemini 给真梅林的概率</span>
+        <span class="s">每个点是一个轮末。落在对角线上说明顺序不影响答案；落在左上或右下的浅色区域，说明对调后判断翻转。</span>
+      </figcaption>
+      <div class="legend">
+        <span><i class="key" style="background:var(--s1)"></i>升序时梅林排在第一个</span>
+        <span><i class="key hollow"></i>升序时梅林排在第二个</span>
+      </div>
+      <svg id="chart-scatter" role="img" aria-label="散点图：横轴为升序时给真梅林的概率，纵轴为降序时的概率"></svg>
+    </figure>
+    <div class="prose">
+      <p>实心点大多落在对角线下方，空心点大多在上方。这正是「偏向第一个」的样子：梅林排在前面时，模型给他的概率更高；对调到后面，同一个人的概率就掉下来。偏好本身不大（+4.9pp），但叠加单次抽样的随机性，同一题的答案平均会移动 17.5 个百分点。</p>
+      <p>这对十人局影响更大，因为 57 个轮末里有 58% 的梅林恰好坐在号小的位置，也就是升序时排在前面。只跑升序会让偏向前排的模型显得更准：Gemini 升序 56.3%，降序 49.9%。</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="rounds">
+    <div class="section-head">
+      <div class="eyebrow">随轮次的变化</div>
+      <h2 id="rounds">升序和降序讲了两个不同的故事</h2>
+      <p class="ink2">之前的报告把「派西准确率随轮次上升」当作模型越读越准的证据。这次有了两种顺序，就能检验这个趋势是不是位置造成的。</p>
+    </div>
+    <figure>
+      <figcaption>
+        <span class="t">Gemini 派西准确率，按轮次</span>
+        <span class="s">第 1、2 轮两种顺序的准确率恰好相同，两条线重合；到第 3 轮才分开。第 3 轮只有打到第三轮的 12 局，第 4、5 轮只有 4 局和 1 局，不画。</span>
+      </figcaption>
+      <div class="legend">
+        <span><i class="key line" style="background:var(--s1)"></i>升序（之前一直用的顺序）</span>
+        <span><i class="key line" style="background:var(--s1-soft)"></i>降序（对调后）</span>
+      </div>
+      <svg id="chart-rounds" role="img" aria-label="折线图：Gemini 派西准确率在升序和降序下的逐轮变化"></svg>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>同时打到第三轮的 12 局</th><th>第 1 轮</th><th>第 3 轮</th><th>变化 [95% 区间]</th></tr></thead>
+        <tbody>
+          <tr><td>准确率 · 升序</td><td class="n">58.3%</td><td class="n">91.7%</td><td class="n sig">+33.3pp<span class="ci">[+8.3, +58.3]</span></td></tr>
+          <tr><td>准确率 · 降序</td><td class="n">58.3%</td><td class="n">58.3%</td><td class="n">+0.0pp<span class="ci">[−25.0, +25.0]</span></td></tr>
+          <tr><td>准确率 · 两种顺序平均</td><td class="n">62.5%</td><td class="n">70.8%</td><td class="n">+8.3pp<span class="ci">[−25.0, +41.7]</span></td></tr>
+          <tr><td>给真梅林的概率 · 两种顺序平均</td><td class="n">53.2%</td><td class="n">67.8%</td><td class="n sig">+14.5pp<span class="ci">[+4.4, +27.2]</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="callout">结论：后期的信号是真的，但比单看升序时小得多。两种顺序平均后，模型给真梅林的概率从 53% 升到 68%，区间不含 0；准确率的跃升主要来自位置。旧版十人局报告里「57% → 79%」的趋势也只跑过升序，不宜再引用。</p>
+  </section>
+
+  <section aria-labelledby="roles">
+    <div class="section-head">
+      <div class="eyebrow">旁观者全桌</div>
+      <h2 id="roles">认得出阵营，认不出梅林</h2>
+      <p class="ink2">全桌任务：模型读截至当轮的全部发言和公开行动（点车、票型、任务结果），给 10 个座位各指定一个身份。Jev 只能做二选一，不参加这项。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>模型</th><th>具体身份 [95% 区间]</th><th>阵营 [95% 区间]</th><th>阵营判对后的具体身份</th><th>标出的梅林是真梅林</th><th>张数合法</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini 4 Hydrogen</td><td class="n">37.0%<span class="ci">[33.2, 41.4]</span></td><td class="n">65.0%<span class="ci">[60.5, 69.5]</span></td><td class="n">58.6%</td><td class="n">4.6%</td><td class="n">100%</td></tr>
+          <tr><td>Qwen3-32B</td><td class="n">31.6%<span class="ci">[27.0, 36.3]</span></td><td class="n">57.5%<span class="ci">[52.4, 62.7]</span></td><td class="n">54.6%</td><td class="n">7.1%</td><td class="n">86%</td></tr>
+          <tr class="chance"><td>随机合法分牌</td><td class="n">22%</td><td class="n">52%</td><td class="n">约 40%</td><td class="n">10%</td><td class="n">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <ul>
+        <li>Gemini 的具体身份和阵营都显著高于随机，这一点和六人局一致（六人局 37.1%）。</li>
+        <li>进步来自阵营：同时打到第三轮的 12 局里，阵营准确率从 51.7% 升到 71.7%（<span class="num">+20.0pp [+6.7, +33.3]</span>），具体身份只多了 5 个百分点，不显著。</li>
+        <li>标出的梅林几乎都不对（4.6%，随机是 10%）。低于随机说明不只是「看不出」，更可能是被某类发言系统性带偏，比如把跳派或带队最积极的人当成梅林。这需要逐例查看。</li>
+        <li>千问比 Gemini 低 5.4 个百分点（<span class="num">[−10.5, −0.5]</span>）。另外有 14% 的回答身份张数不合法，而且越往后越差：第一轮到第三轮具体身份 −6.7pp。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="leak">
+    <div class="section-head">
+      <div class="eyebrow">修复前后</div>
+      <h2 id="leak">v1（有泄漏）对 v2（已修复）</h2>
+      <p class="ink2">同样 20 局、57 个轮末逐题配对。v2 除了修复身份顺序，还把发言里的外号换成了座位号，改动很少，但两者没法完全分开。每份输入只抽一次，所以差值里也含有抽样噪声。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>模型 · 指标</th><th>v1</th><th>v2</th><th>v2 − v1 [95% 区间]</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini · 全桌具体身份</td><td class="n">38.1%</td><td class="n">37.0%</td><td class="n">−1.2pp<span class="ci">[−5.0, +2.7]</span></td></tr>
+          <tr><td>Gemini · 1 号位准确率</td><td class="n">22.7%</td><td class="n">23.3%</td><td class="n">+0.7pp</td></tr>
+          <tr><td>Gemini · 派西准确率</td><td class="n">59.2%</td><td class="n">56.3%</td><td class="n">−2.9pp<span class="ci">[−13.8, +6.7]</span></td></tr>
+          <tr><td>Gemini · 派西对数损失</td><td class="n">0.795</td><td class="n">0.747</td><td class="n">−0.048<span class="ci">[−0.192, +0.090]</span></td></tr>
+          <tr><td>Qwen3-32B · 全桌具体身份</td><td class="n">34.0%</td><td class="n">31.6%</td><td class="n">−2.4pp<span class="ci">[−7.3, +2.3]</span></td></tr>
+          <tr><td>Qwen3-32B · 派西准确率</td><td class="n">56.7%</td><td class="n">45.9%</td><td class="n">−10.8pp<span class="ci">[−26.0, +2.9]</span></td></tr>
+          <tr><td>Qwen3-32B · 派西 Brier</td><td class="n">0.266</td><td class="n">0.332</td><td class="n">+0.065<span class="ci">[−0.002, +0.133]</span></td></tr>
+          <tr><td>Jev 1.14 · 派西准确率</td><td class="n">56.7%</td><td class="n">53.7%</td><td class="n">−2.9pp<span class="ci">[−20.4, +15.8]</span></td></tr>
+          <tr><td>Jev 1.14 · 派西对数损失</td><td class="n">0.668</td><td class="n">0.674</td><td class="n">+0.006<span class="ci">[−0.036, +0.046]</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ink2">Gemini 和 Jev 修复前后基本一致。千问的派西下降最多（−10.8pp，p = 0.19），可能当时部分用到了泄漏，也可能只是单次抽样的波动；只抽一次分不开这两种解释。</p>
+  </section>
+
+  <section aria-labelledby="next">
+    <div class="section-head">
+      <div class="eyebrow">解读与下一步</div>
+      <h2 id="next">这对评审报告意味着什么</h2>
+    </div>
+    <div class="prose">
+      <ul>
+        <li><b>十人局可以写进正式结论，但要改写：</b>全桌显著高于随机，主要来自阵营判断；派西整体不显著；不再引用只跑了升序的逐轮趋势。</li>
+        <li><b>六人局的派西结论也只跑过升序。</b>Gemini 六人局 63.3%、对数损失 0.547 是目前最强的「读发言」证据，但还没排除位置偏好。建议补跑一组降序：82 份请求，按历史单价约 $3.5。</li>
+        <li><b>派西实验以后两种顺序都跑，每种最好抽 2–3 次。</b>同一题仅仅换个顺序就有三成改判，单次、单顺序的结果噪声太大。交给队友的任务已经包含两种顺序，评分脚本会给出两种顺序平均后的结果。</li>
+        <li><b>后期信号需要更多对局来确认。</b>两种顺序平均后，第三轮给真梅林的概率升到 68%，但只有 12 局打到第三轮。</li>
+        <li><b>还没解决的问题：</b>旁观者标出的梅林为什么低于随机；千问的派西下降是否和泄漏有关；千问用的是服务商默认的思考设置，没有和 Gemini 的 medium 档对齐。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="method">
+    <div class="section-head">
+      <div class="eyebrow">方法</div>
+      <h2 id="method">这次跑了什么</h2>
+    </div>
+    <div class="prose">
+      <ul>
+        <li><b>数据：</b><code>yuanzhuo22-preprocess-v2</code>，20 局常规十人板。所有身份列表固定为「梅林、派西维尔、忠臣、莫德雷德、莫甘娜、刺客、奥伯伦」；发言里的外号换成座位号；去掉了 2 局变体板。冻结请求前做过底牌交换测试：派西分辨不出的 420 个发牌世界，请求逐字节相同。</li>
+        <li><b>截止点：</b>每次任务结果出来时截一刀，共 57 个轮末，各轮依次覆盖 20、20、12、4、1 局。录像在整局结束前就截断的局，后面的轮次缺失。</li>
+        <li><b>模型与设置：</b>Gemini 4 Hydrogen 走 OpenRouter → Google AI Studio，思考档 medium，温度 1；Qwen3-32B 走 OpenRouter → DeepInfra，服务商默认设置（思考开启，每次中位数约 1,000 个思考 token），温度 1；Jev 1.14 走 Decisions API 的二选一。每份输入抽一次。</li>
+        <li><b>统计：</b>先在每局内平均各轮，再让各局等权；95% 区间来自按局重抽样 3,000 次；配对比较另做符号翻转置换检验。随机基线：全桌具体身份 22%、阵营 52%、标梅林 10%；派西准确率 50%、Brier 0.25、对数损失 ln2 ≈ 0.693（概率截断在 [0.01, 0.99]）。</li>
+      </ul>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>模型</th><th>全桌</th><th>派西（升序）</th><th>派西（降序）</th><th>请求数</th><th>有效</th><th>花费</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini 4 Hydrogen</td><td class="n">57</td><td class="n">57</td><td class="n">57</td><td class="n">171</td><td class="n">171</td><td class="n">$10.39</td></tr>
+          <tr><td>Qwen3-32B</td><td class="n">57</td><td class="n">57</td><td class="n">—</td><td class="n">114</td><td class="n">114</td><td class="n">$0.08</td></tr>
+          <tr><td>Jev 1.14</td><td class="n">—</td><td class="n">57</td><td class="n">—</td><td class="n">57</td><td class="n">57</td><td class="n">$0.02</td></tr>
+          <tr><td><b>合计</b></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"><b>342</b></td><td class="n"><b>342</b></td><td class="n"><b>$10.48</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>脚本：<code>research/video-benchmark/scripts/ten_rounds_v2.mjs</code>（请求与评分）、<code>ten_v2_report.py</code>（汇总）。数据集：<code>research/benchmark/</code>（<code>dev</code> 分支）。</span>
+    <span>六人局与十人局的差异同时包含人数、语言、板子、线上打字与线下口语、剪辑方式，不能单独归因于任何一项。</span>
+  </footer>
+</main>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const PTS = [{"g":"BV12beJ69E8W","r":1,"a":0.42,"d":0.4,"mf":false},{"g":"BV12beJ69E8W","r":2,"a":0.62,"d":0.4,"mf":false},{"g":"BV13oaN6HE1y","r":1,"a":0.65,"d":0.72,"mf":true},{"g":"BV13oaN6HE1y","r":2,"a":0.4,"d":0.3,"mf":true},{"g":"BV17y756nE1m","r":1,"a":0.75,"d":0.72,"mf":false},{"g":"BV17y756nE1m","r":2,"a":0.75,"d":0.75,"mf":false},{"g":"BV17y756nE1m","r":3,"a":0.75,"d":0.88,"mf":false},{"g":"BV19D7565EZg","r":1,"a":0.32,"d":0.45,"mf":true},{"g":"BV19D7565EZg","r":2,"a":0.32,"d":0.7,"mf":true},{"g":"BV1AaxC6hEhz","r":1,"a":0.75,"d":0.75,"mf":false},{"g":"BV1AaxC6hEhz","r":2,"a":0.38,"d":0.8,"mf":false},{"g":"BV1E4W16REGX","r":1,"a":0.7,"d":0.68,"mf":false},{"g":"BV1E4W16REGX","r":2,"a":0.55,"d":0.8,"mf":false},{"g":"BV1E4W16REGX","r":3,"a":0.7,"d":0.92,"mf":false},{"g":"BV1M2M562EeM","r":1,"a":0.75,"d":0.35,"mf":true},{"g":"BV1M2M562EeM","r":2,"a":0.28,"d":0.05,"mf":true},{"g":"BV1M2M562EeM","r":3,"a":0.7,"d":0.28,"mf":true},{"g":"BV1MfxT6TEJS","r":1,"a":0.75,"d":0.38,"mf":true},{"g":"BV1MfxT6TEJS","r":2,"a":0.2,"d":0.15,"mf":true},{"g":"BV1MfxT6TEJS","r":3,"a":0.82,"d":0.42,"mf":true},{"g":"BV1SEs56XE3r","r":1,"a":0.45,"d":0.55,"mf":true},{"g":"BV1SEs56XE3r","r":2,"a":0.7,"d":0.4,"mf":true},{"g":"BV1SEs56XE3r","r":3,"a":0.75,"d":0.8,"mf":true},{"g":"BV1WB316PEig","r":1,"a":0.72,"d":0.2,"mf":true},{"g":"BV1WB316PEig","r":2,"a":0.2,"d":0.2,"mf":true},{"g":"BV1WB316PEig","r":3,"a":0.8,"d":0.2,"mf":true},{"g":"BV1WB316PEig","r":4,"a":0.25,"d":0.2,"mf":true},{"g":"BV1X34B6YEhK","r":1,"a":0.4,"d":0.3,"mf":false},{"g":"BV1X34B6YEhK","r":2,"a":0.6,"d":0.75,"mf":false},{"g":"BV1aann6eErr","r":1,"a":0.7,"d":0.82,"mf":true},{"g":"BV1aann6eErr","r":2,"a":0.75,"d":0.68,"mf":true},{"g":"BV1bGTy6tEj8","r":1,"a":0.45,"d":0.45,"mf":false},{"g":"BV1bGTy6tEj8","r":2,"a":0.15,"d":0.25,"mf":false},{"g":"BV1dc8F6qE5K","r":1,"a":0.2,"d":0.3,"mf":true},{"g":"BV1dc8F6qE5K","r":2,"a":0.25,"d":0.12,"mf":true},{"g":"BV1dc8F6qE5K","r":3,"a":0.8,"d":0.1,"mf":true},{"g":"BV1ianm6EE7h","r":1,"a":0.38,"d":0.25,"mf":true},{"g":"BV1ianm6EE7h","r":2,"a":0.15,"d":0.25,"mf":true},{"g":"BV1kr876AEE1","r":1,"a":0.25,"d":0.6,"mf":false},{"g":"BV1kr876AEE1","r":2,"a":0.35,"d":0.25,"mf":false},{"g":"BV1kr876AEE1","r":3,"a":0.6,"d":0.8,"mf":false},{"g":"BV1kr876AEE1","r":4,"a":0.6,"d":0.72,"mf":false},{"g":"BV1mzNd6QEN8","r":1,"a":0.7,"d":0.75,"mf":false},{"g":"BV1mzNd6QEN8","r":2,"a":0.75,"d":0.75,"mf":false},{"g":"BV1mzNd6QEN8","r":3,"a":0.85,"d":0.95,"mf":false},{"g":"BV1pYtc6mEcd","r":1,"a":0.85,"d":0.65,"mf":true},{"g":"BV1pYtc6mEcd","r":2,"a":0.8,"d":0.7,"mf":true},{"g":"BV1pYtc6mEcd","r":3,"a":0.85,"d":0.7,"mf":true},{"g":"BV1pYtc6mEcd","r":4,"a":0.88,"d":0.85,"mf":true},{"g":"BV1ufaA6GEwk","r":1,"a":0.2,"d":0.25,"mf":false},{"g":"BV1ufaA6GEwk","r":2,"a":0.05,"d":0.85,"mf":false},{"g":"BV1ufaA6GEwk","r":3,"a":0.9,"d":0.95,"mf":false},{"g":"BV1ypYT6jEyy","r":1,"a":0.38,"d":0.65,"mf":true},{"g":"BV1ypYT6jEyy","r":2,"a":0.6,"d":0.42,"mf":true},{"g":"BV1ypYT6jEyy","r":3,"a":0.35,"d":0.4,"mf":true},{"g":"BV1ypYT6jEyy","r":4,"a":0.75,"d":0.82,"mf":true},{"g":"BV1ypYT6jEyy","r":5,"a":0.68,"d":0.28,"mf":true}];
+const ROWS = [
+  {name: "Gemini（升序）", color: "--s1", acc: [0.5633, 0.4167, 0.7017], ll: [0.7473, 0.5905, 0.9188]},
+  {name: "Gemini（两种顺序平均）", color: "--s1", hollow: true, acc: [0.5696, 0.4175, 0.7183], ll: [0.7239, 0.5783, 0.882]},
+  {name: "Qwen3-32B", color: "--s2", acc: [0.4587, 0.315, 0.6], ll: [0.9977, 0.7186, 1.334]},
+  {name: "Jev 1.14", color: "--s3", acc: [0.5375, 0.375, 0.6958], ll: [0.674, 0.6081, 0.7409]}
+];
+const ROUNDS = {
+  asc: [[1, 0.5, 20], [2, 0.45, 20], [3, 0.9167, 12]],
+  desc: [[1, 0.5, 20], [2, 0.45, 20], [3, 0.5833, 12]]
+};
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+function el(name, attrs, parent, text) {
+  const n = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
+  if (text != null) n.textContent = text;
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function showTip(evt, html) {
+  tip.innerHTML = html;
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+}
+function hideTip() { tip.hidden = true; }
+function bindTip(node, html) {
+  node.setAttribute("tabindex", "0");
+  node.classList.add("hit");
+  node.addEventListener("pointermove", e => showTip(e, html));
+  node.addEventListener("pointerleave", hideTip);
+  node.addEventListener("focus", () => {
+    const b = node.getBoundingClientRect();
+    showTip({clientX: b.right, clientY: b.top}, html);
+  });
+  node.addEventListener("blur", hideTip);
+}
+const pct = v => (v * 100).toFixed(1) + "%";
+
+function dotChart(id, key, lo, hi, ticks, ref, refLabel, fmt) {
+  const svg = document.getElementById(id);
+  const W = 400, left = 8, right = 46, top = 14, rowH = 36, H = top + ROWS.length * rowH + 26;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = v => left + (v - lo) / (hi - lo) * (W - left - right);
+  for (const t of ticks) {
+    el("line", {x1: x(t), x2: x(t), y1: top - 6, y2: H - 22, class: "grid"}, svg);
+    el("text", {x: x(t), y: H - 6, "text-anchor": "middle"}, svg, fmt(t));
+  }
+  el("line", {x1: x(ref), x2: x(ref), y1: top - 10, y2: H - 22, class: "ref"}, svg);
+  el("text", {x: x(ref) + 4, y: top - 1, "text-anchor": "start"}, svg, refLabel);
+  ROWS.forEach((row, i) => {
+    const y = top + i * rowH + rowH / 2 + 4;
+    const [m, a, b] = row[key];
+    const color = `var(${row.color})`;
+    const g = el("g", {}, svg);
+    el("text", {x: left, y: y - 10, class: "lbl"}, g, row.name);
+    el("line", {x1: x(a), x2: x(b), y1: y, y2: y, stroke: color, "stroke-width": 2, "stroke-linecap": "round"}, g);
+    el("circle", {cx: x(m), cy: y, r: 5.5, fill: row.hollow ? "var(--surface)" : color, stroke: row.hollow ? color : "var(--surface)", "stroke-width": 2}, g);
+    el("text", {x: x(b) + 6, y: y + 4, class: "val"}, g, fmt(m, true));
+    el("rect", {x: x(a) - 6, y: y - 12, width: x(b) - x(a) + 12, height: 24, fill: "transparent"}, g);
+    bindTip(g, `<b>${row.name}</b><br>${key === "acc" ? "准确率" : "对数损失"} ${fmt(m, true)}<br>95% 区间 ${fmt(a, true)} – ${fmt(b, true)}`);
+  });
+}
+dotChart("chart-acc", "acc", 0.25, 0.80, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8], 0.5, "抛硬币 50%",
+  (v, precise) => precise ? (v * 100).toFixed(1) + "%" : Math.round(v * 100) + "%");
+dotChart("chart-ll", "ll", 0.5, 1.4, [0.6, 0.8, 1.0, 1.2, 1.4], Math.LN2, "抛硬币 0.693",
+  (v, precise) => precise ? v.toFixed(3) : v.toFixed(1));
+
+(function scatter() {
+  const svg = document.getElementById("chart-scatter");
+  const S = 430, m = {l: 60, r: 16, t: 16, b: 44};
+  const size = S - m.l - m.r;
+  svg.setAttribute("viewBox", `0 0 ${S} ${S - m.r + m.t}`);
+  svg.style.maxWidth = "520px";
+  const x = v => m.l + v * size, y = v => m.t + (1 - v) * size;
+  el("rect", {x: x(0), y: y(1), width: size / 2, height: size / 2, fill: "var(--flip)"}, svg);
+  el("rect", {x: x(0.5), y: y(0.5), width: size / 2, height: size / 2, fill: "var(--flip)"}, svg);
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    el("line", {x1: x(t), x2: x(t), y1: y(0), y2: y(1), class: t === 0 ? "axis" : "grid"}, svg);
+    el("line", {x1: x(0), x2: x(1), y1: y(t), y2: y(t), class: t === 0 ? "axis" : "grid"}, svg);
+    el("text", {x: x(t), y: y(0) + 16, "text-anchor": "middle"}, svg, Math.round(t * 100) + "%");
+    el("text", {x: x(0) - 6, y: y(t) + 4, "text-anchor": "end"}, svg, Math.round(t * 100) + "%");
+  }
+  el("line", {x1: x(0), y1: y(0), x2: x(1), y2: y(1), class: "ref"}, svg);
+  el("text", {x: x(0.5), y: S - m.r + m.t - 4, "text-anchor": "middle", class: "lbl"}, svg, "升序时给真梅林的概率");
+  el("text", {x: 12, y: y(0.5), "text-anchor": "middle", class: "lbl", transform: `rotate(-90 12 ${y(0.5)})`}, svg, "降序时给真梅林的概率");
+  el("text", {x: x(0.98), y: y(0.96), "text-anchor": "end"}, svg, "两次都对");
+  el("text", {x: x(0.02), y: y(0.04), "text-anchor": "start"}, svg, "两次都错");
+  el("text", {x: x(0.02), y: y(0.96), "text-anchor": "start"}, svg, "对调后改判");
+  el("text", {x: x(0.98), y: y(0.04), "text-anchor": "end"}, svg, "对调后改判");
+  const seen = {};
+  for (const p of PTS) {
+    const k = p.a + "," + p.d;
+    const n = (seen[k] = (seen[k] || 0) + 1) - 1;
+    const jx = n ? Math.cos(n * 2.4) * 5 : 0, jy = n ? Math.sin(n * 2.4) * 5 : 0;
+    const g = el("g", {}, svg);
+    el("circle", {cx: x(p.a) + jx, cy: y(p.d) + jy, r: 5, fill: p.mf ? "var(--s1)" : "var(--surface)", stroke: p.mf ? "var(--surface)" : "var(--s1)", "stroke-width": 2}, g);
+    el("circle", {cx: x(p.a) + jx, cy: y(p.d) + jy, r: 10, fill: "transparent"}, g);
+    const flip = (p.a > 0.5) !== (p.d > 0.5);
+    bindTip(g, `<b>${p.g} · 第 ${p.r} 轮</b><br>升序 ${pct(p.a)} · 降序 ${pct(p.d)}<br>升序时梅林排${p.mf ? "第一个" : "第二个"}${flip ? "<br>对调后改判" : ""}`);
+  }
+})();
+
+(function rounds() {
+  const svg = document.getElementById("chart-rounds");
+  const W = 640, H = 300, m = {l: 44, r: 110, t: 16, b: 46};
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = r => m.l + (r - 1) / 2 * (W - m.l - m.r), y = v => m.t + (1 - (v - 0.3) / 0.7) * (H - m.t - m.b);
+  for (const t of [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]) {
+    el("line", {x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), class: t === 0.3 ? "axis" : "grid"}, svg);
+    el("text", {x: m.l - 8, y: y(t) + 4, "text-anchor": "end"}, svg, Math.round(t * 100) + "%");
+  }
+  el("line", {x1: m.l, x2: W - m.r, y1: y(0.5), y2: y(0.5), class: "ref"}, svg);
+  el("text", {x: W - m.r + 6, y: y(0.5) + 4, "text-anchor": "start"}, svg, "抛硬币 50%");
+  for (const [r, , n] of ROUNDS.asc) {
+    el("text", {x: x(r), y: H - m.b + 18, "text-anchor": "middle", class: "lbl"}, svg, `第 ${r} 轮`);
+    el("text", {x: x(r), y: H - m.b + 34, "text-anchor": "middle"}, svg, `${n} 局`);
+  }
+  const series = [["asc", "--s1", "升序"], ["desc", "--s1-soft", "降序"]];
+  for (const [key, color, name] of series) {
+    const pts = ROUNDS[key];
+    el("polyline", {points: pts.map(([r, v]) => `${x(r)},${y(v)}`).join(" "), fill: "none", stroke: `var(${color})`, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round"}, svg);
+    for (const [r, v, n] of pts) {
+      const g = el("g", {}, svg);
+      el("circle", {cx: x(r), cy: y(v), r: 5, fill: `var(${color})`, stroke: "var(--surface)", "stroke-width": 2}, g);
+      el("circle", {cx: x(r), cy: y(v), r: 11, fill: "transparent"}, g);
+      bindTip(g, `<b>${name} · 第 ${r} 轮</b><br>准确率 ${pct(v)}（${n} 局）`);
+    }
+    const [lr, lv] = pts[pts.length - 1];
+    el("text", {x: x(lr) + 10, y: y(lv) + 4, class: "val"}, svg, `${name} ${pct(lv)}`);
+  }
+})();
+</script>
