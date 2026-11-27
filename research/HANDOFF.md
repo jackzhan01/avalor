@@ -21,7 +21,7 @@ git switch dev && git pull --ff-only origin dev
 
 | 路径（相对 `research/benchmark/`） | 内容 |
 |---|---|
-| `tasks/tasks.jsonl` | **697 个任务**，直接喂模型 |
+| `tasks/tasks.jsonl` | **499 个任务**，直接喂模型 |
 | `tasks/evaluator/labels.jsonl` | 答案，仅供评分 |
 | `avalon-nlu-6p/` | 六人局 20 局：整局输入、指令、标签、MIT 许可证 |
 | `yuanzhuo-10p/` | 十人局 20 局（v2）：整局及各截止点输入、指令、标签、清单 |
@@ -44,10 +44,8 @@ python -c "import json,hashlib,pathlib; bad=[p for p,h in json.load(open('sha256
 | `avalon-nlu-6p`（英文线上） | `roles` | `full` | 82 | 旁观者视角：截至本轮的全部聊天和系统事件（点车、票型、任务结果） | 每个座位一个身份 |
 | | `roles` | `actions` | 82 | 同上，但**删掉了玩家聊天**，只剩系统事件 | 同上 |
 | | `percival` | `asc` / `desc` | 82 + 82 | 派西视角：自己的座位、两个拇指位、截至本轮的**全部**玩家发言（不含系统事件） | `first_percent`：第一个候选人是梅林的概率 |
-| | `recent` | `asc` / `desc` | 62 + 62 | 同上，但只给**本轮**发言（第一轮与 `percival` 相同，故省略） | 同上 |
 | `yuanzhuo22-10p-v2`（中文录像转写） | `roles` | `full` | 57 | 旁观者视角 | 每个座位一个身份 |
 | | `percival` | `asc` / `desc` | 57 + 57 | 派西视角，累计发言 | `first_percent` |
-| | `recent` | `asc` / `desc` | 37 + 37 | 派西视角，仅本轮发言 | `first_percent` |
 
 - `asc` 与之前 API 实验发出的提示逐字节相同（候选按座号从小到大）；`desc` 只把两个候选对调。**两种顺序都要跑**：Jev 在六人局 82 次里有 67 次选第二个候选，单看 `asc` 会误以为它会认梅林，按位置平衡后只有 47%。
 - `roles/actions` 是新加的对照：比较 `full` 和 `actions`，可以看出全桌任务的提升有多少来自聊天、多少来自行动本身。
@@ -96,7 +94,7 @@ python score_role_tasks.py --data ../../benchmark/tasks \
 主要看这些：
 
 - **全桌（`roles`）**：`role` 具体身份准确率、`side` 阵营准确率、`within` 阵营判对的座位中具体身份也对的比例、`merlin` 标为梅林的座位确实是梅林的比例。`side` 主要靠行动就能涨，`within` 和 `merlin` 才更依赖读发言。
-- **派西（`percival` / `recent`）**：优先看 `order-averaged` 这一行（同一轮末两种顺序取平均概率后再评分），以及 `logloss` 和 `brier`。`accuracy` 中五五开记 0.5，只作辅助。`balanced_accuracy` 是按梅林排第一和排第二分别算再平均。
+- **派西（`percival`）**：优先看 `order-averaged` 这一行（同一轮末两种顺序取平均概率后再评分），以及 `logloss` 和 `brier`。`accuracy` 中五五开记 0.5，只作辅助。`balanced_accuracy` 是按梅林排第一和排第二分别算再平均。
 
 ## 5. 建议的对比与做法
 

@@ -11,6 +11,8 @@ Gemini/Qwen/Jev. Two additions the API runs lacked:
   - roles/actions: the six-player record with player chat removed (nlu_actions_only.py);
   - belief tasks in both candidate orders (asc as sent before, desc swapped), because a
     model that always picks one slot otherwise looks like it reads Merlin.
+The "current round only" belief control is not exported: it answered a side question (does
+old talk help?) with too few paired checkpoints to say anything.
 """
 import argparse
 import hashlib
@@ -62,8 +64,8 @@ def six_player():
     roles_by_game = {j["game"]: j["roles"] for j in jobs}
     seen = set()
     for j in jobs:
-        if j["task"] == "recent" and j["round"] == 1:
-            continue  # identical prompt to percival q1 by construction
+        if j["task"] == "recent":
+            continue  # dropped control, see module docstring
         key = (j["game"], j["round"], j["task"])
         if key in seen:
             continue
@@ -101,7 +103,11 @@ def ten_player():
             seats = base.read(TEN_RELEASE / pair["label_path"])["seats"]
             truth[pair["bvid"]] = {s: v["role"] for s, v in seats.items()}
     tasks, labels = [], []
-    for j in base.read(TEN_PLAN):
+    plan = base.read(TEN_PLAN)
+    desc_text = {(j["game"], j["round"]): j["body"]["messages"][1]["content"] for j in plan if j["task"] == "percival_desc"}
+    for j in plan:
+        if j["task"] == "percival_desc":
+            continue  # rebuilt below by swap(); must match what Gemini was sent
         body = j["body"]
         assert body["model"] == "google/gemini-4-hydrogen", "export from the gemini arm, the reference prompt set"
         messages = body["messages"]
@@ -114,6 +120,7 @@ def ten_player():
             labels.append(label(tid, 10, j["game"], truth[j["game"]]))
             continue
         flipped, (a, b) = swap(messages, TEN_SEATS, "、")
+        assert flipped[1]["content"] == desc_text[(j["game"], j["round"])], "desc must equal the API order control"
         for variant, msgs, first in (("asc", messages, a), ("desc", flipped, b)):
             tid = f"yz10/{j['game']}/q{j['round']}/{j['task']}/{variant}"
             tasks.append(common | {"task_id": tid, "variant": variant, "messages": msgs, "json_schema": schema})

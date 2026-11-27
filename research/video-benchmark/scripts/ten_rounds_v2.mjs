@@ -84,10 +84,12 @@ function gameJobs(game, actual) {
     const source = checkpoint || truth;
     const view = publicView(checkedFile(source.input_path, source.input_sha256), round, result);
     const shared = {id, round, actual, candidates, own, source:source.sample_id, reconstructed:!checkpoint};
-    jobs.push({...shared, task:"roles", body:makeBody(roleInstruction, view.record, options)});
-    for (const [task, lines] of [["percival", view.dialogue], ["recent", view.recent]]) {
-      const text = `你的座位：${own}。候选座位：${candidates.join("、")}。\n` + lines.join("\n");
-      jobs.push({...shared, task, body:makeBody(beliefInstruction, text, {first_percent:{type:"integer", minimum:0, maximum:100}})});
+    jobs.push({...shared, task:"roles", listed:null, body:makeBody(roleInstruction, view.record, options)});
+    // Same question with the two candidates listed both ways: a slot preference shows up as
+    // P(first listed is Merlin) moving with the listing rather than with the seat.
+    for (const [task, listed] of [["percival", candidates], ["percival_desc", [candidates[1], candidates[0]]]]) {
+      const text = `你的座位：${own}。候选座位：${listed.join("、")}。\n` + view.dialogue.join("\n");
+      jobs.push({...shared, task, listed, body:makeBody(beliefInstruction, text, {first_percent:{type:"integer", minimum:0, maximum:100}})});
     }
   }
   return jobs;
@@ -160,7 +162,7 @@ function adapt(j) {
     return {...j, body:{...body, provider:{only:["deepinfra"], allow_fallbacks:false, require_parameters:true}}};
   }
   if (arm === "jev") {
-    const [a, b] = j.candidates;
+    const [a, b] = j.listed;
     const rules = j.body.messages[0].content.split("只根据你的开局视野")[0];
     const text = j.body.messages[1].content;
     const criteria = {candidate_a:`${a}号是梅林`, candidate_b:`${b}号是梅林`};
@@ -168,7 +170,7 @@ function adapt(j) {
   }
   return j;
 }
-const address = j => path.join(out, j.id, "q" + j.round, (j.round === 1 && j.task === "recent" ? "percival" : j.task) + ".json");
+const address = j => path.join(out, j.id, "q" + j.round, j.task + ".json");
 const fingerprint = j => hash(JSON.stringify(j.body));
 function score(j, receipt) {
   assert.equal(receipt.digest, fingerprint(j));
@@ -198,19 +200,22 @@ function score(j, receipt) {
     if (!Number.isInteger(pred?.first_percent) || pred.first_percent < 0 || pred.first_percent > 100) return row;
     first = pred.first_percent / 100;
   }
-  const prob = j.actual[j.candidates[0]] === "merlin" ? first : 1 - first;
-  return {...row, valid:true, prob, accuracy:prob === 0.5 ? 0.5 : Number(prob > 0.5), confidence:Math.max(prob, 1 - prob), brier:(1 - prob) ** 2};
+  const merlinFirst = j.actual[j.listed[0]] === "merlin";
+  const prob = merlinFirst ? first : 1 - first;
+  return {...row, valid:true, p_first:first, merlin_first:merlinFirst, prob, accuracy:prob === 0.5 ? 0.5 : Number(prob > 0.5),
+    confidence:Math.max(prob, 1 - prob), brier:(1 - prob) ** 2};
 }
 
 const {jobs:built, checked} = schedule();
-const jobs = built.filter(j => arm !== "jev" || j.task !== "roles").map(adapt);
+// The order control is a property of one reader, so only Gemini gets it; Jev has no roles task.
+const jobs = built.filter(j => (arm !== "jev" || j.task !== "roles") && (arm === "gemini" || j.task !== "percival_desc")).map(adapt);
 const unique = new Map();
 for (const j of jobs) {
   const file = address(j);
   if (unique.has(file)) assert.equal(fingerprint(unique.get(file)), fingerprint(j));
   else unique.set(file, j);
 }
-assert.equal(unique.size, {gemini:151, qwen:151, jev:94}[arm]);
+assert.equal(unique.size, {gemini:171, qwen:114, jev:57}[arm]);
 
 // The v1 counterexample must stop working: it read Merlin off the board order.
 const leakRule = j => {
